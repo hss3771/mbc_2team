@@ -35,8 +35,8 @@ def get_keyword_insights(df: pd.DataFrame, year: int, month: int, keyword: str, 
     # 키워드 추출
     keywords = kw_model.extract_keywords(
         joined_text,
-        keyphrase_ngram_range=(1, 1),
-        stop_words=["수출", "기자", "사진", "있다", "했다", "이번", "대한", "위한", "등", "지난", "이어졌다"], 
+        keyphrase_ngram_range=(1, 2),
+        stop_words=["수출", "기자", "사진", "있다", "했다", "이번", "대한", "위한", "등", "지난", "이어졌다","에서"], 
         use_maxsum=True,
         nr_candidates=30,
         top_n=20
