@@ -7,8 +7,10 @@ from transformers import ElectraTokenizerFast, ElectraForSequenceClassification
 from tqdm import tqdm
 
 MODEL_DIR = "models/trust_electra"
-INPUT_PATH = "data/news_with_issue.csv"          # issue 모델까지 끝난 파일
-OUTPUT_PATH = "data/news_with_issue_trust.csv"   # trust_score 붙여 저장
+# INPUT_PATH = "data/news_with_issue.csv"          # issue 모델까지 끝난 파일
+INPUT_PATH = "data/predict_trust2.csv"          # issue 모델까지 끝난 파일
+# OUTPUT_PATH = "data/news_with_issue_trust.csv"   # trust_score 붙여 저장
+OUTPUT_PATH = "data/predict_trust2.csv"   # trust_score 붙여 저장
 MAX_LEN = 256
 BATCH_SIZE = 32
 
@@ -51,8 +53,10 @@ def main():
     print("[INFO] 뉴스 데이터 로딩...")
     df = pd.read_csv(INPUT_PATH)
     df["title"] = df["title"].fillna("")
-    df["body"] = df["body"].fillna("")
-    df["text"] = df["title"] + " [SEP] " + df["body"]
+    # df["body"] = df["body"].fillna("")
+    # df["text"] = df["title"] + " [SEP] " + df["body"]
+    df["content"] = df["content"].fillna("")
+    df["text"] = df["title"] + " [SEP] " + df["content"]
 
     texts = df["text"].tolist()
     dataset = InferenceDataset(texts, tokenizer, MAX_LEN)
@@ -70,6 +74,7 @@ def main():
                 attention_mask=attention_mask,
             )
             logits = outputs.logits
+            print(logits)
             probs = torch.softmax(logits, dim=-1)
 
             # class 1 = "정상 기사" → 신뢰도
