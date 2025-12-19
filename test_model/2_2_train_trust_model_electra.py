@@ -19,13 +19,13 @@ from transformers import (
 from torch.optim import AdamW
 
 # ===== 설정 =====
-DATA_PATH = "data/train_trust.csv"          # preprocess_aihub_trust에서 만든 CSV
+DATA_PATH = "data/train_trust_1212.csv"          # preprocess_aihub_trust에서 만든 CSV
 MODEL_NAME = "monologg/koelectra-base-v3-discriminator"
-SAVE_DIR = "models/trust_electra20251209"
-MAX_LEN = 256
-BATCH_SIZE =  32# 0~128
-EPOCHS = 30 # 5~50 다다익선 정확도 엄청오름 단지 과적합될수 있음
-LR = 3e-5 
+SAVE_DIR = "models/trust_electra20251212"
+MAX_LEN = 512
+BATCH_SIZE =  64# 0~128
+EPOCHS = 4 # 5~50 다다익선 정확도 엄청오름 단지 과적합될수 있음
+LR = 2e-5
 SEED = 42
 
 
