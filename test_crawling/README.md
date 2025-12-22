@@ -2,10 +2,8 @@
 
 ① 주요 기능
 - 특정 날짜(YYYYMMDD) 기준 기사 목록 끝까지 수집
-- 기사 상세 페이지에 직접 진입하여 다음 정보 추출
-```
-제목 (title)/ 본문 (body)/ 기자명 (reporter)/ 언론사 (press_name)/ 발행일 (published_at)/ 원문URL (url)
-```
+- 기사 상세 페이지에 직접 진입하여 다음 정보 추출  
+  제목 (title)/ 본문 (body)/ 기자명 (reporter)/ 언론사 (press_name)/ 발행일 (published_at)/ 원문URL (url)
 - URL 기반 SHA1 해시를 사용한 중복 방시 article_id
 - Elasticsearch bulk insert 로 대량 저장 최적화
 - 이미 저장된 기사는 자동 스킵
@@ -29,7 +27,7 @@
 ④ 사전 준비
 -  requirements.txt 설치
  - pip install -r requirements.txt
-- requirements.txt
+- requirements.txt 파일 참고
 ```
  fastapi
  uvicorn
@@ -88,19 +86,13 @@ PUT news_info
 ```
 
 ⑥ 실행 방법
-- FastAPI 서버 실행
-```
-uvicorn main5:app --reload
-```
-- 서버 실행 후
-```
-http://127.0.0.1:8000
-```
-- 크롤링 실행
-```
- http://127.0.0.1:8000/naver/news?date=20251217
- date 형식 : YYYYMMDD
-```
+- FastAPI 서버 실행  
+  uvicorn main5:app --reload
+- 서버 실행 후  
+  http://127.0.0.1:8000
+- 크롤링 실행  
+  http://127.0.0.1:8000/naver/news?date=20251217
+  - date 형식 : YYYYMMDD
 
 ⑦ 크롤링 동작 흐름
 - 네이버 뉴스 목록 페이지(page=1부터 끝까지) 순회
