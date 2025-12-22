@@ -28,12 +28,12 @@
 - requirements.txt 설치  
   pip install -r requirements.txt
 - requirements.txt 파일 참고  
-  fastapi
-  uvicorn
-  selenium
-  webdriver-manager
-  elasticsearch
-  Elasticsearch 실행 (로컬)
+  fastapi  
+  uvicorn  
+  selenium  
+  webdriver-manager  
+  elasticsearch  
+  Elasticsearch 실행 (로컬)  
 
 ⑤ Elasticsearch 인덱스 생성
 ```
@@ -89,7 +89,7 @@ PUT news_info
 - 서버 실행 후  
   http://127.0.0.1:8000
 - 크롤링 실행  
-  http://127.0.0.1:8000/naver/news?date=20251217
+  http://127.0.0.1:8000/naver/news?date=20251217  
   date 형식 : YYYYMMDD
 
 ⑦ 크롤링 동작 흐름
