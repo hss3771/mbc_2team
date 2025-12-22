@@ -1,0 +1,9 @@
+# 필요한 라이브러리 기록
+# 라이브러리 한 번에 설치
+# pip install -r requirements.txt
+starlette
+uvicorn
+fastapi
+beautifulsoup4
+httpx
+selenium
