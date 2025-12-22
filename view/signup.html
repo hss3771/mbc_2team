@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TrendScope - 회원가입</title>
+  <style>
+    body {
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR",
+                   Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    }
+
+    /* ✅ 1) 핵심: width 계산 정확히(겹침/붙음 방지) */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root{
+      --brand:#0462D2;
+      --text:#0f172a;
+      --muted:#64748b;
+      --cardShadow: 0 18px 60px rgba(15,23,42,.10);
+    }
+
+    #tsJoinWrap{
+      min-height: calc(100vh - 120px);
+      display:flex; align-items:center; justify-content:center;
+      padding:40px 16px;
+      background:
+        radial-gradient(900px 520px at 18% 42%, rgba(4,98,210,.12) 0%, rgba(4,98,210,0) 62%),
+        radial-gradient(760px 460px at 36% 68%, rgba(59,130,246,.08) 0%, rgba(59,130,246,0) 58%),
+        linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+    }
+    #tsShell{ width:min(1080px,100%); display:flex; gap:32px; align-items:flex-start; }
+
+    #tsLeft{flex:1.2;color:var(--text);padding:12px 8px;}
+    #tsLeft .logo{font-size:44px;font-weight:800;letter-spacing:-0.02em;color:var(--brand);}
+    #tsLeft .desc{margin:10px 0 0;color:#475569;line-height:1.6;font-size:15px;}
+    #tsLeft .status{
+      display:inline-flex;align-items:center;gap:10px;margin-top:18px;
+      padding:10px 12px;border-radius:999px;
+      background: rgba(4,98,210,.06);
+      border: 1px solid rgba(4,98,210,.16);
+      font-size:13px;color:#1f2937;
+    }
+    #tsLeft .dot{
+      width:8px;height:8px;border-radius:50%;
+      background:#22c55e;
+      box-shadow:0 0 0 4px rgba(34,197,94,.14);
+      display:inline-block;
+    }
+
+    #tsRight{flex:.9;width:100%;max-width:520px;}
+    #tsCard{
+      background:#fff;border-radius:18px;padding:26px 26px 22px;
+      box-shadow: var(--cardShadow);
+      border: 1px solid rgba(15,23,42,.06);
+    }
+    #tsTitle{margin-bottom:16px;}
+    #tsTitle .h{font-size:24px;font-weight:800;color:#111827;letter-spacing:-0.02em;}
+    #tsTitle .s{margin-top:6px;font-size:13px;color:#6b7280;}
+
+    .tsField{ margin-top:12px; }
+    .tsLabel{
+      font-size:12px; color:#6b7280; margin:0 0 6px 2px;
+      display:flex; gap:6px; align-items:center;
+    }
+    .tsReq{
+      font-size:11px; color:#ef4444;
+      border:1px solid rgba(239,68,68,.25);
+      background:rgba(239,68,68,.06);
+      padding:2px 6px; border-radius:999px;
+    }
+
+    .tsInput{
+      width:100%;
+      height:42px;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      padding:0 12px;
+      outline:0;
+      font-size:14px; color:#111827;
+      transition: border-color .15s, box-shadow .15s;
+      background:#fff;
+    }
+    .tsInput:focus{
+      border-color: var(--brand);
+      box-shadow: 0 0 0 4px rgba(4,98,210,.12);
+    }
+
+    /* ✅ 2) 아이디 입력칸 + 중복확인 버튼 레이아웃 수정 */
+    .tsRow2{
+      display:flex;
+      align-items:center;
+      gap:18px;                /* ✅ 거리 확보 */
+    }
+    .tsRow2 > .grow{
+      flex: 0 0 270px;          /* ✅ 아이디 입력칸 박스 폭 */
+      max-width: 270px;
+      min-width: 0;
+    }
+
+    .tsBtn{
+      height:42px;
+      border-radius:12px;
+      border:1px solid rgba(15,23,42,.12);
+      background:#fff;
+      font-weight:800;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    #btnCheckId{
+      flex: 0 0 78px;           /* ✅ 버튼 폭 */
+      width: 78px;
+      padding: 0;               /* ✅ padding 제거 → 상자 폭 진짜로 줄어듦 */
+      font-size: 12px;
+    }
+
+    .tsBtnPrimary{
+      border:0; background:var(--brand); color:#fff;
+      box-shadow: 0 10px 30px rgba(4,98,210,.22);
+    }
+    .tsBtnPrimary:disabled{
+      background:#d1d5db;
+      box-shadow:none;
+      cursor:not-allowed;
+    }
+
+    .tsHelp{ margin:8px 2px 0; font-size:12px; color:#94a3b8; line-height:1.4; }
+    .tsMsg{ margin:10px 0 0; font-size:12px; line-height:1.4; padding:10px 12px; border-radius:12px; display:none; }
+    .tsMsg.ok{ display:block; color:#166534; background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.18); }
+    .tsMsg.err{ display:block; color:#b91c1c; background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.18); }
+
+    .tsRadioWrap{
+      border:1px solid #e5e7eb; border-radius:12px; padding:10px 12px;
+      display:flex; flex-wrap:wrap; gap:12px;
+    }
+    .tsRadioWrap label{ font-size:13px; color:#334155; display:inline-flex; gap:8px; align-items:center; }
+    .tsRadioWrap input{ accent-color: var(--brand); }
+
+    .tsActions{
+      display:flex; gap:10px; margin-top:18px;
+    }
+    .tsActions a{
+      flex:1; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+      text-decoration:none; font-weight:900;
+      border:1px solid rgba(15,23,42,.12); color:#0f172a; background:#fff;
+    }
+    .tsActions button{
+      flex:1; height:46px; border-radius:12px; border:0;
+      font-weight:900;
+    }
+
+    #tsFoot{
+      display:flex;justify-content:center;gap:14px;margin-top:14px;
+      font-size:12px;color:#64748b;
+    }
+    .tsLinkBlue{ color:var(--brand); text-decoration:none; font-weight:800; }
+
+    @media (max-width:980px){
+      #tsShell{gap:0;}
+      #tsLeft{display:none;}
+      #tsRight{max-width:520px;}
+      /* 모바일에선 너무 꽉 차지 않게 */
+      .tsRow2 > .grow{ flex: 1 1 auto; max-width: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="tsJoinWrap">
+    <div id="tsShell">
+
+      <div id="tsLeft">
+        <div class="logo">TrendScope</div>
+        <p class="desc">
+          회원가입 후 로그인하면 TrendScope 기능을 이용할 수 있어요.<br>
+          지금은 로컬(브라우저) 저장 방식으로만 동작합니다.
+        </p>
+        <div class="status">
+          <span class="dot"></span>
+          프로토타입 모드(서버 미연결)
+        </div>
+      </div>
+
+      <div id="tsRight">
+        <div id="tsCard">
+          <div id="tsTitle">
+            <div class="h">회원가입</div>
+            <div class="s">필수 정보를 입력해 주세요. (서버 연결 전: 로컬 저장)</div>
+          </div>
+
+          <form id="joinForm" action="#">
+            <div class="tsField">
+              <div class="tsLabel">아이디 <span class="tsReq">필수</span></div>
+              <div class="tsRow2">
+                <div class="grow">
+                  <input id="jId" class="tsInput" type="text" autocomplete="username"
+                         placeholder="영문소문자/숫자 4~16자 (예: trendscope01)" />
+                </div>
+                <button type="button" class="tsBtn" id="btnCheckId">중복확인</button>
+              </div>
+              <div class="tsHelp">규칙: 영문 소문자(a-z) + 숫자(0-9), 4~16자</div>
+              <div class="tsMsg" id="idMsg"></div>
+            </div>
+
+            <div class="tsField">
+              <div class="tsLabel">비밀번호 <span class="tsReq">필수</span></div>
+              <input id="jPw" class="tsInput" type="password" autocomplete="new-password"
+                     placeholder="비밀번호를 입력해 주세요." />
+              <div class="tsHelp">권장: 8자 이상 (지금은 로컬 저장용 검증만 수행)</div>
+            </div>
+
+            <div class="tsField">
+              <div class="tsLabel">비밀번호 확인 <span class="tsReq">필수</span></div>
+              <input id="jPw2" class="tsInput" type="password" autocomplete="new-password"
+                     placeholder="비밀번호를 한 번 더 입력해 주세요." />
+            </div>
+
+            <div class="tsField">
+              <div class="tsLabel">이름 <span class="tsReq">필수</span></div>
+              <input id="jName" class="tsInput" type="text" autocomplete="name" placeholder="이름" />
+            </div>
+
+            <!-- ✅ 성별(필수, 선택안함 제거) -->
+            <div class="tsField">
+              <div class="tsLabel">성별 <span class="tsReq">필수</span></div>
+              <div class="tsRadioWrap" role="radiogroup" aria-label="성별">
+                <label><input type="radio" name="gender" value="남" required> 남</label>
+                <label><input type="radio" name="gender" value="여"> 여</label>
+              </div>
+              <div class="tsHelp">성별은 반드시 선택해야 가입할 수 있어요.</div>
+            </div>
+
+            <!-- ✅ 생년월일(필수) -->
+            <div class="tsField">
+              <div class="tsLabel">생년월일 <span class="tsReq">필수</span></div>
+              <input id="jBirth" class="tsInput" type="date" autocomplete="bday" required />
+              <div class="tsHelp">미래 날짜는 선택할 수 없게 제한됩니다.</div>
+            </div>
+
+            <!-- ✅ 휴대전화(선택) -->
+            <div class="tsField">
+              <div class="tsLabel">휴대전화</div>
+              <input id="jPhone" class="tsInput" type="tel" autocomplete="tel"
+                     placeholder="예: 01012345678 (선택, 숫자만)" />
+              <div class="tsHelp">입력하지 않아도 가입 가능 (입력 시 숫자 10~11자리)</div>
+            </div>
+
+            <!-- ✅ 이메일(필수) -->
+            <div class="tsField">
+              <div class="tsLabel">이메일 <span class="tsReq">필수</span></div>
+              <input id="jEmail" class="tsInput" type="email" autocomplete="email"
+                     placeholder="예: hello@trendscope.com" />
+            </div>
+
+            <!-- ✅ 경제지식수준(선택: 필수 뱃지 제거 + required 제거) -->
+            <div class="tsField">
+              <div class="tsLabel">경제지식수준</div>
+              <div class="tsRadioWrap" role="radiogroup" aria-label="경제지식수준">
+                <label><input type="radio" name="knowledge" value="상"> 상</label>
+                <label><input type="radio" name="knowledge" value="중상"> 중상</label>
+                <label><input type="radio" name="knowledge" value="중"> 중</label>
+                <label><input type="radio" name="knowledge" value="중하"> 중하</label>
+                <label><input type="radio" name="knowledge" value="하"> 하</label>
+              </div>
+              <div class="tsHelp">선택 입력 (가입 필수 아님)</div>
+            </div>
+
+            <!-- ✅ 기본은 숨김 -->
+            <div class="tsMsg" id="formErr"></div>
+
+            <div class="tsActions">
+              <a href="index.html">취소</a>
+              <button class="tsBtnPrimary" id="btnJoin" type="submit" disabled>가입하기</button>
+            </div>
+          </form>
+
+          <div id="tsFoot">
+            <a class="tsLinkBlue" href="login.html">이미 계정이 있어요 → 로그인</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // =========================
+    // ✅ 서버 없이 로컬(브라우저) 저장으로 회원가입/로그인 흉내
+    // 나중에 FastAPI 붙일 때는 apiCheckId/apiRegister만 바꾸면 됨
+    // =========================
+    const TS_USERS_KEY = "ts_users";
+    const USE_MOCK = true;
+
+    function loadUsers(){
+      try { return JSON.parse(localStorage.getItem(TS_USERS_KEY) || "[]"); }
+      catch { return []; }
+    }
+    function saveUsers(users){
+      localStorage.setItem(TS_USERS_KEY, JSON.stringify(users));
+    }
+
+    function validId(id){
+      return /^[a-z0-9]{4,16}$/.test(id);
+    }
+
+    function validEmail(email){
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function onlyDigits(s){
+      return (s || "").replace(/\D/g, "");
+    }
+
+    // ✅ 휴대전화: 선택 입력(비어있으면 OK), 입력했으면 10~11자리
+    function validPhoneOptional(raw){
+      const p = onlyDigits(raw);
+      if (!p) return true;
+      return p.length === 10 || p.length === 11;
+    }
+
+    // ✅ 생년월일 검증/정규화(YYYY-MM-DD)
+    function normalizeBirth(raw){
+      const v = (raw || "").trim();
+      if (!v) return "";
+      if (/^\d{8}$/.test(v)) {
+        return `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6,8)}`;
+      }
+      return v; // 보통 type=date면 YYYY-MM-DD
+    }
+
+    function validBirth(raw){
+      const v = normalizeBirth(raw);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+
+      const [y,m,d] = v.split("-").map(Number);
+      if (y < 1900) return false;
+
+      const dt = new Date(y, m - 1, d);
+      if (dt.getFullYear() !== y || dt.getMonth() !== (m - 1) || dt.getDate() !== d) return false;
+
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      dt.setHours(0,0,0,0);
+
+      if (dt > today) return false;
+      return true;
+    }
+
+    async function sha256(str){
+      if (window.crypto && crypto.subtle) {
+        const buf = new TextEncoder().encode(str);
+        const hash = await crypto.subtle.digest("SHA-256", buf);
+        return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,"0")).join("");
+      }
+      return "plain:" + str;
+    }
+
+    async function apiCheckId(memberId){
+      if (USE_MOCK) {
+        const users = loadUsers();
+        const exists = users.some(u => u.memberId === memberId);
+        return { ok: true, exists };
+      }
+      return { ok:false, message:"서버 연결이 꺼져 있어요." };
+    }
+
+    async function apiRegister(payload){
+      if (USE_MOCK) {
+        const users = loadUsers();
+        if (users.some(u => u.memberId === payload.memberId)) {
+          return { ok:false, message:"이미 사용 중인 아이디입니다." };
+        }
+        users.push(payload);
+        saveUsers(users);
+        return { ok:true };
+      }
+      return { ok:false, message:"서버 연결이 꺼져 있어요." };
+    }
+
+    (function(){
+      const jId = document.getElementById("jId");
+      const jPw = document.getElementById("jPw");
+      const jPw2 = document.getElementById("jPw2");
+      const jName = document.getElementById("jName");
+      const jBirth = document.getElementById("jBirth");
+      const jPhone = document.getElementById("jPhone");
+      const jEmail = document.getElementById("jEmail");
+      const btnCheckId = document.getElementById("btnCheckId");
+      const idMsg = document.getElementById("idMsg");
+      const formErr = document.getElementById("formErr");
+      const btnJoin = document.getElementById("btnJoin");
+      const form = document.getElementById("joinForm");
+
+      // ✅ 생년월일: 미래 날짜 방지(max)
+      const todayStr = new Date().toISOString().slice(0,10);
+      jBirth.max = todayStr;
+      jBirth.min = "1900-01-01";
+
+      let idCheckedOk = false;
+
+      function showMsg(el, type, text){
+        el.className = "tsMsg " + (type === "ok" ? "ok" : "err");
+        el.textContent = text;
+        el.style.display = "block";
+      }
+      function hideMsg(el){
+        el.style.display = "none";
+        el.textContent = "";
+      }
+
+      // ✅ 초기에는 무조건 숨김(안전)
+      hideMsg(formErr);
+
+      function calcCanSubmit(){
+        const id = (jId.value||"").trim();
+        const pw = (jPw.value||"");
+        const pw2 = (jPw2.value||"");
+        const name = (jName.value||"").trim();
+        const birth = (jBirth.value||"").trim();
+        const email = (jEmail.value||"").trim();
+        const gender = form.querySelector('input[name="gender"]:checked');
+
+        // 선택 항목(입력했으면 형식 체크)
+        const phoneOk = validPhoneOptional(jPhone.value);
+
+        const ok =
+          idCheckedOk &&
+          validId(id) &&
+          pw.length >= 8 &&
+          pw === pw2 &&
+          name.length >= 1 &&
+          !!gender &&
+          validBirth(birth) &&
+          validEmail(email) &&
+          phoneOk;
+
+        btnJoin.disabled = !ok;
+      }
+
+      jId.addEventListener("input", () => {
+        idCheckedOk = false;
+        hideMsg(idMsg);
+        hideMsg(formErr);
+        calcCanSubmit();
+      });
+
+      [jPw,jPw2,jName,jPhone,jEmail].forEach(el => el.addEventListener("input", () => {
+        hideMsg(formErr);
+        calcCanSubmit();
+      }));
+
+      jBirth.addEventListener("input", () => {
+        hideMsg(formErr);
+        calcCanSubmit();
+      });
+
+      form.querySelectorAll('input[name="gender"]').forEach(r => r.addEventListener("change", () => {
+        hideMsg(formErr);
+        calcCanSubmit();
+      }));
+
+      // 경제지식수준은 선택이지만, 선택/해제 시 상태 갱신은 해줌
+      form.querySelectorAll('input[name="knowledge"]').forEach(r => r.addEventListener("change", calcCanSubmit));
+
+      btnCheckId.addEventListener("click", async () => {
+        hideMsg(formErr);
+
+        const id = (jId.value||"").trim();
+        if (!validId(id)) {
+          showMsg(idMsg, "err", "아이디 규칙을 확인해 주세요. (영문소문자/숫자 4~16자)");
+          idCheckedOk = false;
+          calcCanSubmit();
+          return;
+        }
+
+        btnCheckId.disabled = true;
+        btnCheckId.textContent = "확인중...";
+
+        try{
+          const r = await apiCheckId(id);
+          if (!r.ok) throw new Error(r.message || "중복확인 실패");
+
+          if (r.exists) {
+            showMsg(idMsg, "err", "이미 사용 중인 아이디입니다.");
+            idCheckedOk = false;
+          } else {
+            showMsg(idMsg, "ok", "사용 가능한 아이디입니다.");
+            idCheckedOk = true;
+          }
+        } catch(e){
+          showMsg(idMsg, "err", "중복확인 중 오류가 발생했어요.");
+          idCheckedOk = false;
+        } finally {
+          btnCheckId.disabled = false;
+          btnCheckId.textContent = "중복확인";
+          calcCanSubmit();
+        }
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        hideMsg(formErr);
+
+        const memberId = (jId.value||"").trim();
+        const passwd = jPw.value || "";
+        const passwd2 = jPw2.value || "";
+        const name = (jName.value||"").trim();
+        const birthRaw = (jBirth.value||"").trim();
+        const birthDate = normalizeBirth(birthRaw);
+        const email = (jEmail.value||"").trim();
+        const gender = (form.querySelector('input[name="gender"]:checked')||{}).value;
+
+        // 선택 항목
+        const phoneDigits = onlyDigits(jPhone.value);
+        const knowledge = (form.querySelector('input[name="knowledge"]:checked')||{}).value || "";
+
+        // ✅ 필수만 강제
+        if (!idCheckedOk) { showMsg(formErr,"err","아이디 중복확인을 먼저 해주세요."); return; }
+        if (!validId(memberId)) { showMsg(formErr,"err","아이디 규칙이 올바르지 않습니다."); return; }
+        if (passwd.length < 8) { showMsg(formErr,"err","비밀번호는 8자 이상으로 입력해 주세요."); return; }
+        if (passwd !== passwd2) { showMsg(formErr,"err","비밀번호 확인이 일치하지 않습니다."); return; }
+        if (!name) { showMsg(formErr,"err","이름을 입력해 주세요."); return; }
+        if (!gender) { showMsg(formErr,"err","성별을 선택해 주세요."); return; }
+        if (!validBirth(birthRaw)) { showMsg(formErr,"err","생년월일을 확인해 주세요. (미래 날짜 불가)"); return; }
+        if (!validEmail(email)) { showMsg(formErr,"err","이메일 형식을 확인해 주세요."); return; }
+
+        // ✅ 선택 항목: 입력했으면 형식 체크
+        if (!validPhoneOptional(jPhone.value)) {
+          showMsg(formErr,"err","휴대전화 번호 형식을 확인해 주세요. (숫자 10~11자리)");
+          return;
+        }
+
+        btnJoin.disabled = true;
+        btnJoin.textContent = "가입 처리중...";
+
+        try{
+          const passwordHash = await sha256(passwd);
+
+          const payload = {
+            memberId,
+            passwordHash,
+            name,
+            gender,
+            birthDate,
+            email,
+
+            // 선택 항목(비어도 OK)
+            phone: phoneDigits,
+            knowledge: knowledge,
+
+            createdAt: new Date().toISOString()
+          };
+
+          const r = await apiRegister(payload);
+          if (!r.ok) throw new Error(r.message || "회원가입 실패");
+
+          location.href = `login.html?registered=1&id=${encodeURIComponent(memberId)}`;
+        } catch(err){
+          showMsg(formErr, "err", err.message || "회원가입 중 오류가 발생했어요.");
+        } finally {
+          btnJoin.textContent = "가입하기";
+          calcCanSubmit();
+        }
+      });
+
+      calcCanSubmit();
+    })();
+  </script>
+</body>
+</html>

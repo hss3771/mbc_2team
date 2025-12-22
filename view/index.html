@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TrendScope</title>
+  <style>
+    /* 페이지 기본 여백 제거 (중요) */
+    body { margin: 0; }
+
+    /* ✅ Scope: 이 스타일은 ts-scope 내부에만 적용됩니다 (전역 충돌 방지) */
+    .ts-scope{
+      --ts-brand:#0462D2;
+      --ts-text:#0f172a;
+      --ts-muted:#64748b;
+      --ts-bg:#ffffff;
+      --ts-shadow: 0 18px 60px rgba(15,23,42,.08);
+      --ts-max: 1080px;
+
+      color: var(--ts-text);
+      background: var(--ts-bg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    }
+    .ts-scope, .ts-scope *{ box-sizing:border-box; }
+    .ts-scope a{ color:inherit; text-decoration:none; }
+
+    .ts-wrap{ width:min(var(--ts-max), 100%); margin:0 auto; padding:0 20px; }
+
+    /* Header */
+    .ts-header{
+      position:sticky; top:0; z-index:50;
+      background: rgba(255,255,255,.86);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid rgba(15,23,42,.06);
+    }
+    .ts-header .ts-in{
+      display:flex; align-items:center; justify-content:space-between;
+      height:64px;
+    }
+    .ts-brand{
+      display:flex; align-items:center; gap:10px; font-weight:800;
+      letter-spacing:-.02em;
+    }
+    .ts-brand .ts-mark{
+      width:22px; height:22px; border-radius:6px;
+      background: linear-gradient(135deg, rgba(4,98,210,.16), rgba(4,98,210,.04));
+      border:1px solid rgba(4,98,210,.22);
+      flex:0 0 auto;
+    }
+    .ts-brand span{ color:var(--ts-brand); }
+    .ts-nav{
+      display:flex; gap:28px; align-items:center;
+      color:#334155; font-size:13px;
+    }
+    .ts-nav a{ opacity:.9; }
+    .ts-nav a:hover{ opacity:1; }
+
+    .ts-nav-right{
+      display:flex; gap:10px; align-items:center;
+      font-size:13px; color:#334155;
+    }
+
+    .ts-btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      height:34px; padding:0 12px;
+      border-radius:10px;
+      border:1px solid rgba(15,23,42,.12);
+      background:#fff;
+      font-weight:700;
+      line-height:1;
+      white-space:nowrap;
+      cursor:pointer;
+    }
+    .ts-btn.ts-primary{
+      border:0; background:var(--ts-brand); color:#fff;
+      box-shadow: 0 10px 30px rgba(4,98,210,.22);
+    }
+
+    /* 로그인 상태 배지 */
+    .ts-user{
+      display:inline-flex; align-items:center; gap:8px;
+      height:34px; padding:0 10px;
+      border-radius:10px;
+      border:1px solid rgba(15,23,42,.10);
+      background:#fff;
+      color:#334155;
+      font-weight:800;
+    }
+    .ts-user small{
+      font-weight:700; color:#64748b;
+    }
+
+    /* Hero */
+    .ts-hero{
+      position:relative; overflow:hidden;
+      padding: 56px 0 22px;
+      background:
+        radial-gradient(900px 520px at 18% 38%, rgba(4,98,210,.12) 0%, rgba(4,98,210,0) 62%),
+        radial-gradient(760px 460px at 70% 24%, rgba(59,130,246,.10) 0%, rgba(59,130,246,0) 58%),
+        linear-gradient(180deg, #ffffff 0%, #ffffff 100%);
+    }
+    .ts-hero-center{ text-align:center; padding: 34px 0 18px; }
+    .ts-kicker{ margin:0; font-size:13px; color:#334155; font-weight:700; letter-spacing:-.01em; }
+    .ts-title{ margin:8px 0 6px; font-size:44px; letter-spacing:-.03em; color:var(--ts-brand); font-weight:900; }
+    .ts-sub{ margin:0; color:var(--ts-muted); font-size:14px; letter-spacing:-.01em; }
+    .ts-cta{ margin-top:16px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    .ts-cta .ts-btn.ts-primary{ height:38px; padding:0 14px; border-radius:10px; }
+    .ts-down{ margin-top:18px; display:flex; justify-content:center; opacity:.35; }
+    .ts-chev{
+      width:10px;height:10px;
+      border-right:2px solid #94a3b8;
+      border-bottom:2px solid #94a3b8;
+      transform:rotate(45deg);
+    }
+
+    .ts-preview{
+      margin: 22px auto 0;
+      width:min(880px, 100%);
+      border-radius: 20px;
+      background: rgba(255,255,255,.72);
+      border:1px solid rgba(15,23,42,.06);
+      box-shadow: var(--ts-shadow);
+      padding: 18px;
+    }
+    .ts-preview-img{
+      width:100%;
+      aspect-ratio: 16 / 7;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #f8fbff, #ffffff);
+      border:1px solid rgba(15,23,42,.06);
+      display:flex; align-items:center; justify-content:center;
+      color:#94a3b8; font-size:13px;
+      overflow:hidden;
+    }
+    .ts-preview-img img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+    .ts-features{
+      margin: 18px auto 34px;
+      width:min(900px, 100%);
+      display:grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+    }
+    .ts-feat{
+      text-align:center;
+      padding: 12px 10px;
+      border-radius: 14px;
+      border:1px solid rgba(15,23,42,.06);
+      background:#fff;
+      display:block;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    .ts-feat:hover{ transform: translateY(-2px); box-shadow: 0 12px 35px rgba(15,23,42,.08); }
+    .ts-feat-dot{
+      width:8px;height:8px;border-radius:999px;
+      background: rgba(4,98,210,.85);
+      margin: 0 auto 8px;
+      box-shadow: 0 0 0 4px rgba(4,98,210,.12);
+    }
+    .ts-feat b{ display:block; font-size:12px; color:#0f172a; margin-bottom:4px; letter-spacing:-.01em; }
+    .ts-feat span{ display:block; font-size:11px; color:#64748b; line-height:1.35; }
+    .ts-feat.ts-active{ border-color: rgba(4,98,210,.22); box-shadow: 0 12px 35px rgba(4,98,210,.12); }
+
+    /* Section */
+    .ts-section{ padding: 34px 0 70px; background:#fff; }
+    .ts-section h2{ margin:0; text-align:center; font-size:16px; letter-spacing:-.01em; color:#0f172a; }
+
+    .ts-zigzag{ margin-top:28px; display:flex; flex-direction:column; gap:56px; }
+    .ts-block{ display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:center; }
+    .ts-block.ts-reverse{ direction:rtl; }
+    .ts-block.ts-reverse > *{ direction:ltr; }
+
+    .ts-label{
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:11px; font-weight:800;
+      color: var(--ts-brand);
+      background: rgba(4,98,210,.08);
+      border: 1px solid rgba(4,98,210,.16);
+      padding: 6px 10px; border-radius:999px;
+    }
+    .ts-block h3{ margin:10px 0 8px; font-size:16px; letter-spacing:-.01em; }
+    .ts-block p{ margin:0; color:var(--ts-muted); font-size:12px; line-height:1.6; max-width:420px; }
+
+    .ts-illust{
+      width:100%;
+      border-radius: 18px;
+      background: #f5f7fb;
+      border:1px solid rgba(15,23,42,.06);
+      box-shadow: 0 12px 45px rgba(15,23,42,.06);
+      padding: 18px;
+      min-height: 190px;
+      display:flex; align-items:center; justify-content:center;
+      color:#94a3b8; font-size:12px;
+      position:relative; overflow:hidden;
+    }
+    .ts-illust::after{
+      content:""; position:absolute; inset:-20%;
+      background: radial-gradient(closest-side, rgba(4,98,210,.10), transparent 70%);
+      transform: translate(10%, -10%);
+      pointer-events:none;
+    }
+
+    .ts-mock{
+      width:min(320px, 90%);
+      border-radius:14px;
+      border:1px solid rgba(15,23,42,.08);
+      background:#fff;
+      overflow:hidden;
+      box-shadow: 0 14px 35px rgba(15,23,42,.08);
+    }
+    .ts-mock-bar{
+      height:34px;
+      background: linear-gradient(180deg, #ffffff, #f8fafc);
+      border-bottom:1px solid rgba(15,23,42,.06);
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 10px;
+      font-size:11px; color:#64748b;
+    }
+    .ts-mock-body{ padding:10px; }
+    .ts-mock-row{
+      display:flex; gap:8px; align-items:center;
+      padding:8px; border:1px solid rgba(15,23,42,.08);
+      border-radius:10px; margin-bottom:8px;
+      background:#fff;
+    }
+    .ts-mock-tag{
+      width:10px;height:10px;border-radius:999px;
+      background:rgba(4,98,210,.7);
+      box-shadow:0 0 0 4px rgba(4,98,210,.12);
+      flex:0 0 auto;
+    }
+    .ts-mock-line{
+      height:10px; flex:1;
+      background: linear-gradient(90deg, rgba(15,23,42,.08), rgba(15,23,42,.03));
+      border-radius:999px;
+    }
+
+    /* Footer */
+    .ts-footer{
+      padding:28px 0 40px;
+      border-top:1px solid rgba(15,23,42,.06);
+      background:#fff;
+    }
+    .ts-footer-in{
+      display:flex; flex-direction:column; gap:8px;
+      align-items:center;
+      color:#64748b; font-size:12px;
+    }
+    .ts-footer-title{ font-weight:800; color:#0f172a; }
+
+    @media (max-width: 980px){
+      .ts-nav{ display:none; }
+      .ts-features{ grid-template-columns:1fr; width:min(520px, 100%); }
+      .ts-block{ grid-template-columns:1fr; gap:14px; }
+      .ts-block.ts-reverse{ direction:ltr; }
+      .ts-title{ font-size:38px; }
+      .ts-preview-img{ aspect-ratio: 16/9; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="ts-scope" id="ts-landing">
+    <header class="ts-header">
+      <div class="ts-wrap ts-in">
+        <a class="ts-brand" href="index.html" aria-label="TrendScope Home">
+          <span class="ts-mark" aria-hidden="true"></span>
+          <span>TrendScope</span>
+        </a>
+
+        <nav class="ts-nav" aria-label="primary">
+          <a href="#" onclick="alert('프로토타입: 대시보드는 아직 연결 전입니다.'); return false;">대시보드</a>
+          <a href="#" onclick="alert('프로토타입: 용어사전은 아직 연결 전입니다.'); return false;">용어사전</a>
+          <a href="#" onclick="alert('프로토타입: 기사설명은 아직 연결 전입니다.'); return false;">기사설명</a>
+        </nav>
+
+        <!-- ✅ 비로그인 -->
+        <div class="ts-nav-right" id="navGuest">
+          <a class="ts-login" href="login.html">로그인</a>
+          <a class="ts-btn ts-primary ts-join" href="signup.html">회원가입</a>
+        </div>
+
+        <!-- ✅ 로그인 -->
+        <div class="ts-nav-right" id="navUser" style="display:none;">
+          <div class="ts-user" id="userBadge">
+            <span id="userName">사용자</span>
+            <small>로그인됨</small>
+          </div>
+          <button class="ts-btn" id="btnLogout" type="button">로그아웃</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="ts-hero" id="ts-features">
+        <div class="ts-wrap">
+          <div class="ts-hero-center">
+            <p class="ts-kicker">경제 트렌드 궁금할 땐?</p>
+            <h1 class="ts-title">TrendScope</h1>
+            <p class="ts-sub" id="heroSub">새로운 경험을 해보세요</p>
+
+            <div class="ts-cta">
+              <!-- ✅ 변경: 무조건 dashboard.html로 이동 -->
+              <a class="ts-btn ts-primary" id="ctaBtn" href="dashboard.html">지금 시작하기</a>
+              <!-- ✅ 변경: 옆 '회원가입' 버튼 제거 -->
+            </div>
+
+            <div class="ts-down" aria-hidden="true"><span class="ts-chev"></span></div>
+          </div>
+
+          <div class="ts-preview">
+            <div class="ts-preview-img">
+              (여기에 메인 프리뷰 이미지 넣기)
+            </div>
+          </div>
+
+          <div class="ts-features" aria-label="핵심 기능">
+            <a class="ts-feat" href="#" onclick="alert('프로토타입: 키워드 랭킹은 아직 연결 전입니다.'); return false;">
+              <div class="ts-feat-dot"></div>
+              <b>키워드 랭킹</b><span>급상승 Top10을<br>빠르게 확인</span>
+            </a>
+
+            <a class="ts-feat" href="#" onclick="alert('프로토타입: 기간 비교는 아직 연결 전입니다.'); return false;">
+              <div class="ts-feat-dot"></div>
+              <b>기간 비교</b><span>증가율/변동을<br>한눈에</span>
+            </a>
+
+            <a class="ts-feat ts-active" href="#" onclick="alert('프로토타입: 키워드 허브는 아직 연결 전입니다.'); return false;">
+              <div class="ts-feat-dot"></div>
+              <b>키워드 허브</b><span>트렌드/연관어/<br>요약 종합</span>
+            </a>
+
+            <a class="ts-feat" href="#" onclick="alert('프로토타입: 기사 탐색은 아직 연결 전입니다.'); return false;">
+              <div class="ts-feat-dot"></div>
+              <b>기사 탐색</b><span>필터로 빠르게<br>찾고 읽기</span>
+            </a>
+
+            <a class="ts-feat" href="#" onclick="alert('프로토타입: 요약은 아직 연결 전입니다.'); return false;">
+              <div class="ts-feat-dot"></div>
+              <b>요약</b><span>필요할 때<br>핵심만</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="ts-section" id="ts-usecases">
+        <div class="ts-wrap">
+          <h2>이렇게 활용하고 있어요!</h2>
+
+          <div class="ts-zigzag">
+            <div class="ts-block">
+              <div>
+                <span class="ts-label">나도 써봐</span>
+                <h3>소비 니즈 파악? <br>사람들이 진짜 원하는 것은?</h3>
+                <p>SNS / 뉴스에서 언급량이 늘어나는 키워드를 추적해<br>관심의 흐름과 맥락을 빠르게 이해할 수 있어요.</p>
+              </div>
+
+              <div class="ts-illust">
+                <div class="ts-mock" aria-hidden="true">
+                  <div class="ts-mock-bar"><span>검색</span><span style="color:var(--ts-brand);font-weight:800;">🔎</span></div>
+                  <div class="ts-mock-body">
+                    <div class="ts-mock-row"><span class="ts-mock-tag"></span><span class="ts-mock-line"></span></div>
+                    <div class="ts-mock-row"><span class="ts-mock-tag"></span><span class="ts-mock-line"></span></div>
+                    <div class="ts-mock-row" style="margin-bottom:0"><span class="ts-mock-tag"></span><span class="ts-mock-line"></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ts-block ts-reverse">
+              <div>
+                <span class="ts-label">이렇게 편해</span>
+                <h3>새로운 키워드 찾기? <br>지금 떠오르는 트렌드는?</h3>
+                <p>기간별 추이를 비교하고, 하위 키워드/워드클라우드로<br>이슈의 중심을 빠르게 파악할 수 있어요.</p>
+              </div>
+
+              <div class="ts-illust">
+                <div class="ts-mock" aria-hidden="true">
+                  <div class="ts-mock-bar"><span>트렌드</span><span style="color:var(--ts-brand);font-weight:800;">📈</span></div>
+                  <div class="ts-mock-body">
+                    <div style="height:90px;border-radius:12px;border:1px solid rgba(15,23,42,.08);background:linear-gradient(180deg,#fff,#f8fafc);"></div>
+                    <div style="margin-top:10px; display:flex; gap:8px;">
+                      <div style="flex:1;height:10px;border-radius:999px;background:rgba(15,23,42,.06)"></div>
+                      <div style="flex:.7;height:10px;border-radius:999px;background:rgba(4,98,210,.16)"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ts-block">
+              <div>
+                <span class="ts-label">바로 가능</span>
+                <h3>데이터로 답변이 필요할 때? <br>숫자로 설명해야 한다면?</h3>
+                <p>기사 목록을 필터링하고, 요약/라벨로 근거를 정리해<br>보고서나 의사결정 자료로 연결하기 쉬워요.</p>
+              </div>
+
+              <div class="ts-illust">
+                <div class="ts-mock" aria-hidden="true">
+                  <div class="ts-mock-bar"><span>기사</span><span style="color:var(--ts-brand);font-weight:800;">🧾</span></div>
+                  <div class="ts-mock-body">
+                    <div class="ts-mock-row"><span class="ts-mock-tag"></span><span class="ts-mock-line"></span></div>
+                    <div class="ts-mock-row"><span class="ts-mock-tag"></span><span class="ts-mock-line"></span></div>
+                    <div class="ts-mock-row" style="margin-bottom:0"><span class="ts-mock-tag"></span><span class="ts-mock-line"></span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="ts-footer" id="ts-footer">
+      <div class="ts-wrap ts-footer-in">
+        <div class="ts-footer-title">TrendScope</div>
+        <div>문의: help@yourdomain.com</div>
+        <div style="opacity:.75;">© TrendScope. All rights reserved.</div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // ✅ 로컬 세션(서버 미연결)
+    const TS_SESSION_KEY = "ts_session";
+
+    function getSession(){
+      try { return JSON.parse(localStorage.getItem(TS_SESSION_KEY) || "null"); }
+      catch { return null; }
+    }
+    function clearSession(){
+      localStorage.removeItem(TS_SESSION_KEY);
+    }
+
+    function renderAuthUI(){
+      const session = getSession();
+      const navGuest = document.getElementById("navGuest");
+      const navUser = document.getElementById("navUser");
+      const userName = document.getElementById("userName");
+      const heroSub = document.getElementById("heroSub");
+      const ctaBtn = document.getElementById("ctaBtn");
+
+      // CTA는 로그인 여부 상관없이 dashboard로
+      if (ctaBtn){
+        ctaBtn.textContent = "지금 시작하기";
+        ctaBtn.href = "dashboard.html";
+        ctaBtn.onclick = null;
+      }
+
+      if (session && session.memberId){
+        navGuest.style.display = "none";
+        navUser.style.display = "flex";
+        userName.textContent = session.name || session.memberId;
+
+        heroSub.textContent = "로그인 완료! 대시보드로 바로 이동할 수 있어요.";
+      } else {
+        navGuest.style.display = "flex";
+        navUser.style.display = "none";
+
+        heroSub.textContent = "새로운 경험을 해보세요";
+      }
+    }
+
+    document.getElementById("btnLogout").addEventListener("click", () => {
+      clearSession();
+      renderAuthUI();
+      alert("로그아웃 되었습니다.");
+    });
+
+    renderAuthUI();
+  </script>
+</body>
+</html>

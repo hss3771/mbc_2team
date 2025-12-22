@@ -1,0 +1,1181 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TrendScope Dashboard</title>
+  <style>
+    :root{
+      --brand:#0462D2;
+      --brand2:#0a5fd6;
+      --bg:#eef5ff;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:#e2e8f0;
+      --shadow: 0 10px 30px rgba(2, 8, 23, .06);
+      --radius:14px;
+      --max:1180px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", "Apple SD Gothic Neo", Arial, "Malgun Gothic", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(900px 420px at 18% 6%, rgba(4,98,210,.20), transparent 55%),
+        radial-gradient(900px 420px at 82% 0%, rgba(10,95,214,.18), transparent 55%),
+        linear-gradient(180deg, #f3f8ff, #eef5ff 50%, #eef5ff);
+    }
+
+    a{color:inherit; text-decoration:none}
+    button{font:inherit}
+    .app{min-height:100%}
+
+    /* Topbar */
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:20;
+      height:54px;
+      background: linear-gradient(90deg, var(--brand2), var(--brand));
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 16px;
+      box-shadow: 0 12px 24px rgba(2, 8, 23, .10);
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .mark{
+      width:14px;height:14px;border-radius:4px;
+      background: rgba(255,255,255,.9);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.55);
+    }
+    .top-actions{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    }
+    .pill{
+      display:flex; align-items:center; gap:8px;
+      background: rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.22);
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      backdrop-filter: blur(6px);
+    }
+    .btn{
+      border:1px solid rgba(255,255,255,.22);
+      background: rgba(255,255,255,.12);
+      color:#fff;
+      padding:6px 10px;
+      border-radius:999px;
+      cursor:pointer;
+    }
+    .btn:hover{background: rgba(255,255,255,.18)}
+
+    /* Layout */
+    .main{
+      width:min(var(--max), 100%);
+      margin: 18px auto 0;
+      padding: 0 16px 22px;
+      display:flex;
+      gap:16px;
+    }
+
+    .sidebar{
+      width:220px;
+      background: rgba(255,255,255,.85);
+      border:1px solid rgba(226,232,240,.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:14px 12px;
+      position:sticky;
+      top:72px;
+      height: calc(100vh - 96px);
+      overflow:auto;
+    }
+    .side-title{
+      font-size:12px;
+      color: var(--muted);
+      font-weight:800;
+      padding:6px 10px 10px;
+    }
+    .nav{display:flex; flex-direction:column; gap:6px;}
+    .nav a{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 10px;
+      border-radius:10px;
+      color:#0f172a;
+      font-weight:700;
+      font-size:13px;
+      border:1px solid transparent;
+    }
+    .nav a .ic{
+      width:14px;height:14px;border-radius:5px;
+      background:#dbeafe;
+      border:1px solid #bfdbfe;
+    }
+    .nav a:hover{
+      background:#f1f5ff;
+      border-color:#dbeafe;
+    }
+    .nav a.active{
+      background:#eef2ff;
+      border-color:#dbeafe;
+      box-shadow: 0 8px 18px rgba(2,8,23,.06);
+    }
+
+    .content{flex:1; min-width:0;}
+
+      /* =========================
+        ✅ Toolbar layout (2번째 사진 스타일)
+      ========================= */
+      .toolbar{
+        display:flex;
+        align-items:center;
+        gap:12px;
+        flex-wrap:nowrap;          /* 데스크탑은 한 줄 */
+      }
+
+      /* 왼쪽은 너무 커지지 않게 */
+      .toolbar-left{
+        flex: 0 0 auto;
+        min-width: 210px;
+      }
+
+      /* (선택) 키워드칩을 가운데로 분리했을 때 쓰는 영역 */
+      .toolbar-mid{
+        flex: 0 0 auto;
+        display:flex;
+        align-items:center;
+      }
+
+      /* 오른쪽(날짜+집계)은 자연스럽게 줄어들 수 있게 */
+      .toolbar-right{
+        margin-left:auto;
+        display:flex;
+        align-items:center;
+        gap:10px;
+        flex-wrap:nowrap;
+        min-width:0;               /* ✅ shrink 허용 */
+      }
+
+      /* 날짜 박스는 "너무 길어지지 않게" + shrink 가능 */
+      .dateBox{
+        flex: 0 1 auto;
+        min-width: 0;
+        gap:8px;
+      }
+
+      /* 날짜 input 폭을 고정해서 시작/종료가 길어지는 현상 방지 */
+      .dateBox input[type="date"]{
+        width: 118px;              /* ✅ 110~130 사이에서 취향대로 */
+        min-width: 118px;
+        padding: 0;
+      }
+
+      /* 글자 세로 깨짐 방지 */
+      .dateLabel,
+      .grain{
+        white-space: nowrap;
+        word-break: keep-all;
+      }
+
+      /* 집계 버튼은 절대 줄지 않게(밖으로 튀는 대신, 옆 공간에서 줄어들게 유도) */
+      .grainGroup{
+        flex: 0 0 auto;
+      }
+      .grain{
+        flex: 0 0 auto;
+        min-width: 44px;
+      }
+
+      /* 반응형: 좁아지면 2줄로 자연스럽게 */
+      @media (max-width: 980px){
+        .toolbar{ flex-wrap:wrap; }
+        .toolbar-right{
+          width:100%;
+          justify-content:flex-end;
+          flex-wrap:wrap;
+        }
+      }
+
+
+
+    .dateBox{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:6px 10px;
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:999px;
+      box-shadow: 0 10px 20px rgba(2,8,23,.04);
+    }
+    .dateItem{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:#0f172a;
+    }
+    .calIc{
+      width:12px;height:12px;border-radius:4px;
+      background:#dbeafe;
+      border:1px solid #bfdbfe;
+    }
+    .dateLabel{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:800;
+    }
+    input[type="date"]{
+      border:0;
+      outline:0;
+      font-weight:900;
+      font-size:12px;
+      color:#0f172a;
+      background:transparent;
+    }
+    .dateSep{color:#94a3b8; font-weight:900}
+
+    /* Grain Group */
+    .grainGroup{
+      display:flex; align-items:center;
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:999px;
+      padding:4px;
+      box-shadow: 0 10px 20px rgba(2,8,23,.04);
+      gap:4px;
+    }
+    .grain{
+      border:0;
+      background:transparent;
+      padding:6px 10px;
+      border-radius:999px;
+      cursor:pointer;
+      font-weight:900;
+      font-size:12px;
+      color:#0f172a;
+    }
+    .grain:hover{background:#f1f5ff}
+    .grain.active{
+      background:#e8f1ff;
+      color:#0b2a59;
+      box-shadow: inset 0 0 0 1px #bfdbfe;
+    }
+
+    /* Cards & grids */
+    .grid-top{margin-top:14px;}
+    .grid-mid{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: 1.7fr 1fr;
+      gap:14px;
+      align-items:stretch;
+    }
+    .grid-bot{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+    }
+
+    .card{
+      background: rgba(255,255,255,.92);
+      border:1px solid rgba(226,232,240,.95);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 12px 14px;
+      min-width:0;
+    }
+    .card-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .card-title{font-weight:900}
+    .card-actions{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      padding:3px 8px;
+      border-radius:999px;
+      background:#eff6ff;
+      border:1px solid #dbeafe;
+      color:#0b2a59;
+      font-weight:900;
+      font-size:11px;
+      margin-left:6px;
+    }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#fff;
+      font-weight:900;
+      font-size:11px;
+      color:#334155;
+    }
+    .ghost{
+      border:1px solid var(--line);
+      background:#fff;
+      color:#0f172a;
+      padding:6px 10px;
+      border-radius:999px;
+      cursor:pointer;
+      font-weight:900;
+      font-size:12px;
+    }
+    .ghost:hover{background:#f8fbff}
+
+    .top3{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:10px;
+      margin: 6px 0 10px;
+    }
+    .kCard{
+      border:1px solid rgba(226,232,240,.95);
+      border-radius: 14px;
+      background:#fff;
+      padding:10px 10px;
+      cursor:pointer;
+      box-shadow: 0 10px 18px rgba(2,8,23,.04);
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .kCard:hover{background:#f8fbff}
+    .kTop{
+      display:flex; align-items:center; justify-content:space-between;
+      font-weight:900;
+    }
+    .rankMedal{
+      width:18px;height:18px;border-radius:6px;
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:12px;
+      background:#fff7ed;
+      border:1px solid #fed7aa;
+    }
+    .kName{font-weight:1000}
+    .kSub{display:flex; gap:8px; align-items:center; color:var(--muted); font-size:11px; font-weight:800}
+    .delta{
+      font-weight:1000;
+      font-size:12px;
+      display:inline-flex; align-items:center; gap:4px;
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#fff;
+    }
+    .up{color:#dc2626; border-color:#fecaca; background:#fff1f2}
+    .down{color:#2563eb; border-color:#bfdbfe; background:#eff6ff}
+    .new{color:#059669; border-color:#bbf7d0; background:#ecfdf5}
+
+    table{width:100%; border-collapse:collapse; overflow:hidden;}
+    thead th{
+      text-align:left;
+      font-size:11px;
+      color:var(--muted);
+      font-weight:900;
+      padding:10px 10px;
+      border-bottom:1px solid var(--line);
+    }
+    tbody td{
+      padding:10px 10px;
+      border-bottom:1px solid rgba(226,232,240,.7);
+      font-size:12px;
+      font-weight:800;
+      color:#0f172a;
+    }
+    tbody tr:hover{background:#f8fbff}
+    .rowKw{
+      cursor:pointer;
+      color:#0f172a;
+      font-weight:1000;
+    }
+
+    /* Tabs / Panels */
+    .tabs{
+      display:flex; gap:6px;
+      border:1px solid var(--line);
+      background:#fff;
+      padding:4px;
+      border-radius:999px;
+    }
+    .tab{
+      border:0;
+      background:transparent;
+      padding:6px 10px;
+      border-radius:999px;
+      cursor:pointer;
+      font-weight:1000;
+      font-size:12px;
+      color:#0f172a;
+    }
+    .tab.active{
+      background:#e8f1ff;
+      box-shadow: inset 0 0 0 1px #bfdbfe;
+      color:#0b2a59;
+    }
+    .panel{display:none;}
+    .panel.active{display:block;}
+
+    /* Chart */
+    .chart{
+      height:170px;
+      background:#fff;
+      border:1px solid rgba(226,232,240,.95);
+      border-radius: 14px;
+      padding:10px;
+      display:flex;
+      align-items:flex-end;
+      gap:6px;
+      overflow:hidden;
+    }
+    .bar{
+      width:100%;
+      min-width: 8px;
+      background: linear-gradient(180deg, rgba(4,98,210,.95), rgba(4,98,210,.55));
+      border-radius: 8px 8px 6px 6px;
+      box-shadow: 0 10px 16px rgba(4,98,210,.14);
+      position:relative;
+    }
+    .bar::after{
+      content:"";
+      position:absolute;
+      left:0; right:0; top:0;
+      height:10px;
+      border-radius: 8px 8px 0 0;
+      background: rgba(255,255,255,.24);
+    }
+    .note{
+      margin-top:10px;
+      color:#94a3b8;
+      font-size:11px;
+      line-height:1.5;
+    }
+
+    /* Donut */
+    .donutWrap{display:flex; gap:12px; align-items:center; margin-top:6px;}
+    .donut{
+      width:98px;height:98px;border-radius:999px;
+      background: conic-gradient(#22c55e 0 33%, #60a5fa 33% 70%, #ef4444 70% 100%);
+      border:8px solid #fff;
+      box-shadow: 0 10px 20px rgba(2,8,23,.06);
+    }
+    .legend{display:flex; flex-direction:column; gap:8px; font-size:12px; font-weight:900; color:#0f172a}
+    .legItem{display:flex; align-items:center; gap:8px;}
+    .sw{width:10px;height:10px;border-radius:4px;background:#22c55e}
+    .sw.s2{background:#60a5fa}
+    .sw.s3{background:#ef4444}
+
+    /* Cloud */
+    .cloud{
+      min-height:190px;
+      border:1px solid rgba(226,232,240,.95);
+      border-radius: 14px;
+      background:#fff;
+      padding:14px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-content:flex-start;
+    }
+    .w{
+      display:inline-block;
+      font-weight:1000;
+      color:#0f172a;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(226,232,240,.9);
+      background:#f8fbff;
+      user-select:none;
+    }
+
+    .foot{
+      width:min(var(--max), 100%);
+      margin: 0 auto 24px;
+      padding: 0 16px;
+      color:#94a3b8;
+      font-size:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    @media (max-width: 980px){
+      .main{flex-direction:column;}
+      .sidebar{width:100%; height:auto; position:static;}
+      .grid-mid, .grid-bot{grid-template-columns: 1fr;}
+      .top3{grid-template-columns: 1fr;}
+      .toolbar-left{min-width:auto;}
+      .toolbar-right{
+        flex-wrap:wrap;
+        justify-content:flex-start;
+      }
+    }
+    @media (max-width: 520px){
+      .dateBox{width:100%; justify-content:space-between;}
+      .toolbar-right{width:100%; justify-content:flex-start;}
+      .toolbar-left{flex-wrap:wrap}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <span class="mark"></span>
+        TrendScope <span style="opacity:.8;font-weight:800;font-size:12px;">DASHBOARD</span>
+      </div>
+
+      <div class="top-actions">
+        <div class="pill">기간: <b id="rangeLabel">-</b></div>
+
+        <!-- 비로그인 표시 -->
+        <div class="authWrap" id="authGuest" style="display:none;">
+          <div class="pill">비로그인</div>
+          <button class="btn" type="button" id="btnGoLogin">로그인</button>
+        </div>
+
+        <!-- 로그인 표시 -->
+        <div class="authWrap" id="authUser" style="display:none;">
+          <div class="pill">👤 <b id="authUserName">사용자</b></div>
+          <button class="btn" type="button" id="btnLogout">로그아웃</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="main">
+      <aside class="sidebar">
+        <div class="side-title">메뉴</div>
+        <nav class="nav">
+          <a class="active" href="#"><span class="ic"></span> 대시보드</a>
+          <a href="#"><span class="ic"></span> 키워드 랭킹</a>
+          <a href="#"><span class="ic"></span> 키워드 허브</a>
+          <a href="#"><span class="ic"></span> 기사 목록</a>
+          <a href="#"><span class="ic"></span> 용어사전</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <!-- 상단 컨트롤 바 -->
+        <div class="toolbar">
+          <!-- 왼쪽: 타이틀/브레드크럼 -->
+          <div class="toolbar-left">
+            <div class="toolbar-meta">
+              <div class="toolbar-title">경제 키워드 트렌드 🔥</div>
+              <div class="crumb"></div>
+            </div>
+          </div>
+
+          <!-- 가운데: 키워드칩 (날짜와 분리) -->
+          <div class="toolbar-mid">
+            <div class="kwChip" aria-label="선택 키워드">
+              <span class="kwDot" aria-hidden="true"></span>
+              <span id="kwChipText">금리</span>
+            </div>
+          </div>
+
+          <!-- 오른쪽: 날짜 + 집계 -->
+          <div class="toolbar-right">
+            <div class="dateBox" aria-label="기간 선택">
+              <div class="dateItem">
+                <span class="calIc" aria-hidden="true"></span>
+                <span class="dateLabel">시작일</span>
+                <input id="tsStartDate" type="date" />
+              </div>
+
+              <span class="dateSep">~</span>
+
+              <div class="dateItem">
+                <span class="calIc" aria-hidden="true"></span>
+                <span class="dateLabel">종료일</span>
+                <input id="tsEndDate" type="date" />
+              </div>
+            </div>
+
+            <div class="grainGroup" aria-label="집계 단위">
+              <button class="grain" type="button" data-grain="day">일별</button>
+              <button class="grain active" type="button" data-grain="week">주별</button>
+              <button class="grain" type="button" data-grain="month">월별</button>
+              <button class="grain" type="button" data-grain="year">연도별</button>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- TOP10 -->
+        <section class="grid-top">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">Top10 키워드 랭킹 <span class="badge">1~3위 강조</span></div>
+              <div class="card-actions">
+                <span class="chip">동점: 사전순</span>
+                <button class="ghost" type="button">전체보기</button>
+              </div>
+            </div>
+
+            <div class="top3" id="top3"></div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:64px;">순위</th>
+                  <th>키워드</th>
+                  <th style="width:110px;">언급량</th>
+                  <th style="width:120px;">변동</th>
+                </tr>
+              </thead>
+              <tbody id="topRest"></tbody>
+            </table>
+
+            <div class="note">
+              * 메인은 “오늘 뭐가 중요한지”만 빠르게 보여주고, 감성/맥락은 아래 섹션에서 키워드 기준으로 확인합니다.
+            </div>
+          </div>
+        </section>
+
+        <!-- 키워드 상세 + 배경 -->
+        <section class="grid-mid">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">
+                키워드 상세 <span class="badge" id="kwTitle">금리</span>
+              </div>
+              <div class="card-actions">
+                <div class="tabs" role="tablist" aria-label="keyword detail tabs">
+                  <button class="tab active" data-tab="trend" type="button">언급량 추이</button>
+                  <button class="tab" data-tab="sentiment" type="button">기사 감성 분석</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel active" id="panel-trend">
+              <div class="chart" id="trendChart" aria-label="trend chart"></div>
+              <div class="note" id="trendHint">-</div>
+            </div>
+
+            <div class="panel" id="panel-sentiment">
+              <div class="card-head" style="margin-top:2px;">
+                <div class="card-title" style="font-size:12px;">감성 분포(샘플)</div>
+                <div class="card-actions"><span class="chip">긍/중립/부정</span></div>
+              </div>
+
+              <div class="donutWrap">
+                <div class="donut" id="donut" aria-label="sentiment donut"></div>
+                <div class="legend">
+                  <div class="legItem"><span class="sw"></span> 긍정 <b id="posPct">-</b></div>
+                  <div class="legItem"><span class="sw s2"></span> 중립 <b id="neuPct">-</b></div>
+                  <div class="legItem"><span class="sw s3"></span> 부정 <b id="negPct">-</b></div>
+                </div>
+              </div>
+
+              <div class="note" id="sentimentHint" style="margin-top:6px;">-</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">오늘의 핵심 배경</div>
+              <div class="card-actions"><span class="chip">해설 참고</span></div>
+            </div>
+
+            <div style="font-weight:900;">기준 지표</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+              <div class="chip">금리(선행영향)</div>
+              <div class="chip"><b>기준금리</b> 6.03%</div>
+              <div class="chip">전월 대비 ▼ 0.02%</div>
+            </div>
+
+            <div style="margin-top:12px;font-weight:900;">왜 지금 중요한가</div>
+            <ul style="margin:8px 0 0 18px; padding:0; color:#475569; font-size:12px;">
+              <li>상위 키워드 변동과 동행하는 거시 지표를 한 눈에</li>
+              <li>랭킹 “원인”을 추측할 수 있는 최소 단서 제공</li>
+              <li>상세 분석은 키워드 상세(왼쪽)에서 확인</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- 맥락 확장 -->
+        <section class="grid-bot">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">함께 언급된 키워드 <span class="badge">맥락 확장</span></div>
+              <div class="card-actions"><span class="chip">감성 분석 아님</span></div>
+            </div>
+
+            <div class="note" style="margin-top:0;">
+              ※ 이 영역은 감성(긍/부정)이 아니라, <b>동시 언급/연관 맥락</b>을 보여줍니다.
+            </div>
+
+            <table style="margin-top:6px;">
+              <thead><tr><th>키워드</th><th style="width:90px;">count</th></tr></thead>
+              <tbody id="subkwTable"></tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">워드클라우드 <span class="badge">맥락 확장</span></div>
+              <div class="card-actions"><button class="ghost" type="button">PNG로 교체</button></div>
+            </div>
+
+            <div class="cloud" id="cloud"></div>
+
+            <div class="note">
+              * 실제 구현 시 생성된 워드클라우드 PNG를 불러오는 방식 추천
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <div class="foot">
+      <div>© TrendScope</div>
+      <div style="opacity:.8;">Data is sample for layout. Replace with API/DB.</div>
+    </div>
+  </div>
+
+  <script>
+    // =========================
+    // A) Auth Session (샘플)
+    // =========================
+    const TS_SESSION_KEY = "ts_session";
+
+    function getSession(){
+      try { return JSON.parse(localStorage.getItem(TS_SESSION_KEY) || "null"); }
+      catch { return null; }
+    }
+    function clearSession(){
+      localStorage.removeItem(TS_SESSION_KEY);
+    }
+    function setSession(name){
+      localStorage.setItem(TS_SESSION_KEY, JSON.stringify({ name, ts: Date.now() }));
+    }
+
+    function renderAuthUI(){
+      const guest = document.getElementById("authGuest");
+      const user = document.getElementById("authUser");
+      const name = document.getElementById("authUserName");
+      const session = getSession();
+
+      if (!guest || !user) return;
+
+      if (!session){
+        guest.style.display = "flex";
+        user.style.display = "none";
+      }else{
+        guest.style.display = "none";
+        user.style.display = "flex";
+        if (name) name.textContent = session.name || "사용자";
+      }
+    }
+
+    // =========================
+    // B) Sample Data
+    // =========================
+    const TOP10 = [
+      { rank:1, kw:"환율", count:318, delta:+2 },
+      { rank:2, kw:"금리", count:290, delta:-1 },
+      { rank:3, kw:"물가", count:245, delta:+1 },
+      { rank:4, kw:"주식", count:223, delta:"NEW" },
+      { rank:5, kw:"부동산", count:201, delta:-2 },
+      { rank:6, kw:"고용", count:189, delta:+1 },
+      { rank:7, kw:"경기침체", count:173, delta:-1 },
+      { rank:8, kw:"유가", count:162, delta:+1 },
+      { rank:9, kw:"반도체", count:155, delta:+3 },
+      { rank:10, kw:"수출", count:149, delta:-1 }
+    ];
+
+    const SUBKWS = {
+      "금리": [["기준금리",88],["연준",76],["인하",62],["정책",54],["동결",41],["대출",39],["시장",31]],
+      "환율": [["달러",72],["원화",58],["수출",44],["수입",37],["외환",29],["변동성",24]],
+      "물가": [["소비자물가",61],["인플레이션",53],["원자재",35],["공급망",28]],
+      "경기침체": [["실업",48],["성장률",41],["소비",33],["기업실적",27]],
+    };
+
+    // =========================
+    // C) State
+    // =========================
+    let currentKeyword = "금리";
+    let currentGrain = "week";
+
+    const elStart = document.getElementById("tsStartDate");
+    const elEnd = document.getElementById("tsEndDate");
+    const elRangeLabel = document.getElementById("rangeLabel");
+
+    // =========================
+    // D) Helpers
+    // =========================
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function toInputValue(d){
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    }
+    function parseInputDate(v){
+      // v: yyyy-mm-dd
+      const [y,m,d] = (v || "").split("-").map(Number);
+      if (!y || !m || !d) return null;
+      return new Date(y, m-1, d);
+    }
+    function clampStartEnd(){
+      const s = parseInputDate(elStart.value);
+      const e = parseInputDate(elEnd.value);
+      if (!s || !e) return;
+      if (s > e){
+        // 사용자가 시작일을 더 크게 찍으면 종료일을 시작일로 맞춤
+        elEnd.value = elStart.value;
+      }
+    }
+    function setRangeLabelFromInputs(){
+      if (!elStart || !elEnd || !elRangeLabel) return;
+      const s = elStart.value || "-";
+      const e = elEnd.value || "-";
+      elRangeLabel.textContent = `${s} ~ ${e}`;
+    }
+
+    function shiftMonths(date, months){
+      const d = new Date(date);
+      d.setMonth(d.getMonth() + months);
+      return d;
+    }
+
+    function setRangeByGrain(grain){
+      const end = parseInputDate(elEnd.value) || new Date();
+      let start;
+
+      if (grain === "day"){
+        start = new Date(end);
+        start.setDate(end.getDate() - 1);
+      } else if (grain === "week"){
+        start = new Date(end);
+        start.setDate(end.getDate() - 7);
+      } else if (grain === "month"){
+        start = shiftMonths(end, -1);
+      } else { // year
+        start = shiftMonths(end, -12);
+      }
+
+      elStart.value = toInputValue(start);
+      elEnd.value = toInputValue(end);
+      setRangeLabelFromInputs();
+    }
+
+    // =========================
+    // E) Render
+    // =========================
+    function renderTop10(){
+      const top3 = document.getElementById("top3");
+      const rest = document.getElementById("topRest");
+      if (!top3 || !rest) return;
+
+      top3.innerHTML = "";
+      rest.innerHTML = "";
+
+      TOP10.slice(0,3).forEach((row, idx)=>{
+        const medal = idx===0 ? "🥇" : idx===1 ? "🥈" : "🥉";
+        const div = document.createElement("div");
+        div.className = "kCard";
+        div.setAttribute("role","button");
+        div.tabIndex = 0;
+        div.innerHTML = `
+          <div class="kTop">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="rankMedal">${medal}</span>
+              <span class="kName">${row.kw}</span>
+            </div>
+            ${renderDeltaBadge(row.delta)}
+          </div>
+          <div class="kSub">
+            <span>언급량</span>
+            <b style="color:#0f172a">${row.count}</b>
+          </div>
+        `;
+        div.addEventListener("click", ()=>selectKeyword(row.kw));
+        div.addEventListener("keydown",(e)=>{ if(e.key==="Enter") selectKeyword(row.kw); });
+        top3.appendChild(div);
+      });
+
+      TOP10.slice(3).forEach((row)=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td style="color:#2563eb;font-weight:1000;">${row.rank}</td>
+          <td class="rowKw">${row.kw}</td>
+          <td>${row.count}</td>
+          <td>${renderDeltaText(row.delta)}</td>
+        `;
+        tr.querySelector(".rowKw").addEventListener("click", ()=>selectKeyword(row.kw));
+        rest.appendChild(tr);
+      });
+    }
+
+    function renderDeltaBadge(delta){
+      if (delta === "NEW") return `<span class="delta new">NEW</span>`;
+      const n = Number(delta);
+      if (Number.isFinite(n)){
+        if (n > 0) return `<span class="delta up">▲ ${n}</span>`;
+        if (n < 0) return `<span class="delta down">▼ ${Math.abs(n)}</span>`;
+        return `<span class="delta">-</span>`;
+      }
+      return `<span class="delta">-</span>`;
+    }
+    function renderDeltaText(delta){
+      if (delta === "NEW") return `<span class="delta new">NEW</span>`;
+      const n = Number(delta);
+      if (Number.isFinite(n)){
+        if (n > 0) return `<span class="delta up">▲ ${n}</span>`;
+        if (n < 0) return `<span class="delta down">▼ ${Math.abs(n)}</span>`;
+        return `<span class="delta">-</span>`;
+      }
+      return `<span class="delta">-</span>`;
+    }
+
+    function seededRand(seed){
+      // 간단한 deterministic random
+      let x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    }
+
+    function renderTrend(){
+      const box = document.getElementById("trendChart");
+      const hint = document.getElementById("trendHint");
+      if (!box || !hint) return;
+
+      box.innerHTML = "";
+
+      const s = parseInputDate(elStart.value) || new Date();
+      const e = parseInputDate(elEnd.value) || new Date();
+
+      // grain에 따라 막대 수
+      let bars = 24;
+      if (currentGrain === "day") bars = 12;
+      if (currentGrain === "week") bars = 20;
+      if (currentGrain === "month") bars = 24;
+      if (currentGrain === "year") bars = 28;
+
+      const base = currentKeyword.split("").reduce((acc,ch)=>acc+ch.charCodeAt(0), 0)
+        + (s.getTime()/86400000|0) + (e.getTime()/86400000|0);
+
+      const values = Array.from({length:bars}, (_,i)=>{
+        const r = seededRand(base + i*31);
+        return Math.round(30 + r * 120); // 30~150
+      });
+
+      const maxV = Math.max(...values, 1);
+      values.forEach((v)=>{
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        bar.style.height = `${(v / maxV) * 100}%`;
+        box.appendChild(bar);
+      });
+
+      hint.textContent = `집계: ${grainLabel(currentGrain)} · 기간(${elStart.value} ~ ${elEnd.value}) 기준으로 샘플 막대를 표시합니다.`;
+    }
+
+    function renderSentiment(){
+      const donut = document.getElementById("donut");
+      const posPct = document.getElementById("posPct");
+      const neuPct = document.getElementById("neuPct");
+      const negPct = document.getElementById("negPct");
+      const hint = document.getElementById("sentimentHint");
+      if (!donut || !posPct || !neuPct || !negPct || !hint) return;
+
+      // keyword 기반 샘플 분포
+      const seed = currentKeyword.split("").reduce((a,c)=>a+c.charCodeAt(0),0) + (currentGrain.length*17);
+      const a = 20 + Math.floor(seededRand(seed+1)*55); // pos
+      const b = 15 + Math.floor(seededRand(seed+2)*55); // neu
+      let c = 100 - a - b;
+      if (c < 5) c = 5;
+
+      const total = a + b + c;
+      const p = Math.round((a/total)*100);
+      const n = Math.round((b/total)*100);
+      const g = 100 - p - n;
+
+      posPct.textContent = `${p}%`;
+      neuPct.textContent = `${n}%`;
+      negPct.textContent = `${g}%`;
+
+      const pEnd = p;
+      const nEnd = p + n;
+
+      donut.style.background = `conic-gradient(#22c55e 0 ${pEnd}%, #60a5fa ${pEnd}% ${nEnd}%, #ef4444 ${nEnd}% 100%)`;
+      hint.textContent = `“${currentKeyword}” 관련 기사 감성(샘플): 긍정 ${p}% / 중립 ${n}% / 부정 ${g}%`;
+    }
+
+    function renderContext(){
+      const tbody = document.getElementById("subkwTable");
+      const cloud = document.getElementById("cloud");
+      if (!tbody || !cloud) return;
+
+      const rows = SUBKWS[currentKeyword] || [["연관",22],["분석",18],["지표",15],["시장",12]];
+      tbody.innerHTML = "";
+      rows.forEach(([k,c])=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${k}</td><td>${c}</td>`;
+        tbody.appendChild(tr);
+      });
+
+      cloud.innerHTML = "";
+      const max = Math.max(...rows.map(r=>r[1]), 1);
+      rows.forEach(([k,c], i)=>{
+        const span = document.createElement("span");
+        span.className = "w";
+        const size = 12 + (c/max)*18; // 12~30px
+        span.style.fontSize = `${size}px`;
+        span.style.opacity = String(0.75 + (i%5)*0.05);
+        span.textContent = k;
+        cloud.appendChild(span);
+      });
+    }
+
+    function renderKeywordHeader(){
+      const chip = document.getElementById("kwChipText");
+      const title = document.getElementById("kwTitle");
+      if (chip) chip.textContent = currentKeyword;
+      if (title) title.textContent = currentKeyword;
+    }
+
+    function grainLabel(g){
+      if (g==="day") return "일별";
+      if (g==="week") return "주별";
+      if (g==="month") return "월별";
+      return "연도별";
+    }
+
+    function updateAll(){
+      renderKeywordHeader();
+      renderTop10();
+      renderTrend();
+      renderSentiment();
+      renderContext();
+    }
+
+    function selectKeyword(kw){
+      currentKeyword = kw;
+      updateAll();
+    }
+
+    // =========================
+    // F) UI Init
+    // =========================
+    function initTabs(){
+      const tabs = Array.from(document.querySelectorAll(".tab"));
+      const panelTrend = document.getElementById("panel-trend");
+      const panelSent = document.getElementById("panel-sentiment");
+
+      tabs.forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          tabs.forEach(b=>b.classList.remove("active"));
+          btn.classList.add("active");
+
+          const t = btn.dataset.tab;
+          if (t === "trend"){
+            panelTrend.classList.add("active");
+            panelSent.classList.remove("active");
+          } else {
+            panelSent.classList.add("active");
+            panelTrend.classList.remove("active");
+          }
+        });
+      });
+    }
+
+    function initGrainButtons(){
+      const grains = Array.from(document.querySelectorAll(".grain"));
+      grains.forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          grains.forEach(b=>b.classList.remove("active"));
+          btn.classList.add("active");
+          currentGrain = btn.dataset.grain;
+
+          // ✅ grain 클릭 시 날짜 자동 변경 + 즉시 반영(적용 버튼 없음)
+          // 종료일은 현재 입력값 유지(없으면 오늘)
+          if (!elEnd.value) elEnd.value = toInputValue(new Date());
+          setRangeByGrain(currentGrain);
+          updateAll();
+        });
+      });
+    }
+
+    function initDateImmediateApply(){
+      if (!elStart || !elEnd) return;
+
+      const onChange = ()=>{
+        clampStartEnd();
+        setRangeLabelFromInputs();
+        updateAll(); // ✅ 즉시 반영
+      };
+
+      elStart.addEventListener("change", onChange);
+      elEnd.addEventListener("change", onChange);
+    }
+
+    function initDateDefault(){
+      const today = new Date();
+      elEnd.value = toInputValue(today);
+
+      // 기본 주별로 시작값 설정
+      currentGrain = "week";
+      const weekBtn = document.querySelector('.grain[data-grain="week"]');
+      if (weekBtn){
+        document.querySelectorAll(".grain").forEach(b=>b.classList.remove("active"));
+        weekBtn.classList.add("active");
+      }
+
+      setRangeByGrain(currentGrain);
+      setRangeLabelFromInputs();
+    }
+
+    function initAuthButtons(){
+      const goLogin = document.getElementById("btnGoLogin");
+      const logout = document.getElementById("btnLogout");
+
+      if (goLogin){
+        goLogin.addEventListener("click", ()=>{
+          const name = prompt("로그인(샘플) 사용자 이름을 입력해줘:", "사용자");
+          if (name && name.trim()){
+            setSession(name.trim());
+            renderAuthUI();
+          }
+        });
+      }
+      if (logout){
+        logout.addEventListener("click", ()=>{
+          clearSession();
+          renderAuthUI();
+        });
+      }
+    }
+
+    // =========================
+    // Boot
+    // =========================
+    (function boot(){
+      renderAuthUI();
+      initAuthButtons();
+
+      initTabs();
+      initGrainButtons();
+      initDateDefault();
+      initDateImmediateApply();
+
+      updateAll();
+    })();
+  </script>
+</body>
+</html>
