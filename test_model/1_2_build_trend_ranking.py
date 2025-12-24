@@ -10,9 +10,9 @@ from datetime import datetime
 
 
 MODEL_DIR = "models/issue_classifier"
-NEWS_PATH = "data/news_raw.csv"
-PER_ARTICLE_SAVE_PATH = "data/news_with_issue.csv"
-TREND_SAVE_PATH = "data/keyword_trend.csv"
+NEWS_PATH = "data/predict_trust_score2.csv"
+PER_ARTICLE_SAVE_PATH = "data/news_with_issue1212.csv"
+TREND_SAVE_PATH = "data/keyword_trend1212.csv"
 
 
 def load_models():
@@ -28,13 +28,13 @@ def load_and_prepare_news(path: str) -> pd.DataFrame:
     df = pd.read_csv(path, encoding="utf-8")
 
     # 날짜 컬럼 파싱 (YYYY-MM-DD 가정)
-    df["date"] = pd.to_datetime(df["date"])
-    df["year"] = df["date"].dt.year
-    df["month"] = df["date"].dt.month
+    # df["date"] = pd.to_datetime(df["date"])
+    # df["year"] = df["date"].dt.year
+    # df["month"] = df["date"].dt.month
 
     df["title"] = df["title"].fillna("")
-    df["body"] = df["body"].fillna("")
-    df["text"] = (df["title"] + " " + df["body"]).str.strip()
+    df["content"] = df["content"].fillna("")
+    df["text"] = (df["title"] + " " + df["content"]).str.strip()
 
     # 너무 짧은 텍스트 제거
     df = df[df["text"].str.len() > 10].reset_index(drop=True)
@@ -137,11 +137,11 @@ def main():
     print(f"[SAVE] 기사별 예측 결과 저장 -> {PER_ARTICLE_SAVE_PATH}")
 
     # 2) 월별 랭킹 계산
-    trend_df = build_monthly_ranking(news_df)
-    trend_df.to_csv(TREND_SAVE_PATH, index=False, encoding="utf-8-sig")
-    print(f"[SAVE] 트렌드 랭킹 저장 -> {TREND_SAVE_PATH}")
+    #trend_df = build_monthly_ranking(news_df)
+    #trend_df.to_csv(TREND_SAVE_PATH, index=False, encoding="utf-8-sig")
+    #print(f"[SAVE] 트렌드 랭킹 저장 -> {TREND_SAVE_PATH}")
 
-    print(trend_df.head(20))
+    #print(trend_df.head(20))
 
 
 

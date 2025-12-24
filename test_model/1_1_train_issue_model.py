@@ -13,9 +13,9 @@ from sklearn.metrics import accuracy_score, f1_score, classification_report
 import joblib
 
 
-DATA_DIR = "data/keyword_data"  # CSV들이 들어 있는 폴더
+DATA_DIR = "data/test"  # CSV들이 들어 있는 폴더
 EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-SAVE_DIR = "models/issue_classifier"
+SAVE_DIR = "models/issue_classifier2"
 
 
 def load_and_preprocess_one(csv_path: str) -> pd.DataFrame:

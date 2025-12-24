@@ -17,10 +17,10 @@ import pandas as pd
 
 # ===== 설정 =====
 RAW_DIR = "data/liar_data/146.낚시성 기사 탐지 데이터/01-1.정식개방데이터/Training/01.원천데이터"
-OUTPUT_CSV = "data/train_trust.csv"
+OUTPUT_CSV = "data/train_trust_1212.csv"
 
 CATEGORY_FILTER = "경제"   # 경제 기사만 사용 (전체 사용하려면 None)
-MAX_FILES = 3500          # ⚠️ 처리할 JSON 파일 최대 개수
+MAX_FILES = 99999         # ⚠️ 처리할 JSON 파일 최대 개수
 
 
 def safe_get(d, key, default=""):

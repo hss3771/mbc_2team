@@ -6,7 +6,8 @@ from torch.utils.data import Dataset, DataLoader
 from transformers import ElectraTokenizerFast, ElectraForSequenceClassification
 from tqdm import tqdm
 
-MODEL_DIR = "models/trust_electra"
+#MODEL_DIR = "models/trust_electra"
+MODEL_DIR = "models/trust_electra20251209"
 # INPUT_PATH = "data/news_with_issue.csv"          # issue 모델까지 끝난 파일
 INPUT_PATH = "data/predict_trust2.csv"          # issue 모델까지 끝난 파일
 # OUTPUT_PATH = "data/news_with_issue_trust.csv"   # trust_score 붙여 저장
