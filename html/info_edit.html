@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Page</title>
+
+  <link rel="icon" href="./img/favicon.png">
+  <link rel="stylesheet" href="my_page_style.css"/>
+</head>
+<body>
+  <header class="header">
+  <div class="header-inner">
+      <a class="brand" href="./home.html">
+        <span class="sidebar_logo"><img src="./img/logo_white.png" alt=""></span>
+      </a>
+    <a href="./home.html" class="logout-button">로그아웃</a>
+  </div>
+  </header>
+
+  <div class="app">
+    <aside class="sidebar">
+      <ul class="menu">
+        <li>경제 키워드 트렌드</li>
+        <li>기사</li>
+        <li>키워드 언급량 및 감성분석</li>
+        <li>단어 사전</li>
+        <li class="active">마이페이지</li>
+      </ul>
+    </aside>
+<main>
+  <div class="card">
+    <div class="card-top">
+      <h2>회원 정보 수정</h2>
+      <p class="description">필수 정보를 입력해 주세요.</p>
+    </div>
+
+    <div class="card-scroll">
+      <form id="editForm" class="form">
+          <span>비밀번호</span>
+          <input type="password" placeholder="비밀번호를 입력해 주세요." required />
+          <span>비밀번호 확인</span>
+          <input type="password" placeholder="비밀번호를 한 번 더 입력해 주세요." required />
+          <span>이름</span>
+          <input type="text" placeholder="이름" value="김기자" required />
+
+        <span>성별</span>
+        <div class="radio-field">
+          <label for="male"><input id="male" type="radio" name="gender" checked /> 남</label>
+          <label for="female"><input id="female" type="radio" name="gender" /> 여</label>
+        </div>
+
+          <span>생년월일</span>
+          <input type="date" value="2000-12-21" required />
+          <span>휴대전화</span>
+          <input type="text" placeholder="휴대전화" value="01012345678" required />
+          <span>이메일</span>
+          <input type="email" placeholder="이메일" value="hello@trendscope.com" required />
+
+          <span>경제 지식 수준</span>
+          <div class="radio-group">
+            <label><input type="radio" name="knowledge" /> 상</label>
+            <label><input type="radio" name="knowledge" checked /> 중상</label>
+            <label><input type="radio" name="knowledge" /> 중</label>
+            <label><input type="radio" name="knowledge" /> 중하</label>
+            <label><input type="radio" name="knowledge" /> 하</label>
+          </div>
+          </form>
+          </div>
+          <div class="button-group">
+            <button type="button" class="cancel" onclick="location.href='./my_page.html'">취소</button>
+            <button type="submit" class="revise" form="editForm">수정하기</button>
+          </div>
+          <div class="withdrawal">
+            <button type="button" class="withdraw-btn" onclick="openModal()">탈퇴하기</button>
+          </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 수정 완료 모달 -->
+<div id="updateModal" class="modal" aria-hidden="true">
+  <div class="modal-content">
+    <p>회원정보가 수정되었습니다.</p>
+    <div class="modal-actions">
+      <button type="button" class="modal-confirm" onclick="closeUpdateModal()">확인</button>
+    </div>
+  </div>
+</div>
+
+  <!-- 탈퇴 모달 -->
+<div id="withdrawModal" class="modal">
+  <div class="modal-content">
+    <p>탈퇴하시겠습니까?</p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">취소</button>
+      <button class="modal-confirm" onclick="confirmWithdraw()">탈퇴</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 탈퇴 모달
+  const modal = document.getElementById('withdrawModal');
+  function openModal() { modal.style.display = 'flex'; }
+  function closeModal() { modal.style.display = 'none'; }
+  function confirmWithdraw() { window.location.href = './home.html'; }
+
+  // 수정 모달
+  const editForm = document.getElementById('editForm');
+  const updateModal = document.getElementById('updateModal');
+
+  function openUpdateModal() {
+    updateModal.style.display = 'flex';
+    updateModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeUpdateModal() {
+    updateModal.style.display = 'none';
+    updateModal.setAttribute('aria-hidden', 'true');
+    window.location.href = './my_page.html';
+  }
+
+  // submit 시 모달 띄우기
+  editForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    openUpdateModal();
+  });
+</script>
+
+</body>
+</html>
