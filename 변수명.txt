@@ -1,0 +1,65 @@
+전역 공통 변수
+is_logged_in (현재 사용자가 로그인된 상태인지 여부)
+user_id (로그인한 사용자의 아이디)
+user_role (권한: 관리자 여부)
+	- user / admin
+
+HOME
+<menu_list>
+menu_key (메뉴 식별 키)
+menu_name (화면에 보여줄 메뉴명)
+image_path (미리보기 이미지 경로)
+
+LOGIN
+pw (비밀번호)
+remember_id (아이디 저장 체크 여부)
+login_error_count (로그인 오류 횟수 표시, 최대 5번 제한)
+is_locked (지금 로그인 시도가 막혀있는지 - 5회 이상 실패 시 "24시간 후 다시 시도" 안내를 띄우기 위해)
+lock_until (락이 풀리는 시각 - UI 에서 언제 다시 시도 가능한지를 명확히 보여줌)
+
+SIGNUP
+pw_confirm (비밀번호 확인)
+name (이름)
+gender (성별)
+bday (생일)
+phone_number (핸드폰번호)
+email (이메일)
+econ_knowledge (경제지식수준)
+is_duplicate_id (아이디 중복 확인)
+
+FIND_ID
+found (입력한 정보로 회원이 조회되는지)
+
+FIND_PW / PW_CHANGE
+verified (사용자 검증 성공 여부) - 성공시 PW_CHANGE 로 이동, 실패 시 오류 팝업
+
+MAIN
+selected_keyword (현재 선택된 키워드)
+date_start, date_end (조회기간 - 시작일, 종료일)
+aggregate_unit (집계 단위)
+	- day, week, month, year
+<키워드랭킹테이블>
+rank (현재순위)
+keyword (키워드 텍스트)
+count (언급량)
+change_rate (증가율)
+rank_diff (순위변동)
+<키워드요약>
+keyword_summary (선택 키워드에 대한 선정 이유 요약 문장)
+<기사>
+article_id (기사 식별자)
+title (기사 제목)
+press (언론사)
+published_at (발행일)
+sentiment (감성 라벨)
+	- pos, neg, neu
+trust_score (신뢰도 점수)
+is_clickbait (낚시성 판단 여부)
+article_url (기사 링크)
+<정렬>
+sort_type (정렬 기준)
+	- latest, oldest, high, low
+current_page (현재 페이지)
+total_pages (전체 페이지)
+<로그인 전용 요약 기능>
+can_view_summary (사용자가 요약 기능을 쓸 수 있는지)
