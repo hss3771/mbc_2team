@@ -1,5 +1,7 @@
 from fastapi import FastAPI, UploadFile, Form, File
+from apps.service.user import login as user_login
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
 from starlette.requests import Request
@@ -46,20 +48,38 @@ def read_pw_find():
 
 # API Routes
 # @app.post("/logout")
+@app.post("/logout")
+def logout(request: Request):
+    # 세션 초기화 (로그아웃)
+    request.session.clear()
+    # 로그인 페이지로 이동
+    return RedirectResponse("/service/view/login.html")
 
 # @app.post("/password_check")
 
+# @app.post("/login_check")
 @app.post("/login_check")
 def login_check(
     request: Request,
-    user_id: str = Form(...), 
+    user_id: str = Form(...),
     pw: str = Form(...),
     ):
-    #req.session['loginId'] = param['id']
-    #session = req.session.get('loginId','')
-    #rusult = user.login({"id": user_id,"pw": pw}, request.session)
-    return  # type: ignore
-    #return {"success": True, "message": f"사용자 : {user_id}, 비번 : {pw} 로그인 성공", "try_count": 0}
+    # user.py의 로그인 로직 재사용 (세션 저장까지 user.py에서 처리됨)
+    #from apps.service.user import login as user_login
+    result = user_login({"id": user_id, "pw": pw}, request)
+
+    if result.get("success"):
+        return {
+            "success": True,
+            "message": f"{user_id}님 로그인에 성공하셨습니다.",
+            "try_count": result.get("try_count")
+        }
+
+    return {
+        "success": False,
+        "message": result.get("msg"),
+        "try_count": result.get("try_count")
+    }
 
 # @app.post("get_id")
 
