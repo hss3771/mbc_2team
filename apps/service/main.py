@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, Form, File
 from apps.service.user import login as user_login
+from apps.service.user import my_page_pw
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
@@ -8,7 +9,6 @@ from starlette.requests import Request
 from apps.common.logger import Logger
 from apps.common.db import get_db
 from pathlib import Path
-import apps.service.user as user
 logger = Logger().get_logger(__name__)
 BASE_DIR = Path(__file__).resolve().parent  # apps/service
 
@@ -46,16 +46,38 @@ def read_id_find():
 def read_pw_find():
     return RedirectResponse('/view/pw_find.html')
 
+
 # API Routes
 # @app.post("/logout")
 @app.post("/logout")
 def logout(request: Request):
     # 세션 초기화 (로그아웃)
     request.session.clear()
-    # 로그인 페이지로 이동
-    return RedirectResponse("/service/view/login.html")
+    # 소개 페이지로 이동
+    return RedirectResponse("/service/view/home.html")
+
 
 # @app.post("/password_check")
+@app.post("/password_check")
+def password_check(
+    request: Request,
+    pw: str = Form(...),
+):
+    # user.py의 비밀번호 확인 로직 재사용
+    #from apps.service.user import my_page_pw
+    result = my_page_pw({"pw": pw}, request)
+    # 비밀번호가 맞는 경우
+    if result.get("verified"):
+        return {
+            "verified": True,
+            "message": "비밀번호 확인이 완료되었습니다."
+        }
+    # 비밀번호가 틀리거나 로그인 안 된 경우
+    return {
+        "verified": False,
+        "message": "비밀번호가 올바르지 않습니다."
+    }
+
 
 # @app.post("/login_check")
 @app.post("/login_check")
@@ -63,31 +85,36 @@ def login_check(
     request: Request,
     user_id: str = Form(...),
     pw: str = Form(...),
-    ):
+):
     # user.py의 로그인 로직 재사용 (세션 저장까지 user.py에서 처리됨)
     #from apps.service.user import login as user_login
-    result = user_login({"id": user_id, "pw": pw}, request)
-
+    result = user_login({"user_id": user_id, "pw": pw}, request)
+    # 로그인에 성공한 경우
     if result.get("success"):
         return {
             "success": True,
-            "message": f"{user_id}님 로그인에 성공하셨습니다.",
-            "try_count": result.get("try_count")
+            "message": f"{user_id}님 로그인 성공",
+            "try_count": result.get("try_count") # user.py 확인
         }
-
+    # 로그인에 실패한 경우
     return {
         "success": False,
         "message": result.get("msg"),
-        "try_count": result.get("try_count")
+        "try_count": result.get("try_count") # user.py 확인
     }
+
 
 # @app.post("get_id")
 
+
 # @app.post("new_pw")
+
 
 # @app.post("/register")
 
+
 # @app.post("/info_update")
+
 
 #session api
 @app.get("/api/session")
