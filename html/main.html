@@ -9,6 +9,7 @@
     <link rel="icon" href="./img/favicon.png">
     <link rel="stylesheet" href="my_page_style.css" />
     <link rel="stylesheet" href="main_style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -66,14 +67,14 @@
                 <div class="toolbar-right">
                     <div class="cselect" id="keywordDropdown">
                         <button type="button" class="cselect__btn" aria-haspopup="listbox" aria-expanded="false">
-                            <span class="cselect__value">부동산</span>
+                            <span class="cselect__value">주식</span>
                             <span class="cselect__caret" aria-hidden="true">▾</span>
                         </button>
 
                         <ul class="cselect__list" role="listbox" tabindex="-1" aria-label="키워드 선택">
-                            <li class="cselect__opt" role="option" data-value="주식">주식</li>
-                            <li class="cselect__opt is-selected" role="option" data-value="부동산" aria-selected="true">부동산
+                            <li class="cselect__opt is-selected" role="option" data-value="주식" aria-selected="true">주식
                             </li>
+                            <li class="cselect__opt" role="option" data-value="부동산">부동산</li>
                             <li class="cselect__opt" role="option" data-value="고용">고용</li>
                             <li class="cselect__opt" role="option" data-value="경기침체">경기침체</li>
                             <li class="cselect__opt" role="option" data-value="유가">유가</li>
@@ -90,7 +91,7 @@
             </div>
 
             <div class="main-scroll">
-                <section class="main1-panel">
+                <section id="main1" class="main1-panel">
                     <!-- 본문 -->
                     <div class="main1-body">
                         <!-- 키워드 랭킹 -->
@@ -415,69 +416,6 @@
         renderAuthButtons();
 
 
-        // ===== 사이드바 현재 페이지 active 처리 =====
-        function setSidebarActive() {
-            const curFileRaw = (location.pathname.split('/').pop() || '').split('?')[0].split('#')[0];
-            const curHash = location.hash || '';
-
-            // 하위 페이지를 상위 메뉴로 묶고 싶으면 여기 추가
-            const alias = {
-                'info_edit.html': 'my_page.html',
-            };
-            const curFile = alias[curFileRaw] || curFileRaw;
-
-            // active 초기화
-            document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
-
-            const links = Array.from(document.querySelectorAll('.menu a'));
-
-            // 해시값이 있을 때 그 해시값에 해당하는 메뉴를 활성화
-            if (curFile === 'main.html' && (curHash === '#main2' || curHash === '#main3')) {
-                const hashTarget = links.find(a => {
-                    const href = a.getAttribute('href') || '';
-                    const [filePart, hashPart] = href.split('#');
-                    const file = (filePart.split('/').pop() || '');
-                    const hash = hashPart ? ('#' + hashPart) : '';
-                    return file === 'main.html' && hash === curHash;
-                });
-
-                const links = Array.from(document.querySelectorAll('.menu a'));
-
-links.forEach(link => {
-    const sectionId = link.getAttribute('href').split('#')[1]; // #main1, #main2, #main3
-    const section = document.getElementById(sectionId);
-
-    // 섹션이 보이면 해당 메뉴 활성화
-    if (section && isElementInViewport(section)) {
-        link.closest('li').classList.add('active');
-    } else {
-        link.closest('li').classList.remove('active');
-    }
-});
-
-                if (hashTarget) {
-                    hashTarget.closest('li')?.classList.add('active');
-                    return;
-                }
-            }
-
-            // 기본 파일명만 비교하여 활성화
-            const fileTarget = links.find(a => {
-                const href = a.getAttribute('href') || '';
-                const file = (href.split('#')[0].split('/').pop() || '');
-                return file === curFile;
-            });
-
-            fileTarget?.closest('li')?.classList.add('active');
-        }
-
-        // 페이지 로딩 시 한 번 호출
-        setSidebarActive();
-
-        // 해시값이 변경될 때마다 호출
-        window.addEventListener('hashchange', setSidebarActive);
-
-
         // ===== 샘플 데이터 =====
         const KEYWORDS = [
             { rank: 1, keyword: "주식", count: 223, rate: +94, move: "NEW" },
@@ -586,6 +524,7 @@ links.forEach(link => {
             window.ts2Api?.setKeyword(keyword);
             window.ts3Api?.setKeyword(keyword);
         }
+        window.selectKeyword = selectKeyword;
 
         // ===== 기간 탭 =====
         segmentedBtns.forEach((btn) => {
@@ -1074,13 +1013,34 @@ links.forEach(link => {
             const donutEl = root.querySelector('#ts3Donut');
             const cloudEl = root.querySelector('#ts3WordCloud');
 
-            // 샘플(나중에 데이터 붙이면 이 부분만 교체하면 됨)
+            const canvas = document.getElementById('ts3LineCanvas');
+            const placeholder = root.querySelector('.ts3-placeholder');
+
+            // ===== 상태: 기준키워드 + (추가된)비교키워드들 =====
+            let baseKeyword = '주식';
+            let compareSet = new Set(); // base 제외한 비교 키워드만
+
+            // 색상 팔레트(키워드별 라인 컬러)
+            const COLOR = {
+                '주식': '#0462D2',
+                '부동산': '#e53935',
+                '고용': '#8a97ad',
+                '경기침체': '#18a567',
+                '유가': '#ff9800',
+                '반도체': '#7b61ff',
+                '수출': '#00acc1',
+                '노동': '#795548',
+                '경제': '#2a4f98',
+                '현금': '#607d8b',
+            };
+            const colorFor = (kw) => COLOR[kw] || '#0462D2';
+
+            // ===== (샘플) 워드/감성 =====
             const WORDS = {
                 '주식': ['주식', '주식시장', '인상', '물가', '정부', '정책', '대출', '연준', '경기', '부동산', '금리', '인하'],
                 '부동산': ['부동산', '전세', '매매', '대출', '금리', '규제', '청약', '거래량', '분양', '전월세', '집값', '정책'],
                 '고용': ['고용', '취업자', '실업률', '청년', '임금', '채용', '서비스업', '제조업', '구직', '정책', '경기', '노동'],
             };
-
             const SENT = {
                 '주식': { pos: 40, neu: 30, neg: 30 },
                 '부동산': { pos: 35, neu: 40, neg: 25 },
@@ -1090,15 +1050,13 @@ links.forEach(link => {
             function renderCloud(keyword) {
                 const list = WORDS[keyword] || WORDS['주식'];
                 const main = list[0] || keyword;
-
-                const rest = list.slice(1);
-                const pick = rest.slice(0, 11);
+                const rest = list.slice(1).slice(0, 11);
 
                 const colors = ['#1e63ff', '#e53935', '#6a7a93', '#2a4f98', '#8a97ad'];
                 const spans = [
                     `<span class="ts3-w lg">${main}</span>`,
                     `<span class="ts3-w lg" style="color:#1e63ff">${(list[1] || '키워드')}</span>`,
-                    ...pick.map((w, i) => {
+                    ...rest.map((w, i) => {
                         const cls = i % 3 === 0 ? 'md' : 'sm';
                         const c = colors[i % colors.length];
                         return `<span class="ts3-w ${cls}" style="--c:${c}">${w}</span>`;
@@ -1111,112 +1069,310 @@ links.forEach(link => {
             function renderDonut(keyword) {
                 const v = SENT[keyword] || SENT['주식'];
                 const total = (v.pos + v.neu + v.neg) || 1;
-
                 const p1 = Math.round((v.pos / total) * 100);
                 const p2 = Math.round((v.neu / total) * 100);
                 const p3 = Math.max(0, 100 - p1 - p2);
 
-                // conic-gradient 퍼센트 반영
                 donutEl.style.background =
                     `conic-gradient(#1e63ff 0 ${p1}%, #8a97ad ${p1}% ${p1 + p2}%, #e53935 ${p1 + p2}% 100%)`;
-
                 donutEl.setAttribute('aria-label', `감성 비율 도넛 차트 (긍정 ${p1}%, 중립 ${p2}%, 부정 ${p3}%)`);
             }
 
-            function setActiveBtn(keyword) {
-                btns.forEach(b => {
-                    const on = (b.dataset.keyword === keyword);
-                    b.classList.toggle('is-active', on);
-                    b.setAttribute('aria-selected', on ? 'true' : 'false');
+            // ===== 기간 라벨 만들기 (x축) =====
+            const startEl = document.getElementById('startDate');
+            const endEl = document.getElementById('endDate');
+
+            function getActiveGrain() {
+                return document.querySelector('.seg-btn.is-active')?.dataset.grain || 'day';
+            }
+
+            function pad2(n) { return String(n).padStart(2, '0'); }
+
+            function makeLabels(startStr, endStr, grain) {
+                const start = new Date(startStr + 'T00:00:00');
+                const end = new Date(endStr + 'T00:00:00');
+                if (isNaN(start) || isNaN(end)) return [];
+
+                const labels = [];
+                const d = new Date(start);
+
+                if (grain === 'day') {
+                    while (d <= end) {
+                        labels.push(`${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`);
+                        d.setDate(d.getDate() + 1);
+                    }
+                } else if (grain === 'week') {
+                    // 단순: 7일 단위로 끊기 (원하면 ISO week로도 바꿀 수 있음)
+                    let i = 1;
+                    while (d <= end) {
+                        labels.push(`W${i} (${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())})`);
+                        d.setDate(d.getDate() + 7);
+                        i++;
+                    }
+                } else if (grain === 'month') {
+                    while (d <= end) {
+                        labels.push(`${d.getFullYear()}-${pad2(d.getMonth() + 1)}`);
+                        d.setMonth(d.getMonth() + 1);
+                    }
+                } else if (grain === 'year') {
+                    while (d <= end) {
+                        labels.push(String(d.getFullYear()));
+                        d.setFullYear(d.getFullYear() + 1);
+                    }
+                }
+                return labels;
+            }
+
+            // ===== (샘플) 키워드별 언급량 시계열 생성 ⚠️나중에 makeSeries()만 실제 데이터로 바꾸기=====
+            function makeSeries(keyword, labels) {
+                // "키워드마다 조금씩 다른" 패턴을 만들기 위한 seed
+                const seed = Array.from(keyword).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+                const base = 80 + (seed % 60);
+
+                return labels.map((_, i) => {
+                    const wave = Math.sin((i + 1) * 0.7) * 12;
+                    const step = (i % 3) * 6;
+                    const noise = ((seed + i * 13) % 7) - 3;
+                    return Math.max(0, Math.round(base + wave + step + noise));
                 });
             }
 
-            function setKeyword(keyword) {
-                setActiveBtn(keyword);
-                if (wordTag) wordTag.textContent = keyword;
-                if (donutTag) donutTag.textContent = keyword;
+            // ===== Chart.js =====
+            let chart = null;
 
-                renderCloud(keyword);
-                renderDonut(keyword);
+            function buildDatasets(labels) {
+                const kws = [baseKeyword, ...Array.from(compareSet)];
+                return kws.map((kw) => ({
+                    label: kw,
+                    data: makeSeries(kw, labels),
+                    borderColor: colorFor(kw),
+                    backgroundColor: colorFor(kw),
+                    borderWidth: kw === baseKeyword ? 3 : 2,
+                    tension: 0.3,
+                    pointRadius: 2,
+                    pointHoverRadius: 4,
+                }));
             }
 
-            // 버튼 클릭 -> 전체 페이지 키워드도 같이 바꾸기(상단 드롭다운/랭킹/TS2까지 싱크)
+            function renderLineChart() {
+                if (!canvas || typeof Chart === 'undefined') return;
+
+                const labels = makeLabels(startEl?.value, endEl?.value, getActiveGrain());
+                const datasets = buildDatasets(labels);
+
+                if (placeholder) placeholder.style.display = 'none';
+                canvas.style.display = 'block';
+
+                const ctx = canvas.getContext('2d');
+
+                if (!chart) {
+                    chart = new Chart(ctx, {
+                        type: 'line',
+                        data: { labels, datasets },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                legend: { display: true, position: 'top' },
+                                tooltip: { enabled: true },
+                            },
+                            scales: {
+                                x: {
+                                    title: { display: true, text: '기간' },
+                                    ticks: { maxRotation: 0 },
+                                },
+                                y: {
+                                    title: { display: true, text: '언급량' },
+                                    beginAtZero: true,
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    chart.data.labels = labels;
+                    chart.data.datasets = datasets;
+                    chart.update();
+                }
+            }
+
+            // ===== 버튼 UI 동기화 (base는 고정 + 비교는 토글) =====
+            function syncButtons() {
+                btns.forEach(b => {
+                    const kw = b.dataset.keyword;
+                    const isBase = kw === baseKeyword;
+                    const isCompare = compareSet.has(kw);
+
+                    // base는 항상 active(잠금 느낌)
+                    b.classList.toggle('is-active', isBase || isCompare);
+                    b.classList.toggle('is-base', isBase);
+                    b.setAttribute('aria-pressed', (isBase || isCompare) ? 'true' : 'false');
+                });
+            }
+
+            function setBaseKeyword(next) {
+                baseKeyword = next;
+                compareSet = new Set(); // 기준이 바뀌면 비교는 초기화(원하면 유지하도록 바꿀 수 있어)
+                if (wordTag) wordTag.textContent = baseKeyword;
+                if (donutTag) donutTag.textContent = baseKeyword;
+                renderCloud(baseKeyword);
+                renderDonut(baseKeyword);
+                syncButtons();
+                renderLineChart();
+            }
+
+            function toggleCompareKeyword(kw) {
+                if (kw === baseKeyword) return; // 기준은 제거 불가
+
+                if (compareSet.has(kw)) compareSet.delete(kw);
+                else compareSet.add(kw);
+
+                syncButtons();
+                renderLineChart();
+            }
+
+            // 버튼 클릭: "추가/삭제"만 수행 (기준 변경은 드롭다운/랭킹)
             btns.forEach(b => {
                 b.addEventListener('click', () => {
                     const kw = b.dataset.keyword;
-                    if (window.selectKeyword) window.selectKeyword(kw);
-                    else setKeyword(kw);
+                    toggleCompareKeyword(kw);
                 });
             });
 
-            // 외부에서 제어 가능하게
-            window.ts3Api = { setKeyword };
+            // 기간/단위 바뀌면 차트 리렌더
+            startEl?.addEventListener('change', renderLineChart);
+            endEl?.addEventListener('change', renderLineChart);
+            document.querySelectorAll('.seg-btn').forEach(btn => btn.addEventListener('click', () => {
+                // segmented 로직이 is-active 바꾸는 건 이미 위에서 하고 있으니
+                // 여기서는 차트만 갱신
+                renderLineChart();
+            }));
 
-            // 초기값
+            // 외부에서(=selectKeyword) 기준 키워드 바꾸게 노출
+            window.ts3Api = {
+                setKeyword: setBaseKeyword,
+                toggleCompareKeyword,
+                getState: () => ({ baseKeyword, compare: Array.from(compareSet) })
+            };
+
+            // 초기값: 상단 드롭다운과 동기화
             const init =
                 (document.querySelector('#keywordDropdown input[type="hidden"]')?.value ||
                     document.querySelector('#keywordDropdown .cselect__value')?.textContent ||
                     '주식').trim();
 
-            setKeyword(init);
+            setBaseKeyword(init);
         })();
 
-        // 스크롤에 맞춰 사이드바 변경
- function setSidebarActive() {
-            const curFileRaw = (location.pathname.split('/').pop() || '').split('?')[0].split('#')[0];
-            const curHash = location.hash || '';
-            const links = Array.from(document.querySelectorAll('.menu a'));
+        // ===============================
+        // Sidebar active + in-container anchor scroll (FIX)
+        // ===============================
+        (function initSidebarAndAnchors() {
+            const scrollContainer = document.querySelector('.main-scroll');
+            const toolbar = document.querySelector('.main-toolbar');
+            const menuLinks = Array.from(document.querySelectorAll('.menu a'));
 
-            // 콘솔로 상태 확인
-            console.log('Current file:', curFileRaw);
-            console.log('Current hash:', curHash);
-            console.log('Links:', links);
+            // main1도 감시하려면 HTML에 id="main1" 추가해야 함
+            const sections = ['main1', 'main2', 'main3']
+                .map(id => document.getElementById(id))
+                .filter(Boolean);
 
-            // 하위 페이지를 상위 메뉴로 묶고 싶으면 여기 추가
-            const alias = {
-                'info_edit.html': 'my_page.html',
-            };
-            const curFile = alias[curFileRaw] || curFileRaw;
-
-            // active 초기화
-            document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
-
-            // 해시값이 있을 때 그 해시값에 해당하는 메뉴를 활성화
-            if (curFile === 'main.html' && (curHash === '#main2' || curHash === '#main3')) {
-                const hashTarget = links.find(a => {
-                    const href = a.getAttribute('href') || '';
-                    const [filePart, hashPart] = href.split('#');
-                    const file = (filePart.split('/').pop() || '');
-                    const hash = hashPart ? ('#' + hashPart) : '';
-                    return file === 'main.html' && hash === curHash;
-                });
-                
-                if (hashTarget) {
-                    hashTarget.closest('li')?.classList.add('active');
-                    return;
-                }
+            function clearActive() {
+                document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
             }
 
-            // 기본 파일명만 비교하여 활성화
-            const fileTarget = links.find(a => {
-                const href = a.getAttribute('href') || '';
-                const file = (href.split('#')[0].split('/').pop() || '');
-                return file === curFile;
+            function setActiveBySectionId(id) {
+                clearActive();
+
+                // 링크가 "#main2" 일 수도 있고 "./main.html#main2" 일 수도 있으니 endsWith로 처리
+                const target = menuLinks.find(a => {
+                    const href = (a.getAttribute('href') || '').trim();
+                    if (!href) return false;
+
+                    if (id === 'main1') {
+                        // main1은 "main.html" (해시 없는 링크) 쪽을 활성화
+                        return href.endsWith('main.html') && !href.includes('#');
+                    }
+                    return href.endsWith(`#${id}`);
+                });
+
+                target?.closest('li')?.classList.add('active');
+            }
+
+            function setActiveByLocation() {
+                const file = (location.pathname.split('/').pop() || '').split('?')[0].split('#')[0];
+                const hash = location.hash || '';
+
+                // main.html에서만 해시 기반 활성화
+                if (file === 'main.html') {
+                    if (hash === '#main2') return setActiveBySectionId('main2');
+                    if (hash === '#main3') return setActiveBySectionId('main3');
+                    return setActiveBySectionId('main1');
+                }
+
+                // 다른 페이지에서는 파일명 기준 활성화
+                clearActive();
+                const target = menuLinks.find(a => {
+                    const href = (a.getAttribute('href') || '').split('#')[0];
+                    const hrefFile = (href.split('/').pop() || '');
+                    return hrefFile === file;
+                });
+                target?.closest('li')?.classList.add('active');
+            }
+
+            // 최초 1회
+            setActiveByLocation();
+
+            // ===== 컨테이너 내부 스무스 스크롤 (./main.html#main2 도 처리) =====
+            const scrollLinks = document.querySelectorAll('.menu a.js-scroll[href*="#"]');
+            scrollLinks.forEach(a => {
+                a.addEventListener('click', (e) => {
+                    const href = a.getAttribute('href') || '';
+                    const url = new URL(href, location.href);
+
+                    const samePage = url.pathname === location.pathname; // main.html에서만 가로채서 스크롤
+                    const id = (url.hash || '').slice(1);
+                    const target = id ? document.getElementById(id) : null;
+
+                    if (!samePage || !scrollContainer || !target) return;
+
+                    e.preventDefault();
+
+                    const top =
+                        target.getBoundingClientRect().top -
+                        scrollContainer.getBoundingClientRect().top +
+                        scrollContainer.scrollTop;
+
+                    const offset = (toolbar?.offsetHeight || 0) + 12;
+                    scrollContainer.scrollTo({ top: Math.max(0, top - offset), behavior: 'smooth' });
+
+                    history.replaceState(null, '', url.hash);
+                    setActiveByLocation();
+                });
             });
 
-            fileTarget?.closest('li')?.classList.add('active');
-        }
+            // ===== 스크롤에 맞춰 active 변경(IntersectionObserver) =====
+            if (scrollContainer && sections.length) {
+                const io = new IntersectionObserver((entries) => {
+                    // 가장 많이 보이는 섹션을 선택
+                    const visible = entries
+                        .filter(en => en.isIntersecting)
+                        .sort((a, b) => (b.intersectionRatio - a.intersectionRatio))[0];
 
-        // 페이지 로딩 시 한 번 호출
-        setSidebarActive();
+                    if (!visible) return;
+                    const id = visible.target.id || 'main1';
+                    setActiveBySectionId(id);
+                }, {
+                    root: scrollContainer,
+                    threshold: [0, 0.2, 0.4, 0.6, 0.8],
+                    rootMargin: '-15% 0px -70% 0px'
+                });
 
-        // 해시값이 변경될 때마다 호출
-        window.addEventListener('hashchange', setSidebarActive);
+                sections.forEach(s => io.observe(s));
+            }
 
-        // 스크롤에 맞춰 사이드바 변경
-        document.querySelector('.main-scroll').addEventListener('scroll', setSidebarActive);
-
-
+            window.addEventListener('hashchange', setActiveByLocation);
+        })();
 
     </script>
 </body>

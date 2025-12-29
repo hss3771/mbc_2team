@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Page</title>
+
+  <link rel="icon" href="./img/favicon.png">
+  <link rel="stylesheet" href="word_style.css" />
+</head>
+
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <a class="brand" href="./home.html">
+        <span class="sidebar_logo"><img src="./img/logo_white.png" alt=""></span>
+      </a>
+      <a href="./home.html" class="logout-button">로그아웃</a>
+    </div>
+  </header>
+
+  <div class="app">
+    <aside class="sidebar">
+      <ul class="menu">
+        <li><a href="./main.html">경제 키워드 트렌드</a></li>
+        <li><a href="./main.html#main2">기사</a></li>
+        <li><a href="./main.html#main3">키워드 언급량 및 감성분석</a></li>
+        <li><a href="./word.html">단어 사전</a></li>
+        <li><a href="./my_page.html">마이페이지</a></li>
+      </ul>
+    </aside>
+    <main>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const alias = { 'info_edit.html': 'my_page.html' };
+
+      function setSidebarActive() {
+        const curFileRaw = (location.pathname.split('/').pop() || '').split('?')[0];
+        const curFile = alias[curFileRaw] || curFileRaw;
+        const curHash = location.hash || '';
+
+        // active 초기화
+        document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
+
+        const links = Array.from(document.querySelectorAll('.menu a'));
+
+        // main.html에서 hash(#main2/#main3)가 있으면 그 항목을 우선 active
+        if (curFile === 'main.html' && (curHash === '#main2' || curHash === '#main3')) {
+          const hashTarget = links.find(a => {
+            const href = a.getAttribute('href') || '';
+            const parts = href.split('#');
+            const file = (parts[0].split('/').pop() || '').split('?')[0];
+            const hash = parts[1] ? ('#' + parts[1]) : '';
+            return file === 'main.html' && hash === curHash;
+          });
+
+          if (hashTarget) {
+            hashTarget.closest('li').classList.add('active');
+            return;
+          }
+        }
+
+        // 기본: 파일명만 비교 (hash 무시)
+        const fileTarget = links.find(a => {
+          const href = a.getAttribute('href') || '';
+          const file = (href.split('#')[0].split('/').pop() || '').split('?')[0];
+          return file === curFile;
+        });
+
+        if (fileTarget) fileTarget.closest('li').classList.add('active');
+      }
+
+      setSidebarActive();
+      window.addEventListener('hashchange', setSidebarActive);
+    });
+  </script>
+
+</body>
+
+</html>

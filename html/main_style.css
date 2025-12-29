@@ -20,7 +20,6 @@
   padding: 16px;
   box-sizing: border-box;
 
-  height: calc(100vh - 70px);
   align-items: stretch;
 }
 
@@ -36,22 +35,26 @@
 }
 
 .main-scroll::-webkit-scrollbar {
-  width: 10px;              /* 세로 스크롤 두께 */
+  width: 10px;
+  /* 세로 스크롤 두께 */
 }
 
 .main-scroll::-webkit-scrollbar-track {
-  background: #f1f4fb;      /* 트랙 배경 */
+  background: #f1f4fb;
+  /* 트랙 배경 */
   border-radius: 999px;
 }
 
 .main-scroll::-webkit-scrollbar-thumb {
-  background: #c7d6f5;      /* 썸(움직이는 바) */
+  background: #c7d6f5;
+  /* 썸(움직이는 바) */
   border-radius: 999px;
   border: 0;
 }
 
 .main-scroll::-webkit-scrollbar-thumb:hover {
-  background: #a9c2f2;      /* 호버 색 */
+  background: #a9c2f2;
+  /* 호버 색 */
 }
 
 .main-scroll::-webkit-scrollbar-corner {
@@ -63,7 +66,7 @@
   width: 100%;
   border-radius: 14px;
   background: #ffffff;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
 }
@@ -171,11 +174,13 @@
 }
 
 .cselect.cselect--sm {
-  width: 150px; /* 필요하면 120~180 조절 */
+  width: 150px;
+  /* 필요하면 120~180 조절 */
 }
 
 .cselect.cselect--sm .cselect__btn {
-  height: 34px;        /* 기존 ts2-select 높이 */
+  height: 34px;
+  /* 기존 ts2-select 높이 */
   padding: 0 10px;
   border-radius: 12px;
   font-size: 12px;
@@ -276,7 +281,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .section-head {
@@ -311,7 +316,7 @@
   flex-direction: column;
   border: 1px solid #e8eef8;
   border-radius: 14px;
-  overflow: hidden;
+  overflow: visible;
   background: #ffffff;
 }
 
@@ -909,6 +914,17 @@
     display: none !important;
   }
 
+  .menu li.active>a {
+    display: block;
+    background: #e8f1ff;
+    color: #0462D2;
+    border-radius: 12px;
+  }
+
+  .menu li.active>a:hover {
+    background: #dcebff;
+  }
+
   .mains {
     width: 100%;
     max-width: 100%;
@@ -949,10 +965,10 @@
   .main-toolbar {
     display: flex;
     flex-wrap: wrap;
-    align-items:stretch;
+    align-items: stretch;
     gap: 10px;
     padding: 10px;
-    border-radius:12px;
+    border-radius: 12px;
   }
 
   /* 날짜/세그먼트 묶음 */
@@ -963,14 +979,16 @@
   /* 날짜 pill 2개: 2열로 (공간 부족하면 자동 줄바꿈) */
   .date-pill {
     flex: 1 1 calc(50% - 5px);
-    min-width: 180px;  /* 필요하면 160~200 사이로 조절 */
+    min-width: 180px;
+    /* 필요하면 160~200 사이로 조절 */
   }
 
   /* 키워드 드롭다운: 한 줄을 통째로 차지 (날짜 다음 줄) */
-  .toolbar-right{
+  .toolbar-right {
     flex: 1 1 100%;
     order: 3;
-    margin-left: 0;   /* 기존 margin-left:auto 때문에 이상해지는 거 방지 */
+    margin-left: 0;
+    /* 기존 margin-left:auto 때문에 이상해지는 거 방지 */
   }
 
   .cselect {
@@ -981,27 +999,28 @@
     width: 100%;
   }
 
- /* 일별/주별/월별/연도별: “드롭다운 아래”로 내려오기 */
-  .segmented{
+  /* 일별/주별/월별/연도별: “드롭다운 아래”로 내려오기 */
+  .segmented {
     flex: 1 1 100%;
     order: 4;
     margin-left: 0;
     justify-content: flex-start;
 
     /* 버튼이 길면 가로 스크롤로 */
-    overflow-x:auto;
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   /* 버튼은 줄바꿈하지 말고 가로로 쭉 */
-  .seg-btn{
+  .seg-btn {
     flex: 0 0 auto;
     white-space: nowrap;
     padding: 8px 12px;
   }
 
   /* 앵커 보정(툴바 높이가 늘어나니까) */
-  #main2, #main3{
+  #main2,
+  #main3 {
     scroll-margin-top: 160px;
   }
 }
@@ -1140,8 +1159,8 @@
   border-radius: 12px;
   background:
     linear-gradient(#ffffff, #ffffff) padding-box,
-    repeating-linear-gradient(0deg, rgba(15,40,90,0.06) 0 1px, transparent 1px 44px),
-    repeating-linear-gradient(90deg, rgba(15,40,90,0.04) 0 1px, transparent 1px 80px);
+    repeating-linear-gradient(0deg, rgba(15, 40, 90, 0.06) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(90deg, rgba(15, 40, 90, 0.04) 0 1px, transparent 1px 80px);
   position: relative;
   overflow: hidden;
 }
@@ -1199,9 +1218,19 @@
   white-space: nowrap;
 }
 
-.ts3-w.lg { font-size: 40px; color: #6b6b6b; }
-.ts3-w.md { font-size: 26px; }
-.ts3-w.sm { font-size: 16px; opacity: .9; }
+.ts3-w.lg {
+  font-size: 40px;
+  color: #6b6b6b;
+}
+
+.ts3-w.md {
+  font-size: 26px;
+}
+
+.ts3-w.sm {
+  font-size: 16px;
+  opacity: .9;
+}
 
 /* 도넛 자리 */
 .ts3-donutwrap {
@@ -1241,7 +1270,11 @@
   white-space: nowrap;
 }
 
-.ts3-leg { display: inline-flex; align-items: center; gap: 6px; }
+.ts3-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 
 .ts3-dot {
   width: 10px;
@@ -1250,9 +1283,17 @@
   display: inline-block;
 }
 
-.ts3-dot--pos { background: #1e63ff; }
-.ts3-dot--neu { background: #8a97ad; }
-.ts3-dot--neg { background: #e53935; }
+.ts3-dot--pos {
+  background: #1e63ff;
+}
+
+.ts3-dot--neu {
+  background: #8a97ad;
+}
+
+.ts3-dot--neg {
+  background: #e53935;
+}
 
 /* 반응형 */
 @media (max-width: 1100px) {
@@ -1260,35 +1301,46 @@
     grid-template-columns: 1fr;
   }
 }
-/* ===================== /TS3 =====================
+
+/* ===================== /TS3 ===================== */
 
 /* 바깥(페이지) 스크롤 제거: 이중 스크롤 방지 */
-html, body { height: 100%; }
-body { overflow: hidden; }
+html,
+body {
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+}
 
 /* 헤더 아래 영역을 정확히 화면 높이로 고정 */
-.app{
-  height: calc(100vh - 70px); /* 헤더가 70px이면 그대로 */
+.app {
+  height: calc(100vh - 70px);
+  /* 헤더가 70px이면 그대로 */
   min-height: 0;
-  overflow: hidden;          /* 앱 밖으로 스크롤 안 새게 */
+  overflow: hidden;
+  /* 앱 밖으로 스크롤 안 새게 */
 }
 
 /* 사이드바도 같은 높이로 */
-.sidebar{
+.sidebar {
   height: 100%;
   min-height: 0;
-  overflow-y: auto;          /* 메뉴 길면 사이드바만 스크롤 */
+  overflow-y: auto;
+  /* 메뉴 길면 사이드바만 스크롤 */
 }
 
 /* main도 app 높이에 맞추고 내부에서만 스크롤 */
-.mains{
+.mains {
   height: 100%;
   min-height: 0;
   /* 기존에 mains에 height: calc(100vh - 70px) 있으면 지워도 됨 */
 }
 
-.main-scroll{
+.main-scroll {
   min-height: 0;
   overflow-y: auto;
-  overscroll-behavior: contain; /* 끝에서 바깥으로 스크롤 튀는 거 방지 */
+  overscroll-behavior: contain;
+  /* 끝에서 바깥으로 스크롤 튀는 거 방지 */
 }
