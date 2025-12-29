@@ -144,7 +144,7 @@ def register_user(info):
 # 회원정보 수정
 
 if __name__ == "__main__":
-    #임시 유저 등록
+    # 임시 유저 등록
     # db.py확인용
     # print(register_user(information))
     # 실사용 코드
@@ -171,3 +171,4 @@ if __name__ == "__main__":
     # 실사용 코드
     # db.get_user_role("siwoo")
     # 결과 => user/admin
+    pass

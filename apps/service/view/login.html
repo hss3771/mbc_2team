@@ -13,19 +13,23 @@
 <script>
 document.getElementById("btn").onclick = function () {
 
-  fetch("/user/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: document.getElementById("id").value,
-      pw: document.getElementById("pw").value
-    })
+fetch("/user/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    user_id: document.querySelector('[name="user_id"]').value,
+    pw: document.querySelector('[name="pw"]').value
   })
-  .then(res => res.json())
-  .then(data => {
-    alert(JSON.stringify(data));
-  });
-};
+})
+.then(res => res.json())
+.then(result => {
+  if (result.success) {
+    alert("로그인 성공");
+    location.href = "/main";
+  } else {
+    alert(result.msg);
+  }
+});
 </script>
 
 </body>
