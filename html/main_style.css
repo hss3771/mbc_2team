@@ -1,20 +1,65 @@
-/* main은 기존 my_page_style.css 위에 덮어씌우는 전용 스타일 */
-
-main {
-  /* my_page_style.css의 main { display:flex; padding:10px 40px; ... } 를 덮음 */
-  display: block;
-  padding: 16px;
+.auth-area {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
+/* 회원가입 버튼을 “보조 버튼” 느낌으로 주고 싶으면 */
+.auth-area .btn-secondary {
+  background: #ffffff;
+  color: #0462D2;
+  border: 1px solid #a6c8ef;
+}
+
+
+/* mains은 기존 my_page_style.css 위에 덮어씌우는 전용 스타일 */
 .mains {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  box-sizing: border-box;
+
+  height: calc(100vh - 70px);
+  align-items: stretch;
+}
+
+.main-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  /* flex 스크롤 필수 패턴 */
   overflow-y: auto;
   scroll-behavior: smooth;
-  height: calc(100vh - 70px);
-  /* header 높이에 맞게 숫자만 조절 */
+  padding-top: 14px;
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
+}
+
+.main-scroll::-webkit-scrollbar {
+  width: 10px;              /* 세로 스크롤 두께 */
+}
+
+.main-scroll::-webkit-scrollbar-track {
+  background: #f1f4fb;      /* 트랙 배경 */
+  border-radius: 999px;
+}
+
+.main-scroll::-webkit-scrollbar-thumb {
+  background: #c7d6f5;      /* 썸(움직이는 바) */
+  border-radius: 999px;
+  border: 0;
+}
+
+.main-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a9c2f2;      /* 호버 색 */
+}
+
+.main-scroll::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 .main1-panel {
-  height: 100%;
+  height: auto;
   width: 100%;
   border-radius: 14px;
   background: #ffffff;
@@ -25,15 +70,23 @@ main {
 
 /* ===== 상단 툴바 ===== */
 .main-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  width: 100%;
+  align-self: stretch;
+  box-sizing: border-box;
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 14px;
   padding: 12px 14px;
   background: #f1f5fb;
   border-bottom: 1px solid #e6edf8;
+  border-radius: 14px;
+}
+
+#main2,
+#main3 {
+  scroll-margin-top: 90px;
+  /* 툴바 높이에 맞춰 조절 */
 }
 
 .toolbar-right {
@@ -67,7 +120,7 @@ main {
   font-weight: 600;
 }
 
-.main1 .date-pill input[type="date"] {
+.mains .date-pill input[type="date"] {
   width: auto;
   /* my_page_style.css에서 100%로 되어있어서 덮음 */
   border: none;
@@ -79,7 +132,7 @@ main {
 
 /* ===== 세그먼트 버튼 ===== */
 .segmented {
-  margin-left: auto;
+  margin-left: 0;
   display: inline-flex;
   padding: 4px;
   border-radius: 14px;
@@ -115,6 +168,23 @@ main {
   position: relative;
   width: 180px;
   font-family: 'Noto Sans KR', sans-serif;
+}
+
+.cselect.cselect--sm {
+  width: 150px; /* 필요하면 120~180 조절 */
+}
+
+.cselect.cselect--sm .cselect__btn {
+  height: 34px;        /* 기존 ts2-select 높이 */
+  padding: 0 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.cselect.cselect--sm .cselect__opt {
+  font-size: 12px;
+  padding: 9px 10px;
 }
 
 .cselect__btn {
@@ -190,18 +260,20 @@ main {
 
 /* ===== 본문 레이아웃 ===== */
 .main1-body {
-  flex: 1;
+  align-items: stretch;
+  flex: 0 0 auto;
   min-height: 0;
   display: flex;
   gap: 18px;
-  padding: 5px 14px 14px;
-  overflow: hidden;
+  padding: 5px 14px 0px;
+  overflow: visible;
 }
 
 /* ===== 랭킹 영역 ===== */
 .ranking {
   flex: 1 1 auto;
   min-width: 520px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -233,7 +305,7 @@ main {
 
 /* “표” 대신 div grid 형태로 (스크린샷 느낌) */
 .rank-table {
-  flex: 0 0 auto;
+  flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -345,10 +417,10 @@ main {
 }
 
 .rank-list {
-  flex: 0 0 auto;
+  flex: 1;
   min-height: 0;
-  overflow: auto;
-  max-height: 625px;
+  overflow: visible;
+  max-height: none;
   background: #ffffff;
 }
 
@@ -396,10 +468,6 @@ main {
   font-size: 13px;
   font-weight: 800;
   color: #1d2b42;
-}
-
-.tooltip {
-  text-align: center;
 }
 
 .c-count,
@@ -469,6 +537,7 @@ main {
   flex-direction: column;
   gap: 12px;
   overflow: hidden;
+  min-height: 0;
 }
 
 .summary p {
@@ -488,7 +557,7 @@ main {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  margin-bottom: 10px;
+  margin-bottom: 0px;
 }
 
 .summary-title {
@@ -518,7 +587,7 @@ main {
 .summary-content {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow: visible;
   padding: 14px;
 }
 
@@ -556,21 +625,6 @@ main {
   background: #a9c2f2;
 }
 
-/* ===== 반응형 ===== */
-@media (max-width: 1100px) {
-  .main1-body {
-    flex-direction: column;
-  }
-
-  .summary {
-    width: 100%;
-  }
-
-  .ranking {
-    min-width: 0;
-  }
-}
-
 /* ===================== TS2: MAIN2 (기사 3열) ===================== */
 .ts2-panel {
   margin-top: 18px;
@@ -580,61 +634,9 @@ main {
 
 .ts2-grid {
   display: grid;
-  grid-template-columns:  repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   align-items: start;
-}
-
-/* 내부 메뉴 카드(스샷 느낌) */
-.ts2-menucard {
-  border: 1px solid #e8eef8;
-  background: #ffffff;
-  border-radius: 14px;
-  overflow: hidden;
-  padding: 14px;
-  min-height: 820px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.ts2-menucard__title {
-  font-size: 13px;
-  font-weight: 900;
-  color: #1d2b42;
-  margin-bottom: 6px;
-}
-
-.ts2-menucard__item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 10px;
-  border-radius: 12px;
-  color: #2c3a52;
-  font-weight: 800;
-  font-size: 13px;
-  text-decoration: none;
-  border: 1px solid transparent;
-  background: transparent;
-}
-
-.ts2-menucard__item:hover {
-  background: #f7fbff;
-  border-color: #dfe8f7;
-}
-
-.ts2-menucard__item.is-active {
-  background: #eaf3ff;
-  border-color: #b8d6ff;
-  color: #0462D2;
-}
-
-.ts2-menucard__foot {
-  margin-top: auto;
-  font-size: 11px;
-  color: #8a97ad;
-  padding-top: 10px;
 }
 
 /* 컬럼 패널 */
@@ -643,7 +645,6 @@ main {
   background: #ffffff;
   border-radius: 14px;
   overflow: hidden;
-  min-height: 820px;
   display: flex;
   flex-direction: column;
 }
@@ -722,28 +723,36 @@ main {
 .ts2-list {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  max-height: none;
+  overflow: hidden;
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.ts2-list::-webkit-scrollbar {
-  width: 12px;
+.ts2-list.is-vscroll {
+  max-height: var(--ts2-list-max, 560px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
 }
 
-.ts2-list::-webkit-scrollbar-track {
+.ts2-list.is-vscroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.ts2-list.is-vscroll::-webkit-scrollbar-track {
   background: #f1f4fb;
   border-radius: 999px;
 }
 
-.ts2-list::-webkit-scrollbar-thumb {
+.ts2-list.is-vscroll::-webkit-scrollbar-thumb {
   background: #c7d6f5;
   border-radius: 999px;
 }
 
-.ts2-list::-webkit-scrollbar-thumb:hover {
+.ts2-list.is-vscroll::-webkit-scrollbar-thumb:hover {
   background: #a9c2f2;
 }
 
@@ -875,19 +884,51 @@ main {
 /* 반응형 */
 @media (max-width: 1300px) {
   .ts2-grid {
-    grid-template-columns: 220px 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .ts2-col--neg {
-    grid-column: 2 / -1;
+    grid-column: auto;
   }
-
-  /* 보기 좋게 */
 }
 
 @media (max-width: 1100px) {
+  .main1-body {
+    flex-direction: column;
+  }
+
+  .summary {
+    width: 100%;
+  }
+
+  .ranking {
+    min-width: 0;
+  }
+
+  .sidebar {
+    display: none !important;
+  }
+
+  .mains {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .app {
+    gap: 0;
+    /* 사이드바 빠지면서 생기는 여백 방지 */
+    grid-template-columns: 1fr !important;
+  }
+
   .ts2-grid {
     grid-template-columns: 1fr;
+  }
+
+  .ts2-grid.is-scroll {
+    display: grid;
+    overflow-x: visible;
+    padding-bottom: 0;
   }
 
   .ts2-menucard {
@@ -899,4 +940,355 @@ main {
   }
 }
 
+@media (max-width: 768px) {
+  .mains {
+    padding: 12px;
+  }
+
+  /* 툴바: wrap 허용 + 간격/패딩 조금 축소 */
+  .main-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items:stretch;
+    gap: 10px;
+    padding: 10px;
+    border-radius:12px;
+  }
+
+  /* 날짜/세그먼트 묶음 */
+  .date-range {
+    display: contents;
+  }
+
+  /* 날짜 pill 2개: 2열로 (공간 부족하면 자동 줄바꿈) */
+  .date-pill {
+    flex: 1 1 calc(50% - 5px);
+    min-width: 180px;  /* 필요하면 160~200 사이로 조절 */
+  }
+
+  /* 키워드 드롭다운: 한 줄을 통째로 차지 (날짜 다음 줄) */
+  .toolbar-right{
+    flex: 1 1 100%;
+    order: 3;
+    margin-left: 0;   /* 기존 margin-left:auto 때문에 이상해지는 거 방지 */
+  }
+
+  .cselect {
+    width: 100%;
+  }
+
+  .cselect__btn {
+    width: 100%;
+  }
+
+ /* 일별/주별/월별/연도별: “드롭다운 아래”로 내려오기 */
+  .segmented{
+    flex: 1 1 100%;
+    order: 4;
+    margin-left: 0;
+    justify-content: flex-start;
+
+    /* 버튼이 길면 가로 스크롤로 */
+    overflow-x:auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 버튼은 줄바꿈하지 말고 가로로 쭉 */
+  .seg-btn{
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 8px 12px;
+  }
+
+  /* 앵커 보정(툴바 높이가 늘어나니까) */
+  #main2, #main3{
+    scroll-margin-top: 160px;
+  }
+}
+
+@media (max-width: 480px) {
+  .date-pill {
+    flex: 1 1 100%;
+    min-width: 0;
+    padding: 9px 10px;
+    gap: 8px;
+  }
+
+  .date-label {
+    display: none;
+    /* "시작일/종료일" 텍스트 숨겨서 공간 확보 */
+  }
+
+  .seg-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+}
+
 /* ===================== /TS2 ===================== */
+
+/* ===================== TS3: MAIN3 (키워드 언급량 및 감성분석) ===================== */
+.ts3-panel {
+  margin-top: 18px;
+}
+
+.ts3-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.ts3-card {
+  border: 1px solid #e8eef8;
+  background: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ts3-card--wide {
+  grid-column: 1 / -1;
+}
+
+.ts3-head {
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #eef2fb;
+}
+
+.ts3-head--wide {
+  align-items: flex-start;
+}
+
+.ts3-head--space {
+  align-items: flex-start;
+}
+
+.ts3-head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ts3-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  color: #1d2b42;
+}
+
+.ts3-tag {
+  font-size: 12px;
+  font-weight: 900;
+  color: #0462D2;
+  background: #e8f1ff;
+  border: 1px solid #a6c8ef;
+  border-radius: 999px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.ts3-klist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: 6px;
+}
+
+.ts3-kbtn {
+  border: 1px solid #dfe8f7;
+  background: #f5f8ff;
+  color: #6a7a93;
+  font-weight: 900;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: .15s;
+}
+
+.ts3-kbtn:hover {
+  background: #e8f1ff;
+  color: #0462D2;
+  border-color: #a6c8ef;
+}
+
+.ts3-kbtn.is-active {
+  background: #e8f1ff;
+  color: #0462D2;
+  border-color: #a6c8ef;
+  box-shadow: inset 0 0 0 1px #a6c8ef;
+}
+
+.ts3-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 상단 큰 그래프 자리 */
+.ts3-chartbox {
+  height: 330px;
+  border: 1px solid #eef2fb;
+  border-radius: 12px;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    repeating-linear-gradient(0deg, rgba(15,40,90,0.06) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(90deg, rgba(15,40,90,0.04) 0 1px, transparent 1px 80px);
+  position: relative;
+  overflow: hidden;
+}
+
+.ts3-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #8a97ad;
+  font-weight: 900;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.ts3-placeholder small {
+  font-weight: 800;
+  opacity: .8;
+}
+
+.ts3-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 워드클라우드 자리 */
+.ts3-cloud {
+  height: 220px;
+  border: 1px solid #eef2fb;
+  border-radius: 12px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  overflow: hidden;
+}
+
+.ts3-cloud-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-content: center;
+  justify-content: center;
+}
+
+.ts3-w {
+  font-weight: 900;
+  color: var(--c, #6a7a93);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ts3-w.lg { font-size: 40px; color: #6b6b6b; }
+.ts3-w.md { font-size: 26px; }
+.ts3-w.sm { font-size: 16px; opacity: .9; }
+
+/* 도넛 자리 */
+.ts3-donutwrap {
+  height: 220px;
+  border: 1px solid #eef2fb;
+  border-radius: 12px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+}
+
+.ts3-donut {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: conic-gradient(#1e63ff 0 40%, #8a97ad 40% 70%, #e53935 70% 100%);
+  position: relative;
+}
+
+.ts3-donut::after {
+  content: "";
+  position: absolute;
+  inset: 52px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #eef2fb;
+}
+
+/* 범례 */
+.ts3-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #6a7a93;
+  font-weight: 900;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ts3-leg { display: inline-flex; align-items: center; gap: 6px; }
+
+.ts3-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.ts3-dot--pos { background: #1e63ff; }
+.ts3-dot--neu { background: #8a97ad; }
+.ts3-dot--neg { background: #e53935; }
+
+/* 반응형 */
+@media (max-width: 1100px) {
+  .ts3-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* ===================== /TS3 =====================
+
+/* 바깥(페이지) 스크롤 제거: 이중 스크롤 방지 */
+html, body { height: 100%; }
+body { overflow: hidden; }
+
+/* 헤더 아래 영역을 정확히 화면 높이로 고정 */
+.app{
+  height: calc(100vh - 70px); /* 헤더가 70px이면 그대로 */
+  min-height: 0;
+  overflow: hidden;          /* 앱 밖으로 스크롤 안 새게 */
+}
+
+/* 사이드바도 같은 높이로 */
+.sidebar{
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;          /* 메뉴 길면 사이드바만 스크롤 */
+}
+
+/* main도 app 높이에 맞추고 내부에서만 스크롤 */
+.mains{
+  height: 100%;
+  min-height: 0;
+  /* 기존에 mains에 height: calc(100vh - 70px) 있으면 지워도 됨 */
+}
+
+.main-scroll{
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain; /* 끝에서 바깥으로 스크롤 튀는 거 방지 */
+}
