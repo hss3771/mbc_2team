@@ -1,13 +1,10 @@
-from fastapi import FastAPI, UploadFile, Form, File
+from fastapi import FastAPI, Form
 import apps.service.user as user
-from apps.common.db import login_count
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
 from starlette.requests import Request
 from apps.common.logger import Logger
-from apps.common.db import get_db
 from pathlib import Path
 logger = Logger().get_logger(__name__)
 BASE_DIR = Path(__file__).resolve().parent  # apps/service
@@ -154,7 +151,7 @@ def get_id(
 
     # 2) user.py 아이디 찾기 서비스 로직 호출
     #from apps.service.user import find_id as user_find_id
-    result = user.find_id(name)
+    result = user.find_id(name, email)
     return result
 
 
@@ -229,7 +226,7 @@ def mypage_password_check(
     # 1) 로그인 여부 확인 (세션에서 user_id)
     user_id = request.session.get("user_id")
     if not user_id:
-        return {"success": False, "message": "로그인이 필요합니다."}
+        return RedirectResponse("/view/login.html")
 
     # 2) 입력값 검증
     if not pw or not pw.strip():
@@ -241,16 +238,75 @@ def mypage_password_check(
     # 4) 성공 시 세션 플래그 저장 (회원정보 수정 페이지 접근 허용)
     if result.get("success"):
         request.session["my_page_verified"] = True
+        # 성공 즉시 회원정보 수정 화면으로 이동
+        return RedirectResponse("/view/info_edit.html")
 
-    return result
+    return {"success": False, "message": result.get("message")}
 
 
 # 마이페이지 - 회원정보 불러오기
+"""
+1. 브라우저가 info_edit.html 로드
+2. 페이지가 열림 (빈 input 상태)
+3. JS가 /info_edit/data 로 요청 보냄
+4. 서버가 JSON 응답 반환
+5. JS가 그 JSON을 받아서 input에 채움
+"""
+# 회원정보 수정 화면에서 기존 정보 풀러오기 (폼 채우기용)
+# info_edit.html 로드 후, 프론트가 AJAX로 호출해서 입력칸 채우는 용도
+@app.get("/my_page_load/data")
+def my_page_load_data(request: Request):
+    user_id = request.session.get("user_id") # 지금 요청한 사람이 누구인지 확인
+    if not user_id: # 세션에 user_id 가 없으면? -> 프론트: 로그인페이지로 이동 처리
+        return {"success": False, "message": "로그인이 필요합니다."}
 
+    # 마이페이지 비밀번호 확인 통과 체크
+    if not request.session.get("my_page_verified"):
+        return {"success": False, "message": "비밀번호 확인이 필요합니다."}
+
+    # user.py 의 로직 호출 : DB에서 회원정보 조회/ state 해석/ {success, data} 형태로 반환
+    # 해당 반환값이 그대로 JSON 응답으로 프론트에 전달됨
+    result = user.get_my_page(user_id)
+    return result
 
 
 # 회원정보 수정
-# @app.post("/info_update")
+@app.post("/info_update")
+def info_update(
+    request: Request,
+    pw: str = Form(...),
+    pw_confirm: str = Form(...),
+    email: str = Form(...),
+    name: str = Form(...),
+    birthday: str = Form(...),
+    phone: str = Form(...),
+    eco_state: str = Form(...),
+    gender: str = Form(...),
+):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return {"success": False, "message": "로그인이 필요합니다."}
+
+    if not request.session.get("my_page_verified"):
+        return {"success": False, "message": "비밀번호 확인이 필요합니다."}
+
+    info = {
+        "pw": pw,
+        "pw_confirm": pw_confirm,
+        "email": email,
+        "name": name,
+        "birthday": birthday,
+        "phone": phone,
+        "eco_state": eco_state,
+        "gender": gender,
+    }
+
+    result = user.update_my_page_info(user_id, info)
+
+    if result.get("success"):
+        request.session.pop("my_page_verified", None)
+
+    return result
 
 
 # session api : 로그인 정보 확인 (bool)

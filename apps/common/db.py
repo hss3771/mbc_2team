@@ -3,11 +3,11 @@ import hashlib
 information = {
     "user_id":"gkstmdtn",
     "password_hash": hashlib.sha256("gkstmdtn".encode()).hexdigest(),
-    "email": "gkstmdtn@gmail.com",
+    "email": "gkstmdtn2@gmail.com",
     "name": "한승수",
     "birthday": "2000-04-11",
     "phone": "010-1234-5678",
-    "eco_state": "하",
+    "eco_state": "상",
     "gender": "남"
 }
 
@@ -46,7 +46,7 @@ def login_check(info):
     result = None
     try:
         result = db.execute(sql,input).mappings().fetchone()
-        if result['is_valid']:
+        if result['is_valid']: # type: ignore
             sql_log = text("INSERT INTO login_log (user_id, result) VALUES (:user_id, 'SUCCESS')")
             db.execute(sql_log, {'user_id': input['user_id']})
             db.commit()
@@ -58,7 +58,7 @@ def login_check(info):
                     ) AS is_valid"""
                 )
             exist = db.execute(sql,{'user_id': input['user_id']}).mappings().fetchone()
-            if exist['is_valid']:
+            if exist['is_valid']: # type: ignore
                 sql_log = text("INSERT INTO login_log (user_id, result) VALUES (:user_id, 'FAIL')")
                 db.execute(sql_log, {'user_id': input['user_id']})
                 db.commit()
@@ -110,7 +110,7 @@ def get_user_role(user_id):
         """)
     try:
         result = db.execute(sql, {'user_id': user_id}).mappings().fetchone()
-        result = result['role_name']
+        result = result['role_name'] # type: ignore
     except Exception as e:
         print(f'Get user role error: {e}')
         result = "error"
@@ -152,7 +152,7 @@ def find_user_pw(user_id, name, email):
     result = None
     try:
         result = db.execute(sql, info).mappings().fetchone()
-        if result['is_valid']:
+        if result['is_valid']: # type: ignore
             result = 1 # 성공
         else:
             result = 0 # 일치하는 정보 없음
@@ -173,7 +173,7 @@ def change_user_pw(user_id, new_pw):
     result = None
     try:
         r = db.execute(sql, info)
-        if r.rowcount:
+        if r.rowcount: # type: ignore
             result = 1 #"비밀번호 변경 완료"
         else:
             result = 0 #"비밀번호 변경 실패"
@@ -194,7 +194,7 @@ def register_user(info):
     result = None
     try:
         r = db.execute(sql, info)
-        if r.rowcount:
+        if r.rowcount: # type: ignore
             sql = text("INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, '1')")
             db.execute(sql, {'user_id': info['user_id']})
         result = "등록 완료"
@@ -218,7 +218,7 @@ def check_duplicate_user_id(user_id):
     result = None
     try:
         result = db.execute(sql, {'user_id': user_id}).mappings().fetchone()
-        if result['is_exist']:
+        if result['is_exist']: # type: ignore
             result = 0
         else:
             result = 1
@@ -243,7 +243,7 @@ def check_user_pw(user_id, pw):
     result = None
     try:
         result = db.execute(sql, info).mappings().fetchone()
-        if result['is_valid']:
+        if result['is_valid']: # type: ignore
             result = 1 # 성공
         else:
             result = 0 # 실패
@@ -254,7 +254,7 @@ def check_user_pw(user_id, pw):
         db.close()
         return result
 
-# 회원정보 불러오기 #미완
+# 회원정보 불러오기
 def get_user_info(user_id):
     db = get_db()
     result = None
@@ -264,10 +264,41 @@ def get_user_info(user_id):
                FROM users
                where user_id = :user_id
                 """)
+    try:
+        result = db.execute(sql, info).mappings().fetchone()
+    except Exception as e:
+        print(e)
+        result = "error"
+    finally:
+        db.close()
+        return result
 
-
-# # 회원정보 수정
-# def update
+# 회원정보 수정
+def update_user_info(info):
+    db = get_db()
+    result = None
+    sql = text("""
+               UPDATE users
+                SET password_hash = :password_hash,
+                email = :email,
+                name = :name,
+                birthday = :birthday,
+                phone = :phone,
+                eco_state = :eco_state,
+                gender = :gender
+                WHERE user_id = :user_id
+               """)
+    try:
+        result = db.execute(sql, info)
+        result = result.rowcount # type: ignore
+    except Exception as e:
+        print(e)
+        result = 2
+    finally:
+        db.commit()
+        db.close()
+        return {"state":result}
+    
 if __name__ == "__main__":
     #임시 유저 등록
     # db.py확인용
@@ -305,11 +336,25 @@ if __name__ == "__main__":
     # db.check_duplicate_user_id(user_id)
     # 결과 => 0(중복), 1(중복아님), 2(에러)
     ###########################################################################
-    # 임시 중복 확인
+    # 임시 비밀번호 확인
     # db.py확인용
     # print(check_user_pw(information["user_id"],information["password_hash"])) => 1
     # print(check_user_pw("gkstmdtn", "gkstmdtn")) => 0
     # 실사용 코드
     # db.check_user_pw(user_id)
     # 결과 => 0(실패), 1(통과), 2(에러)
+    ###########################################################################
+    # 임시 회원정보 불러오기
+    # db.py확인용
+    # print(get_user_info("gkstmdtn"))
+    # 실사용 코드
+    # db.get_user_info(user_id)
+    # 결과 => {'name': '한승수', 'gender': '남', 'birthday': datetime.date(2000, 4, 11), 'phone': '010-1234-5678', 'email': 'gkstmdtn@gmail.com', 'eco_state': '하'}
+    ###########################################################################
+    # 임시 회원정보 수정
+    # db.py확인용
+    # print(update_user_info(information))
+    # 실사용 코드
+    # db.update_user_info(info)
+    # 결과 => {"state" : 0(실패)/1(성공)/2(에러)}
     pass

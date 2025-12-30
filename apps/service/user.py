@@ -11,7 +11,7 @@ def login(user_id: str, pw: str, session) -> dict:
     count_result = db.login_count(user_id)
 
     # login_count는 dict 형태
-    fail_count = count_result["fail_cnt"]
+    fail_count = count_result["fail_cnt"] # type: ignore
 
     if fail_count >= 5:
         return {
@@ -26,7 +26,7 @@ def login(user_id: str, pw: str, session) -> dict:
         "password_hash": hash_pw(pw)
     })
 
-    if result["is_valid"]:
+    if result["is_valid"]: # type: ignore
         session["user_id"] = user_id
         session["user_role"] = db.get_user_role(user_id)
         return {
@@ -67,6 +67,7 @@ def signup(
     eco_state: str,
     gender: str,
 ) -> dict:
+
     # db.register_user()가 요구하는 형태로 dict 구성
     info = {
         "user_id": user_id,
@@ -117,15 +118,15 @@ def check_user_id(user_id: str) -> dict:
 def find_id(name: str, email: str) -> dict:
     result = db.find_user_id(name, email)
 
-    if result["state"] == 1:
+    if result["state"] == 1:  # type: ignore
         return {
             "success": True,
-            "user_id": result["user_id"]
+            "user_id": result["user_id"] # type: ignore
         }
 
     return {
         "success": False,
-        "message": result["user_id"]
+        "message": result["user_id"] # type: ignore
     }
 
 # 비밀번호 찾기
@@ -216,28 +217,107 @@ def check_my_page_pw(user_id: str, pw: str) -> dict:
     }
 
 # 마이 페이지 정보 불러오기
-def get_my_page(user_id: str, pw: str) -> dict:
-    # DB 비밀번호 확인
-    state = db.??(user_id)
+def get_my_page(user_id: str) -> dict:
+    result = db.get_user_info(user_id)
 
-    # 수정 실패
-    if state == 0:
+    # DB 에러
+    if result == "error":
         return {
             "success": False,
-            "message": "비밀번호가 올바르지 않습니다."
+            "message": "회원 정보 조회 중 오류가 발생했습니다."
         }
 
-    # 수정 실패
-    if state == 1:
+    # 회원 정보 없음
+    if result is None:
         return {
-            "success": True,
-            "message": "비밀번호 확인이 완료되었습니다."
+            "success": False,
+            "message": "회원 정보를 찾을 수 없습니다."
         }
 
-    # 시스템 에러
+    # 조회 성공
     return {
-        "success": False,
-        "message": "비밀번호 확인 중 오류가 발생했습니다."
+        "success": True,
+        "data": {
+            "name": result.get("name"),
+            "gender": result.get("gender"),
+            "birthday": result.get("birthday"),
+            "phone": result.get("phone"),
+            "email": result.get("email"),
+            "eco_state": result.get("eco_state"),
+        }
     }
 
 # 마이페이지 회원정보 수정
+def update_my_page_info(user_id: str, info: dict) -> dict:
+    # 필수 값 검증 (이중 보안)
+    required_fields = [
+        "pw",
+        "pw_confirm",
+        "email",
+        "name",
+        "birthday",
+        "gender",
+    ]
+
+    for field in required_fields:
+        if not info.get(field) or not str(info.get(field)).strip():
+            return {
+                "success": False,
+                "message": "필수 항목을 모두 입력해주세요."
+            }
+
+    # 비밀번호 / 비밀번호 확인 일치 여부
+    if info["pw"] != info["pw_confirm"]:
+        return {
+            "success": False,
+            "message": "비밀번호가 일치하지 않습니다."
+        }
+
+    # 비밀번호 해시 처리
+    password_hash = hash_pw(info["pw"])
+
+    # DB에 전달할 데이터 구성(선택값은 없어도 그대로 전달)
+    update_info = {
+        "user_id": user_id,
+        "password_hash": password_hash,
+        "email": info["email"],
+        "name": info["name"],
+        "birthday": info["birthday"],
+        "gender": info["gender"],
+        "phone": info.get("phone"),
+        "eco_state": info.get("eco_state")
+    }
+
+    try:
+        # DB 회원정보 수정 요청
+        result = db.update_user_info(update_info)
+
+        # db.py는 {"state": 0|1|2} 반환한다고 가정
+        state = result.get("state")
+
+        # 수정 성공
+        if state == 1:
+            return {
+                "success": True,
+                "message": "회원정보가 수정되었습니다."
+            }
+
+        # 수정 실패
+        if state == 0:
+            return {
+                "success": False,
+                "message": "회원정보 수정에 실패했습니다."
+            }
+
+        # 시스템 에러
+        return {
+            "success": False,
+            "message": "회원정보 수정 중 오류가 발생했습니다."
+        }
+
+    except Exception as e:
+        print(f"회원정보 수정 오류: {e}")
+        return {
+            "success": False,
+            "message": "회원정보 수정 중 오류가 발생했습니다."
+        }
