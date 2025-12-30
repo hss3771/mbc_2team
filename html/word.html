@@ -4,10 +4,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Page</title>
+  <title>단어 사전</title>
 
   <link rel="icon" href="./img/favicon.png">
-  <link rel="stylesheet" href="word_style.css" />
+  <link rel="stylesheet" href="word.css" />
 </head>
 
 <body>
@@ -31,53 +31,82 @@
       </ul>
     </aside>
     <main>
+      <div class="word-wrap">
+        <div class="word-page-title">단어 사전</div>
+
+        <section class="word-panel">
+          <!-- 상단: 탭 + 북마크 버튼 -->
+          <div class="word-toolbar">
+            <div class="word-seg" role="tablist" aria-label="단어 분류">
+              <button class="word-seg-btn is-active" data-seg="ko" role="tab" aria-selected="true">한글</button>
+              <button class="word-seg-btn" data-seg="en" role="tab" aria-selected="false">영문</button>
+              <button class="word-seg-btn" data-seg="num" role="tab" aria-selected="false">숫자</button>
+            </div>
+
+            <div class="word-toolbar-right">
+              <button class="word-outline-btn" id="openBookmark" type="button">
+                Bookmark list
+              </button>
+            </div>
+          </div>
+
+          <!-- 인덱스 바 -->
+          <div class="word-indexbar" id="indexBar" aria-label="인덱스"></div>
+
+          <!-- 본문(좌: 리스트 / 우: 상세) -->
+          <div class="word-body">
+            <aside class="word-list-card">
+              <div class="word-list" id="wordList" role="listbox" aria-label="단어 목록"></div>
+            </aside>
+
+            <article class="word-detail-card">
+              <div class="word-detail-head">
+                <div class="word-detail-title">
+                  <h2 id="detailTitle">단어를 선택하세요</h2>
+                  <button class="icon-star-btn" id="detailStarBtn" type="button" aria-label="즐겨찾기">
+                    <span class="icon-star" aria-hidden="true">☆</span>
+                  </button>
+                </div>
+                <div class="word-detail-meta" id="detailMeta"></div>
+              </div>
+
+              <div class="word-detail-content" id="detailContent">
+                <div class="word-empty">
+                  <div class="word-empty-emoji">📘</div>
+                  <div class="word-empty-title">왼쪽 목록에서 단어를 선택해 주세요</div>
+                  <div class="word-empty-sub">임시 데이터로 구성되어 있어요. (API/DB 연결 시 쉽게 교체 가능)</div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+
+      <!-- 북마크 모달 -->
+      <div class="modal-backdrop" id="bookmarkModal" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Bookmark list">
+          <div class="modal-head">
+            <div class="modal-title">Bookmark list</div>
+            <button class="modal-close" id="closeBookmark" type="button" aria-label="닫기">✕</button>
+          </div>
+
+          <div class="modal-body">
+            <div class="bookmark-list" id="bookmarkList"></div>
+            <div class="bookmark-empty" id="bookmarkEmpty" hidden>
+              아직 즐겨찾기한 단어가 없어요 🙂
+            </div>
+          </div>
+
+          <div class="modal-foot">
+            <button class="word-outline-btn" id="clearBookmarks" type="button">전체 삭제</button>
+            <button class="word-primary-btn" id="closeBookmark2" type="button">닫기</button>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const alias = { 'info_edit.html': 'my_page.html' };
-
-      function setSidebarActive() {
-        const curFileRaw = (location.pathname.split('/').pop() || '').split('?')[0];
-        const curFile = alias[curFileRaw] || curFileRaw;
-        const curHash = location.hash || '';
-
-        // active 초기화
-        document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
-
-        const links = Array.from(document.querySelectorAll('.menu a'));
-
-        // main.html에서 hash(#main2/#main3)가 있으면 그 항목을 우선 active
-        if (curFile === 'main.html' && (curHash === '#main2' || curHash === '#main3')) {
-          const hashTarget = links.find(a => {
-            const href = a.getAttribute('href') || '';
-            const parts = href.split('#');
-            const file = (parts[0].split('/').pop() || '').split('?')[0];
-            const hash = parts[1] ? ('#' + parts[1]) : '';
-            return file === 'main.html' && hash === curHash;
-          });
-
-          if (hashTarget) {
-            hashTarget.closest('li').classList.add('active');
-            return;
-          }
-        }
-
-        // 기본: 파일명만 비교 (hash 무시)
-        const fileTarget = links.find(a => {
-          const href = a.getAttribute('href') || '';
-          const file = (href.split('#')[0].split('/').pop() || '').split('?')[0];
-          return file === curFile;
-        });
-
-        if (fileTarget) fileTarget.closest('li').classList.add('active');
-      }
-
-      setSidebarActive();
-      window.addEventListener('hashchange', setSidebarActive);
-    });
-  </script>
+  <script src="./word.js"></script>
 
 </body>
 
