@@ -1,0 +1,50 @@
+[
+  {
+    "term_id": "1618",
+    "tab": "KOR",
+    "section": "",
+    "label": "시장청산",
+    "error": "TimeoutException()",
+    "at": "2025-12-30T14:36:35"
+  },
+  {
+    "term_id": "1670",
+    "tab": "KOR",
+    "section": "",
+    "label": "실버산업",
+    "error": "TimeoutException()",
+    "at": "2025-12-30T14:46:58"
+  },
+  {
+    "term_id": "1967",
+    "tab": "KOR",
+    "section": "",
+    "label": "유럽경화증",
+    "error": "TimeoutException()",
+    "at": "2025-12-30T15:17:50"
+  },
+  {
+    "term_id": "2467",
+    "tab": "KOR",
+    "section": "",
+    "label": "총부채상환비율",
+    "error": "TimeoutException()",
+    "at": "2025-12-30T15:53:35"
+  },
+  {
+    "term_id": "2543",
+    "tab": "KOR",
+    "section": "",
+    "label": "코리나",
+    "error": "TimeoutException()",
+    "at": "2025-12-30T16:04:53"
+  },
+  {
+    "term_id": "3034",
+    "tab": "ENG",
+    "section": "",
+    "label": "C의 공포",
+    "error": "TimeoutException()",
+    "at": "2025-12-30T16:39:35"
+  }
+]
