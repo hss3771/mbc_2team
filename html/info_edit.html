@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Page</title>
+  <title>마이페이지</title>
 
   <link rel="icon" href="./img/favicon.png">
   <link rel="stylesheet" href="my_page_style.css" />
@@ -40,32 +40,34 @@
         <div class="card-scroll">
           <form id="editForm" class="form">
             <span>비밀번호</span>
-            <input type="password" placeholder="비밀번호를 입력해 주세요." required />
+            <input type="password" id="password" name="password" placeholder="비밀번호를 입력해 주세요." required />
             <span>비밀번호 확인</span>
-            <input type="password" placeholder="비밀번호를 한 번 더 입력해 주세요." required />
+            <input type="password" id="confirmPassword" placeholder="비밀번호를 한 번 더 입력해 주세요."
+              required />
+            <p class="error" id="passwordError" aria-live="polite"></p>
             <span>이름</span>
-            <input type="text" placeholder="이름" value="김기자" required />
+            <input type="text" name="userName" placeholder="이름" value="김기자" required />
 
             <span>성별</span>
             <div class="radio-field">
-              <label for="male"><input id="male" type="radio" name="gender" checked /> 남</label>
-              <label for="female"><input id="female" type="radio" name="gender" /> 여</label>
+              남<input id="male" type="radio" name="gender" value="M" checked />
+              여<input id="female" type="radio" name="gender" value="F" />
             </div>
 
             <span>생년월일</span>
-            <input type="date" value="2000-12-21" required />
+            <input type="date" name="birth" value="2025-12-21" required />
             <span>휴대전화</span>
-            <input type="text" placeholder="휴대전화" value="01012345678" required />
+            <input type="text" name="phone" placeholder="휴대전화" value="01012345678" required />
             <span>이메일</span>
-            <input type="email" placeholder="이메일" value="hello@trendscope.com" required />
+            <input type="email" name="email" placeholder="이메일" value="hello@trendscope.com" required />
 
             <span>경제 지식 수준</span>
             <div class="radio-group">
-              <label><input type="radio" name="knowledge" /> 상</label>
-              <label><input type="radio" name="knowledge" checked /> 중상</label>
-              <label><input type="radio" name="knowledge" /> 중</label>
-              <label><input type="radio" name="knowledge" /> 중하</label>
-              <label><input type="radio" name="knowledge" /> 하</label>
+              <label><input type="radio" name="knowledge" value="HIGH" /> 상</label>
+              <label><input type="radio" name="knowledge" value="MID_HIGH" checked /> 중상</label>
+              <label><input type="radio" name="knowledge" value="MID" /> 중</label>
+              <label><input type="radio" name="knowledge" value="MID_LOW" /> 중하</label>
+              <label><input type="radio" name="knowledge" value="LOW" /> 하</label>
             </div>
           </form>
         </div>

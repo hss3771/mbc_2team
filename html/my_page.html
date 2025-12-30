@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Page</title>
+  <title>비밀번호 확인</title>
 
   <link rel="icon" href="./img/favicon.png">
   <link rel="stylesheet" href="my_page_style.css" />
@@ -39,9 +39,10 @@
         </div>
 
         <div class="card-scroll">
-          <form action="info_edit.html" method="get" class="form">
+          <form action="info_edit.html" method="get" id="pwForm" class="form">
             <label for="password" class="visually-hidden">비밀번호</label>
-            <input type="password" id="password" placeholder="비밀번호를 입력해 주세요." required />
+            <input type="password" id="password" name="password" placeholder="비밀번호를 입력해 주세요." required />
+            <p id="pwError" class="error" aria-live="polite"></p>
             <button type="submit" class="OK">확인</button>
           </form>
         </div>
@@ -96,6 +97,48 @@
 
     // main.html에서 #main2/#main3로 바뀔 때도 active 바뀌게
     window.addEventListener('hashchange', setSidebarActive);
+
+    // 비밀번호 검증 완료시 이동
+     const pwForm = document.getElementById('pwForm');
+  const pwInput = document.getElementById('password');
+  const pwError = document.getElementById('pwError');
+
+  pwForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    pwError.textContent = '';
+
+    const password = pwInput.value.trim();
+    if (!password) {
+      pwError.textContent = '비밀번호를 입력해 주세요.';
+      return;
+    }
+
+    try {
+      // 나중에 백엔드 주소에 맞춰 URL만 바꾸면 됨
+      const res = await fetch('/api/mypage/verify-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // 세션/쿠키 쓰면 필수
+        body: JSON.stringify({ password })
+      });
+
+      if (res.ok) {
+        // 검증 성공 → info_edit로 이동
+        location.href = './info_edit.html';
+      } else {
+        // 실패 메시지 받기(서버가 보내주면)
+        let msg = '비밀번호가 올바르지 않습니다.';
+        try {
+          const data = await res.json();
+          if (data && data.message) msg = data.message;
+        } catch (_) {}
+        pwError.textContent = msg;
+      }
+    } catch (err) {
+      pwError.textContent = '비밀번호가 올바르지 않습니다. 다시 확인해 주세요.';
+      console.error(err);
+    }
+  });
   </script>
 </body>
 
