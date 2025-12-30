@@ -283,12 +283,7 @@ main {
   align-items: center;
   gap: 8px;
   background: #fff;
-  border: 1px solid #eef2fba1;
-  --index-gap: 8px; /* 기본값 */
-}
-
-.word-indexbar .index-pill {
-  gap: var(--index-gap);
+  border: 1px solid #eef2fb;
 }
 
 .index-pill {
@@ -307,10 +302,6 @@ main {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
-
-#indexBar[data-seg="ko"] { --index-gap: 20px; }   /* ㄱㄴㄷ... */
-#indexBar[data-seg="en"] { --index-gap: 6px; }   /* ABC... */
-#indexBar[data-seg="num"] { --index-gap: 14px; } /* 0~9 */
 
 .index-pill::-webkit-scrollbar {
   height: 8px;
