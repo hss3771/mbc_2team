@@ -1,0 +1,36 @@
+<!--임시 login 이라서 지우고 새로 만들어야 함.-->
+<!DOCTYPE html>
+<html>
+<body>
+
+<h3>LOGIN TEST</h3>
+
+<input id="id" placeholder="id">
+<input id="pw" placeholder="pw">
+
+<button type="button" id="btn">로그인</button>
+
+<script>
+document.getElementById("btn").onclick = function () {
+
+fetch("/user/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    user_id: document.querySelector('[name="user_id"]').value,
+    pw: document.querySelector('[name="pw"]').value
+  })
+})
+.then(res => res.json())
+.then(result => {
+  if (result.success) {
+    alert("로그인 성공");
+    location.href = "/main";
+  } else {
+    alert(result.msg);
+  }
+});
+</script>
+
+</body>
+</html>
