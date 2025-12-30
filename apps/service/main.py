@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, Form, File
 from apps.service.user import login as user_login
+from apps.common.db import login_count
 from apps.service.user import my_page_pw
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
@@ -79,6 +80,7 @@ def password_check(
     }
 
 
+# 로그인
 # @app.post("/login_check")
 @app.post("/login_check")
 def login_check(
@@ -93,15 +95,15 @@ def login_check(
     if result.get("success"):
         return {
             "success": True,
-            "message": f"{user_id}님 로그인 성공",
-            "try_count": result.get("try_count") # user.py 확인
+            "msg": "로그인 성공"
         }
     # 로그인에 실패한 경우
     return {
         "success": False,
-        "message": result.get("msg"),
-        "try_count": result.get("try_count") # user.py 확인
+        "msg": result.get("message"),
+        "count": result.get("count")
     }
+    #lock상태는 javascript로 처리
 
 
 # @app.post("get_id")
@@ -116,7 +118,9 @@ def login_check(
 # @app.post("/info_update")
 
 
-#session api
+# session api : 로그인 정보 확인 (bool)
+# 모든 페이지에서 로그인 정보를 확인하여 상단에 로그인/로그아웃 표시하기 위함
+# apps/static/base.js 와 연동
 @app.get("/api/session")
 def session_info(request: Request):
-    return {"logged_in": bool(request.session.get("user"))}
+    return {"logged_in": bool(request.session.get("user_id"))}
