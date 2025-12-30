@@ -251,6 +251,8 @@ def get_my_page(user_id: str) -> dict:
 def update_my_page_info(user_id: str, info: dict) -> dict:
     # 필수 값 검증 (이중 보안)
     required_fields = [
+        "pw",
+        "pw_confirm",
         "email",
         "name",
         "birthday",

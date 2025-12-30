@@ -1,50 +1,145 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Page</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>비밀번호 확인</title>
 
-  <link rel="icon" href="./img/favicon.png">
-  <link rel="stylesheet" href="css/my_page_style.css"/>
+  <link rel="icon" href="/view/img/favicon.png">
+  <link rel="stylesheet" href="/view/css/my_page_style.css" />
 </head>
+
 <body>
   <header class="header">
-  <div class="header-inner">
+    <div class="header-inner">
       <a class="brand" href="./home.html">
         </span>
         <span class="sidebar_logo"><img src="./img/logo_white.png" alt=""></span>
       </a>
-    <a href="./home.html" class="logout-button">로그아웃</a>
-  </div>
+      <a href="./home.html" class="logout-button">로그아웃</a>
+    </div>
   </header>
 
   <div class="app">
     <aside class="sidebar">
       <ul class="menu">
-        <li>경제 키워드 트렌드</li>
-        <li>기사</li>
-        <li>키워드 언급량 및 감성분석</li>
-        <li>단어 사전</li>
-        <li class="active">마이페이지</li>
+        <li><a href="./main.html">경제 키워드 트렌드</a></li>
+        <li><a href="./main.html#main2">기사</a></li>
+        <li><a href="./main.html#main3">키워드 언급량 및 감성분석</a></li>
+        <li><a href="./word.html">단어 사전</a></li>
+        <li><a href="./my_page.html">마이페이지</a></li>
       </ul>
     </aside>
-<main class="content">
-  <div class="card">
-    <div class="card-top">
-      <h2>마이페이지</h2>
-      <p class="description">마이페이지 조회를 위해 비밀번호 확인이 필요합니다.</p>
-    </div>
+    <main class="content">
+      <div class="card">
+        <div class="card-top">
+          <h2>마이페이지</h2>
+          <p class="description">마이페이지 조회를 위해 비밀번호 확인이 필요합니다.</p>
+        </div>
 
-    <div class="card-scroll">
-      <form action="info_edit.html" method="get" class="form">
-        <label for="password" class="visually-hidden">비밀번호</label>
-        <input type="password" id="password" placeholder="비밀번호를 입력해 주세요." required />
-        <button type="submit" class="OK">확인</button>
-      </form>
-    </div>
+        <div class="card-scroll">
+          <form action="info_edit.html" method="get" id="pwForm" class="form">
+            <label for="password" class="visually-hidden">비밀번호</label>
+            <input type="password" id="password" name="password" placeholder="비밀번호를 입력해 주세요." required />
+            <p id="pwError" class="error" aria-live="polite"></p>
+            <button type="submit" class="OK">확인</button>
+          </form>
+        </div>
+      </div>
+    </main>
   </div>
-</main>
-  </div>
+
+  <script>
+    function setSidebarActive() {
+      const curFileRaw = (location.pathname.split('/').pop() || '').split('?')[0].split('#')[0];
+      const curHash = location.hash || '';
+
+      // 하위 페이지를 상위 메뉴로 묶고 싶으면 여기 추가
+      const alias = {
+        'info_edit.html': 'my_page.html',
+      };
+      const curFile = alias[curFileRaw] || curFileRaw;
+
+      // active 초기화
+      document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
+
+      const links = Array.from(document.querySelectorAll('.menu a'));
+
+      // 1) main.html에서 해시가 있으면(main2/main3) 그 해시에 해당하는 링크를 우선 활성화
+      if (curFile === 'main.html' && (curHash === '#main2' || curHash === '#main3')) {
+        const hashTarget = links.find(a => {
+          const href = a.getAttribute('href') || '';
+          const [filePart, hashPart] = href.split('#');
+          const file = (filePart.split('/').pop() || '');
+          const hash = hashPart ? ('#' + hashPart) : '';
+          return file === 'main.html' && hash === curHash;
+        });
+
+        if (hashTarget) {
+          hashTarget.closest('li')?.classList.add('active');
+          return;
+        }
+      }
+
+      // 2) 기본: 파일명만 비교해서 활성화 (해시는 무시)
+      const fileTarget = links.find(a => {
+        const href = a.getAttribute('href') || '';
+        const file = (href.split('#')[0].split('/').pop() || '');
+        return file === curFile;
+      });
+
+      fileTarget?.closest('li')?.classList.add('active');
+    }
+
+    // 최초 1회
+    setSidebarActive();
+
+    // main.html에서 #main2/#main3로 바뀔 때도 active 바뀌게
+    window.addEventListener('hashchange', setSidebarActive);
+
+    // 비밀번호 검증 완료시 이동
+     const pwForm = document.getElementById('pwForm');
+  const pwInput = document.getElementById('password');
+  const pwError = document.getElementById('pwError');
+
+  pwForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    pwError.textContent = '';
+
+    const password = pwInput.value.trim();
+    if (!password) {
+      pwError.textContent = '비밀번호를 입력해 주세요.';
+      return;
+    }
+
+    try {
+      // 나중에 백엔드 주소에 맞춰 URL만 바꾸면 됨
+      const res = await fetch('/api/mypage/verify-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // 세션/쿠키 쓰면 필수
+        body: JSON.stringify({ password })
+      });
+
+      if (res.ok) {
+        // 검증 성공 → info_edit로 이동
+        location.href = './info_edit.html';
+      } else {
+        // 실패 메시지 받기(서버가 보내주면)
+        let msg = '비밀번호가 올바르지 않습니다.';
+        try {
+          const data = await res.json();
+          if (data && data.message) msg = data.message;
+        } catch (_) {}
+        pwError.textContent = msg;
+      }
+    } catch (err) {
+      pwError.textContent = '비밀번호가 올바르지 않습니다. 다시 확인해 주세요.';
+      console.error(err);
+    }
+  });
+  </script>
 </body>
+
 </html>

@@ -1,55 +1,463 @@
-<!--임시 login 이라서 지우고 새로 만들어야 함.-->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>Signup Test</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TrendScope - 회원가입</title>
+  <link rel="stylesheet" href="/view/css/signup.css">
 </head>
 <body>
 
-<h3>SIGNUP TEST</h3>
+  <div id="tsJoinWrap">
+    <div id="tsShell">
 
-<input id="user_id" placeholder="아이디"><br>
-<input id="pw" type="password" placeholder="비밀번호"><br>
-<input id="pw_confirm" type="password" placeholder="비밀번호 확인"><br>
-<input id="name" placeholder="이름"><br>
-<input id="email" placeholder="이메일"><br>
-<input id="gender" placeholder="성별"><br>
-<input id="birthday" placeholder="생년월일"><br><br>
+      <div id="tsLeft">
+        <div class="logo">TrendScope</div>
+        <p class="desc">
+          회원가입 후 로그인하면 TrendScope 기능을 이용할 수 있어요.<br>
+          지금은 로컬(브라우저) 저장 방식으로만 동작합니다.
+        </p>
+        <div class="status">
+          <span class="dot"></span>
+          프로토타입 모드(서버 미연결)
+        </div>
+      </div>
 
-<button type="button" onclick="signup()">회원가입</button>
+      <div id="tsRight">
+        <div id="tsCard">
+          <div id="tsTitle">
+            <div class="h">회원가입</div>
+            <div class="s">필수 정보를 입력해 주세요. (서버 연결 전: 로컬 저장)</div>
+          </div>
 
-<pre id="result"></pre>
+          <form id="joinForm" action="#">
+            <div class="tsField">
+              <div class="tsLabel">아이디 <span class="tsReq">필수</span></div>
+              <div class="tsRow2">
+                <div class="grow">
+                  <input id="jId" class="tsInput" type="text" autocomplete="username"
+                         placeholder="영문소문자/숫자 4~16자 (예: trendscope01)" />
+                </div>
+                <button type="button" class="tsBtn" id="btnCheckId">중복확인</button>
+              </div>
+              <div class="tsHelp">규칙: 영문 소문자(a-z) + 숫자(0-9), 4~16자</div>
+              <div class="tsMsg" id="idMsg"></div>
+            </div>
 
-<script>
-function signup() {
-  fetch("/user/signup", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      user_id: document.getElementById("user_id").value,
-      pw: document.getElementById("pw").value,
-      pw_confirm: document.getElementById("pw_confirm").value,
-      name: document.getElementById("name").value,
-      email: document.getElementById("email").value,
-      gender: document.getElementById("gender").value,
-      birthday: document.getElementById("birthday").value
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    document.getElementById("result").innerText =
-      JSON.stringify(data, null, 2);
+            <div class="tsField">
+              <div class="tsLabel">비밀번호 <span class="tsReq">필수</span></div>
+              <input id="jPw" class="tsInput" type="password" autocomplete="new-password"
+                     placeholder="비밀번호를 입력해 주세요." />
+              <div class="tsHelp">권장: 8자 이상 (로컬 저장용 검증만 수행)</div>
+            </div>
 
-    if (data.success) {
-      alert("회원가입 성공! 로그인 페이지로 이동합니다.");
-      location.href = "/view/login.html";
+            <div class="tsField">
+              <div class="tsLabel">비밀번호 확인 <span class="tsReq">필수</span></div>
+              <input id="jPw2" class="tsInput" type="password" autocomplete="new-password"
+                     placeholder="비밀번호를 한 번 더 입력해 주세요." />
+            </div>
+
+            <div class="tsField">
+              <div class="tsLabel">이름 <span class="tsReq">필수</span></div>
+              <input id="jName" class="tsInput" type="text" autocomplete="name" placeholder="이름" />
+            </div>
+
+            <div class="tsField">
+              <div class="tsLabel">성별 <span class="tsReq">필수</span></div>
+              <div class="tsRadioWrap" role="radiogroup" aria-label="성별">
+                <label><input type="radio" name="gender" value="남" required> 남</label>
+                <label><input type="radio" name="gender" value="여"> 여</label>
+              </div>
+              <div class="tsHelp">성별은 반드시 선택해야 가입할 수 있어요.</div>
+            </div>
+
+            <div class="tsField">
+              <div class="tsLabel">생년월일 <span class="tsReq">필수</span></div>
+              <input id="jBirth" class="tsInput" type="date" autocomplete="bday" required />
+              <div class="tsHelp">미래 날짜는 선택할 수 없게 제한됩니다.</div>
+            </div>
+
+            <div class="tsField">
+              <div class="tsLabel">휴대전화</div>
+              <input id="jPhone" class="tsInput" type="tel" autocomplete="tel"
+                     placeholder="예: 01012345678 (선택, 숫자만)" />
+              <div class="tsHelp">입력하지 않아도 가입 가능 (입력 시 숫자 10~11자리)</div>
+            </div>
+
+            <div class="tsField">
+              <div class="tsLabel">이메일 <span class="tsReq">필수</span></div>
+              <input id="jEmail" class="tsInput" type="email" autocomplete="email"
+                     placeholder="예: hello@trendscope.com" />
+            </div>
+
+            <div class="tsField">
+              <div class="tsLabel">경제지식수준</div>
+              <div class="tsRadioWrap" role="radiogroup" aria-label="경제지식수준">
+                <label><input type="radio" name="knowledge" value="상"> 상</label>
+                <label><input type="radio" name="knowledge" value="중상"> 중상</label>
+                <label><input type="radio" name="knowledge" value="중"> 중</label>
+                <label><input type="radio" name="knowledge" value="중하"> 중하</label>
+                <label><input type="radio" name="knowledge" value="하"> 하</label>
+              </div>
+              <div class="tsHelp">선택 입력 (가입 필수 아님)</div>
+            </div>
+
+            <div class="tsMsg" id="formErr"></div>
+
+            <div class="tsActions">
+              <!-- L1 = home -->
+              <a href="./home.html">취소</a>
+              <button class="tsBtnPrimary" id="btnJoin" type="submit" disabled>가입하기</button>
+            </div>
+          </form>
+
+          <div id="tsFoot">
+            <!-- L3 = login -->
+            <a class="tsLinkBlue" href="login.html">이미 계정이 있어요 → 로그인</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!--  2-1: 사용 가능한 아이디 -->
+  <div id="tsAvailLayer" class="tsLayer" aria-hidden="true">
+    <div class="tsModal" role="dialog" aria-modal="true" aria-labelledby="tsAvailText">
+      <p id="tsAvailText" class="tsModalText">사용 가능한 아이디 입니다.</p>
+      <button id="tsAvailBtn" class="tsModalBtn" type="button">확인</button>
+    </div>
+  </div>
+
+  <!--  2-2: 이미 사용중인 아이디 -->
+  <div id="tsDupLayer" class="tsLayer" aria-hidden="true">
+    <div class="tsModal" role="dialog" aria-modal="true" aria-labelledby="tsDupText">
+      <p id="tsDupText" class="tsModalText">이미 사용중인 아이디 입니다.</p>
+      <button id="tsDupBtn" class="tsModalBtn" type="button">확인</button>
+    </div>
+  </div>
+
+  <!--  4-1: 가입하시겠습니까? -->
+  <div id="tsJoinAskLayer" class="tsLayer" aria-hidden="true">
+    <div class="tsModal" role="dialog" aria-modal="true" aria-labelledby="tsJoinAskText">
+      <p id="tsJoinAskText" class="tsModalText">가입하시겠습니까?</p>
+      <button id="tsJoinAskBtn" class="tsModalBtn" type="button">확인</button>
+    </div>
+  </div>
+
+  <script>
+    // =========================
+    // 로컬(브라우저) 저장 회원가입
+    // =========================
+    const TS_USERS_KEY = "ts_users";
+
+    function loadUsers(){
+      try { return JSON.parse(localStorage.getItem(TS_USERS_KEY) || "[]"); }
+      catch { return []; }
     }
-  });
-}
-</script>
+    function saveUsers(users){
+      localStorage.setItem(TS_USERS_KEY, JSON.stringify(users));
+    }
 
+    function validId(id){
+      return /^[a-z0-9]{4,16}$/.test(id);
+    }
+    function validEmail(email){
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+    function onlyDigits(s){
+      return (s || "").replace(/\D/g, "");
+    }
+    function validPhoneOptional(raw){
+      const p = onlyDigits(raw);
+      if (!p) return true;
+      return p.length === 10 || p.length === 11;
+    }
+
+    function normalizeBirth(raw){
+      const v = (raw || "").trim();
+      if (!v) return "";
+      if (/^\d{8}$/.test(v)) {
+        return `${v.slice(0,4)}-${v.slice(4,6)}-${v.slice(6,8)}`;
+      }
+      return v;
+    }
+
+    function validBirth(raw){
+      const v = normalizeBirth(raw);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+
+      const [y,m,d] = v.split("-").map(Number);
+      if (y < 1900) return false;
+
+      const dt = new Date(y, m - 1, d);
+      if (dt.getFullYear() !== y || dt.getMonth() !== (m - 1) || dt.getDate() !== d) return false;
+
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      dt.setHours(0,0,0,0);
+
+      return dt <= today;
+    }
+
+    //비밀번호 암호화(SHA-256)
+    async function sha256(str){
+      if (window.crypto && crypto.subtle) {
+        const buf = new TextEncoder().encode(str);
+        const hash = await crypto.subtle.digest("SHA-256", buf);
+        return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,"0")).join("");
+      }
+      return "plain:" + str; // fallback
+    }
+
+    function apiCheckId(memberId){
+      const users = loadUsers();
+      const exists = users.some(u => u.memberId === memberId);
+      return { ok: true, exists };
+    }
+
+    function localRegister(payload){
+      const users = loadUsers();
+      if (users.some(u => u.memberId === payload.memberId)) {
+        return { ok:false };
+      }
+      users.push(payload);
+      saveUsers(users);
+      return { ok:true };
+    }
+
+    (function(){
+      const jId = document.getElementById("jId");
+      const jPw = document.getElementById("jPw");
+      const jPw2 = document.getElementById("jPw2");
+      const jName = document.getElementById("jName");
+      const jBirth = document.getElementById("jBirth");
+      const jPhone = document.getElementById("jPhone");
+      const jEmail = document.getElementById("jEmail");
+
+      const btnCheckId = document.getElementById("btnCheckId");
+      const idMsg = document.getElementById("idMsg");
+      const formErr = document.getElementById("formErr");
+      const btnJoin = document.getElementById("btnJoin");
+      const form = document.getElementById("joinForm");
+
+      // layers
+      const availLayer = document.getElementById("tsAvailLayer");
+      const availBtn   = document.getElementById("tsAvailBtn");
+      const dupLayer   = document.getElementById("tsDupLayer");
+      const dupBtn     = document.getElementById("tsDupBtn");
+      const joinAskLayer = document.getElementById("tsJoinAskLayer");
+      const joinAskBtn   = document.getElementById("tsJoinAskBtn");
+
+      // 생년월일 제한
+      const todayStr = new Date().toISOString().slice(0,10);
+      jBirth.max = todayStr;
+      jBirth.min = "1900-01-01";
+
+      let idCheckedOk = false;
+      let pendingPayload = null; // 4-1 확인 누를 때 저장할 payload
+
+      function showMsg(el, type, text){
+        el.className = "tsMsg " + (type === "ok" ? "ok" : "err");
+        el.textContent = text;
+        el.style.display = "block";
+      }
+      function hideMsg(el){
+        el.style.display = "none";
+        el.textContent = "";
+      }
+
+      function openLayer(layer){
+        layer.style.display = "flex";
+        layer.setAttribute("aria-hidden","false");
+      }
+      function closeLayer(layer){
+        layer.style.display = "none";
+        layer.setAttribute("aria-hidden","true");
+      }
+
+      hideMsg(formErr);
+
+      function calcCanSubmit(){
+        const id = (jId.value||"").trim();
+        const pw = (jPw.value||"");
+        const pw2 = (jPw2.value||"");
+        const name = (jName.value||"").trim();
+        const birth = (jBirth.value||"").trim();
+        const email = (jEmail.value||"").trim();
+        const gender = form.querySelector('input[name="gender"]:checked');
+
+        const phoneOk = validPhoneOptional(jPhone.value);
+
+        //  “모든 필수 칸 입력 + 중복확인 완료”일 때 활성화
+        const ok =
+          idCheckedOk &&
+          validId(id) &&
+          pw.length >= 8 &&
+          pw === pw2 &&
+          name.length >= 1 &&
+          !!gender &&
+          validBirth(birth) &&
+          validEmail(email) &&
+          phoneOk;
+
+        btnJoin.disabled = !ok;
+      }
+
+      // 아이디가 바뀌면 중복확인 무효
+      jId.addEventListener("input", () => {
+        idCheckedOk = false;
+        hideMsg(idMsg);
+        hideMsg(formErr);
+        calcCanSubmit();
+      });
+
+      [jPw,jPw2,jName,jPhone,jEmail].forEach(el => el.addEventListener("input", () => {
+        hideMsg(formErr);
+        calcCanSubmit();
+      }));
+
+      jBirth.addEventListener("input", () => {
+        hideMsg(formErr);
+        calcCanSubmit();
+      });
+
+      form.querySelectorAll('input[name="gender"]').forEach(r => r.addEventListener("change", () => {
+        hideMsg(formErr);
+        calcCanSubmit();
+      }));
+
+      form.querySelectorAll('input[name="knowledge"]').forEach(r => r.addEventListener("change", calcCanSubmit));
+
+      // 2) 중복확인
+      btnCheckId.addEventListener("click", () => {
+        hideMsg(formErr);
+
+        const id = (jId.value||"").trim();
+
+        if (!validId(id)) {
+          showMsg(idMsg, "err", "아이디 규칙을 확인해 주세요. (영문소문자/숫자 4~16자)");
+          idCheckedOk = false;
+          calcCanSubmit();
+          return;
+        }
+
+        const r = apiCheckId(id);
+
+        if (r.exists) {
+          // 2-2
+          idCheckedOk = false;
+          showMsg(idMsg, "err", "이미 사용 중인 아이디입니다.");
+          openLayer(dupLayer);
+        } else {
+          // 2-1
+          idCheckedOk = true;
+          showMsg(idMsg, "ok", "사용 가능한 아이디입니다.");
+          openLayer(availLayer);
+        }
+
+        calcCanSubmit();
+      });
+
+      availBtn.addEventListener("click", () => closeLayer(availLayer));
+      dupBtn.addEventListener("click", () => closeLayer(dupLayer));
+
+      // 4-1 확인 누르면 “회원가입 저장 + login 이동(L2/L3=login)”
+      joinAskBtn.addEventListener("click", () => {
+        closeLayer(joinAskLayer);
+
+        if (!pendingPayload) return;
+
+        const r = localRegister(pendingPayload);
+        const id = encodeURIComponent(pendingPayload.memberId);
+
+        pendingPayload = null;
+
+        // 저장 순간에 중복이 생긴 경우(안전장치)
+        if (!r.ok) {
+          idCheckedOk = false;
+          openLayer(dupLayer);
+          calcCanSubmit();
+          return;
+        }
+
+        location.href = `login.html?registered=1&id=${id}`;
+      });
+
+      // 4.가입하기
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        hideMsg(formErr);
+
+        const memberId = (jId.value||"").trim();
+        const passwd = jPw.value || "";
+        const passwd2 = jPw2.value || "";
+        const name = (jName.value||"").trim();
+        const birthRaw = (jBirth.value||"").trim();
+        const birthDate = normalizeBirth(birthRaw);
+        const email = (jEmail.value||"").trim();
+        const gender = (form.querySelector('input[name="gender"]:checked')||{}).value;
+
+        const phoneDigits = onlyDigits(jPhone.value);
+        const knowledge = (form.querySelector('input[name="knowledge"]:checked')||{}).value || "";
+
+        // 필수 검증
+        if (!idCheckedOk) { showMsg(formErr,"err","아이디 중복확인을 먼저 해주세요."); return; }
+        if (!validId(memberId)) { showMsg(formErr,"err","아이디 규칙이 올바르지 않습니다."); return; }
+        if (passwd.length < 8) { showMsg(formErr,"err","비밀번호는 8자 이상으로 입력해 주세요."); return; }
+        if (passwd !== passwd2) { showMsg(formErr,"err","비밀번호 확인이 일치하지 않습니다."); return; }
+        if (!name) { showMsg(formErr,"err","이름을 입력해 주세요."); return; }
+        if (!gender) { showMsg(formErr,"err","성별을 선택해 주세요."); return; }
+        if (!validBirth(birthRaw)) { showMsg(formErr,"err","생년월일을 확인해 주세요. (미래 날짜 불가)"); return; }
+        if (!validEmail(email)) { showMsg(formErr,"err","이메일 형식을 확인해 주세요."); return; }
+        if (!validPhoneOptional(jPhone.value)) {
+          showMsg(formErr,"err","휴대전화 번호 형식을 확인해 주세요. (숫자 10~11자리)");
+          return;
+        }
+
+        //가입하기 누를 때 “중복 재확인”
+        const chk = apiCheckId(memberId);
+        if (chk.exists) {
+          idCheckedOk = false;
+          showMsg(idMsg, "err", "이미 사용 중인 아이디입니다.");
+          openLayer(dupLayer); // 2-2 팝업
+          calcCanSubmit();
+          return;
+        }
+
+        btnJoin.disabled = true;
+        btnJoin.textContent = "가입 처리중...";
+
+        try{
+          const passwordHash = await sha256(passwd);
+
+          //4-1 팝업에서 “확인” 누를 때 저장되도록 pendingPayload만 준비
+          pendingPayload = {
+            memberId,
+            passwordHash,
+            name,
+            gender,
+            birthDate,
+            email,
+            phone: phoneDigits,
+            knowledge,
+            createdAt: new Date().toISOString()
+          };
+
+          // 4-1 팝업
+          openLayer(joinAskLayer);
+
+        } catch(err){
+          pendingPayload = null;
+          showMsg(formErr, "err", err.message || "회원가입 중 오류가 발생했어요.");
+        } finally {
+          btnJoin.textContent = "가입하기";
+          calcCanSubmit();
+        }
+      });
+
+      calcCanSubmit();
+    })();
+  </script>
 </body>
 </html>
