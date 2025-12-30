@@ -216,6 +216,28 @@ def check_my_page_pw(user_id: str, pw: str) -> dict:
     }
 
 # 마이 페이지 정보 불러오기
+def get_my_page(user_id: str, pw: str) -> dict:
+    # DB 비밀번호 확인
+    state = db.??(user_id)
 
+    # 수정 실패
+    if state == 0:
+        return {
+            "success": False,
+            "message": "비밀번호가 올바르지 않습니다."
+        }
+
+    # 수정 실패
+    if state == 1:
+        return {
+            "success": True,
+            "message": "비밀번호 확인이 완료되었습니다."
+        }
+
+    # 시스템 에러
+    return {
+        "success": False,
+        "message": "비밀번호 확인 중 오류가 발생했습니다."
+    }
 
 # 마이페이지 회원정보 수정
