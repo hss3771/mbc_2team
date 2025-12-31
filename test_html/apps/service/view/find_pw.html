@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TrendScope - 비밀번호 찾기</title>
+  <link rel="stylesheet" href="./css/find_pw.css">
+</head>
+<body>
+  <div id="tsFindWrap">
+    <div id="tsShell">
+
+      <!-- LEFT -->
+      <div id="tsLeft">
+        <div class="logo">TrendScope</div>
+        <p class="desc">
+          통합 ID로 TrendScope의 모든 서비스를 이용할 수 있습니다.<br>
+          경제 이슈와 키워드를 한 번에 탐색하세요.
+        </p>
+        <div class="status">
+          <span class="dot"></span>
+          오늘의 데이터 업데이트 완료
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div id="tsRight">
+        <div id="tsCard">
+          <div id="tsTitle">
+            <div class="h">비밀번호 찾기</div>
+          </div>
+
+          <form id="findPwForm" action="#">
+            <div class="tsField">
+              <div class="tsLabel">아이디 <span class="tsReq">필수</span></div>
+              <input id="fpId" class="tsInput" type="text" placeholder="아이디" autocomplete="username" />
+            </div>
+
+            <div class="tsField">
+              <div class="tsLabel">이름 <span class="tsReq">필수</span></div>
+              <input id="fpName" class="tsInput" type="text" placeholder="이름" autocomplete="name" />
+            </div>
+
+            <div class="tsField">
+              <div class="tsLabel">이메일 <span class="tsReq">필수</span></div>
+              <input id="fpEmail" class="tsInput" type="email" placeholder="이메일" autocomplete="email" />
+            </div>
+
+            <!-- L1 버튼(확인) -->
+            <button class="tsBtnPrimary" id="fpSubmit" type="submit">확인</button>
+          </form>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ✅ 팝업(2-1~2-4) -->
+  <div id="tsPopupLayer" aria-hidden="true">
+    <div id="tsPopup" role="dialog" aria-modal="true" aria-labelledby="tsPopupText">
+      <p id="tsPopupText">-</p>
+      <button id="tsPopupBtn" type="button">확인</button>
+    </div>
+  </div>
+
+  <script>
+    // ✅ 회원가입(signup.html)이 localStorage에 저장한 유저 목록 키
+    // [{ memberId, name, email, passwordHash, ... }]
+    const TS_USERS_KEY = "ts_users";
+
+    function loadUsers(){
+      try { return JSON.parse(localStorage.getItem(TS_USERS_KEY) || "[]"); }
+      catch { return []; }
+    }
+
+    // 공백 제거 + (이메일은 대소문자 구분 의미 없으니 소문자 처리)
+    function n(s){ return (s || "").trim(); }
+    function nEmail(s){ return n(s).toLowerCase(); }
+
+    // ====== Popup ======
+    const layer = document.getElementById("tsPopupLayer");
+    const textEl = document.getElementById("tsPopupText");
+    const btnEl  = document.getElementById("tsPopupBtn");
+
+    function openPopup(message){
+      // 줄바꿈 포함 문구 그대로 보이게
+      textEl.textContent = message;
+      layer.style.display = "flex";
+      layer.setAttribute("aria-hidden", "false");
+      btnEl.focus();
+    }
+    function closePopup(){
+      layer.style.display = "none";
+      layer.setAttribute("aria-hidden", "true");
+    }
+
+    btnEl.addEventListener("click", closePopup);
+    window.addEventListener("keydown", (e)=>{
+      if (e.key === "Escape" && layer.style.display === "flex") closePopup();
+    });
+
+    // ====== Form Logic ======
+    const form = document.getElementById("findPwForm");
+    const fpId = document.getElementById("fpId");
+    const fpName = document.getElementById("fpName");
+    const fpEmail = document.getElementById("fpEmail");
+
+    form.addEventListener("submit", (e)=>{
+      e.preventDefault();
+
+      const id = n(fpId.value);
+      const name = n(fpName.value);
+      const email = nEmail(fpEmail.value);
+
+      // ✅ 요구사항/이미지 순서대로
+      // 2-1 아이디 비었을 때
+      if (!id) {
+        openPopup("아이디 항목은\n필수 입력값입니다.");
+        fpId.focus();
+        return;
+      }
+      // 2-3 이름 비었을 때 (이미지에서 2-2가 이름으로 되어있어서, 네 문서 기준으로는 2-3이지만
+      // 여기서는 너가 적어준 요구사항 번호대로: 2-3 = 이름)
+      if (!name) {
+        openPopup("이름 항목은\n필수 입력값입니다.");
+        fpName.focus();
+        return;
+      }
+      // 2-2 메일(=이메일) 비었을 때
+      if (!email) {
+        openPopup("이메일 항목은\n필수 입력값입니다.");
+        fpEmail.focus();
+        return;
+      }
+
+      // ✅ DB 매칭: 아이디+이름+이메일 모두 일치해야 함
+      const users = loadUsers();
+
+      const found = users.find(u =>
+        n(u.memberId) === id &&
+        n(u.name) === name &&
+        nEmail(u.email) === email
+      );
+
+      // 2-4 일치하는 값 없음
+      if (!found){
+        openPopup("입력하신 정보로 가입된 회원을 찾을 수 없습니다.\n회원가입 후 이용해 주세요.");
+        return;
+      }
+
+      // ✅ 성공 시 pw_change로 이동
+      location.href = "pw_change.html?memberId=" + encodeURIComponent(id);
+    });
+  </script>
+</body>
+</html>

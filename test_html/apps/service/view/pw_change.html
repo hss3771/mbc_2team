@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TrendScope - 비밀번호 변경하기</title>
+  <link rel="stylesheet" href="./css/pw_change.css">
+</head>
+<body>
+
+  <div id="tsWrap">
+    <div id="tsShell">
+
+      <!-- LEFT -->
+      <div id="tsLeft">
+        <div class="logo">TrendScope</div>
+        <p class="desc">
+          통합 ID로 TrendScope의 모든 서비스를 이용할 수 있습니다.<br>
+          경제 이슈와 키워드를 한 번에 탐색하세요.
+        </p>
+        <div class="status">
+          <span class="dot"></span>
+          오늘의 데이터 업데이트 완료
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div id="tsRight">
+        <div id="tsCard">
+
+          <div id="tsTitle">
+            <div class="h">비밀번호 변경하기</div>
+          </div>
+
+          <form id="pwChangeForm" action="#">
+            <div class="tsField">
+              <div class="tsLabel">새 비밀번호 <span class="tsReq">필수</span></div>
+              <input id="newPw" class="tsInput" type="password" autocomplete="new-password"
+                     placeholder="비밀번호를 입력해 주세요." />
+              <div class="tsHelp">권장: 8자 이상</div>
+            </div>
+
+            <div class="tsField">
+              <div class="tsLabel">비밀번호 확인 <span class="tsReq">필수</span></div>
+              <input id="newPw2" class="tsInput" type="password" autocomplete="new-password"
+                     placeholder="비밀번호를 한 번 더 입력해 주세요." />
+            </div>
+
+            <div class="tsMsg" id="formMsg"></div>
+
+            <button id="btnChange" class="tsBtnPrimary" type="submit" disabled>
+              비밀번호 변경하기
+            </button>
+          </form>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ✅ 2-1 팝업 -->
+  <div id="tsPopupLayer" aria-hidden="true">
+    <div id="tsPopup" role="dialog" aria-modal="true" aria-labelledby="tsPopupText">
+      <p id="tsPopupText">-</p>
+      <button id="tsPopupBtn" type="button">확인</button>
+    </div>
+  </div>
+
+  <script>
+    const TS_USERS_KEY = "ts_users";
+    const PW_CHANGE_ID_KEY = "ts_pw_change_memberId"; // 있으면 업데이트에 사용(없어도 팝업은 뜸)
+
+    function loadUsers(){
+      try { return JSON.parse(localStorage.getItem(TS_USERS_KEY) || "[]"); }
+      catch { return []; }
+    }
+    function saveUsers(users){
+      localStorage.setItem(TS_USERS_KEY, JSON.stringify(users));
+    }
+    function n(s){ return (s || "").trim(); }
+
+    async function sha256(str){
+      if (window.crypto && crypto.subtle) {
+        const buf = new TextEncoder().encode(str);
+        const hash = await crypto.subtle.digest("SHA-256", buf);
+        return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,"0")).join("");
+      }
+      return "plain:" + str;
+    }
+
+    // ===== Popup =====
+    const layer = document.getElementById("tsPopupLayer");
+    const textEl = document.getElementById("tsPopupText");
+    const btnEl  = document.getElementById("tsPopupBtn");
+
+    function openPopup(message, onClose){
+      textEl.textContent = message;
+      layer.style.display = "flex";
+      layer.setAttribute("aria-hidden", "false");
+      btnEl.focus();
+
+      btnEl.onclick = () => {
+        layer.style.display = "none";
+        layer.setAttribute("aria-hidden", "true");
+        if (typeof onClose === "function") onClose();
+      };
+    }
+
+    // ===== Form =====
+    const form = document.getElementById("pwChangeForm");
+    const newPw = document.getElementById("newPw");
+    const newPw2 = document.getElementById("newPw2");
+    const btnChange = document.getElementById("btnChange");
+    const formMsg = document.getElementById("formMsg");
+
+    function showMsg(type, msg){
+      formMsg.className = "tsMsg " + (type === "ok" ? "ok" : "err");
+      formMsg.textContent = msg;
+      formMsg.style.display = "block";
+    }
+    function hideMsg(){
+      formMsg.style.display = "none";
+      formMsg.textContent = "";
+    }
+
+    // memberId는 있으면 업데이트용으로만 사용 (없어도 진행)
+    const qs = new URLSearchParams(location.search);
+    const memberId = n(qs.get("memberId")) || n(localStorage.getItem(PW_CHANGE_ID_KEY));
+
+    function canSubmit(){
+      const p1 = newPw.value || "";
+      const p2 = newPw2.value || "";
+      const ok = p1.length >= 8 && p1 === p2;
+      btnChange.disabled = !ok;
+      btnChange.style.cursor = ok ? "pointer" : "not-allowed";
+      btnChange.style.background = ok ? "#0462D2" : "#d1d5db";
+    }
+
+    newPw.addEventListener("input", () => { hideMsg(); canSubmit(); });
+    newPw2.addEventListener("input", () => { hideMsg(); canSubmit(); });
+    canSubmit();
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideMsg();
+
+      const p1 = newPw.value || "";
+      const p2 = newPw2.value || "";
+
+      // 필수 조건만 체크(요구사항)
+      if (p1.length < 8) { showMsg("err", "비밀번호는 8자 이상으로 입력해 주세요."); return; }
+      if (p1 !== p2) { showMsg("err", "비밀번호 확인이 일치하지 않습니다."); return; }
+
+      btnChange.disabled = true;
+      btnChange.textContent = "변경 중...";
+
+      try{
+        //  (가능하면) 실제 로컬 DB 업데이트
+        if (memberId) {
+          const users = loadUsers();
+          const idx = users.findIndex(u => n(u.memberId) === memberId);
+          if (idx >= 0) {
+            const hash = await sha256(p1);
+            users[idx].passwordHash = hash;
+            users[idx].pwUpdatedAt = new Date().toISOString();
+            saveUsers(users);
+          }
+        }
+
+        //  요구사항: 버튼 누르면 2-1 팝업 제공 → L1=login
+        openPopup("비밀번호 변경이 완료되었습니다.\n로그인을 다시 시도해주세요.", () => {
+          localStorage.removeItem(PW_CHANGE_ID_KEY); // 선택: 인증 흔적 제거
+          location.href = "login.html"; // L1
+        });
+
+      } catch(err){
+        showMsg("err", "비밀번호 변경 중 오류가 발생했어요.");
+      } finally {
+        btnChange.textContent = "비밀번호 변경하기";
+        canSubmit();
+      }
+    });
+  </script>
+</body>
+</html>
