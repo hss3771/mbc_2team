@@ -1,6 +1,6 @@
 import hashlib
 import apps.common.db as db
-
+import re
 
 def hash_pw(pw: str) -> str:
     return hashlib.sha256(pw.encode()).hexdigest()
@@ -56,6 +56,17 @@ def logout(session) -> dict:
         "message": "로그아웃 되었습니다."
     }
 
+# 비밀번호 규칙: 영문 소문자 + 숫자, 4~16자
+def is_valid_password(pw: str) -> bool:
+    pattern = r"^(?=.*[a-z])(?=.*\d)[a-z\d]{4,16}$"
+    return bool(re.match(pattern, pw))
+
+
+# 이메일 형식 검사
+def is_valid_email(email: str) -> bool:
+    pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+    return bool(re.match(pattern, email))
+
 # 회원가입
 def signup(
     user_id: str,
@@ -67,20 +78,59 @@ def signup(
     eco_state: str,
     gender: str,
 ) -> dict:
+    # 필수값 검증 (phone, eco_state 제외)
+    required_fields = {
+        "아이디": user_id,
+        "비밀번호": pw,
+        "이메일": email,
+        "이름": name,
+        "생년월일": birthday,
+        "성별": gender,
+    }
 
-    # db.register_user()가 요구하는 형태로 dict 구성
+    for field_name, value in required_fields.items():
+        if not value or not str(value).strip():
+            return {
+                "success": False,
+                "message": f"{field_name}은(는) 필수 입력 항목입니다."
+            }
+
+    # 비밀번호 규칙 검증
+    if not is_valid_password(pw):
+        return {
+            "success": False,
+            "message": "비밀번호는 영문 소문자와 숫자를 포함한 4~16자여야 합니다."
+        }
+
+    # 이메일 형식 검증
+    if not is_valid_email(email):
+        return {
+            "success": False,
+            "message": "이메일 형식이 올바르지 않습니다."
+        }
+
+    # 아이디 중복 체크 (서버 2차 방어)
+    state = db.check_duplicate_user_id(user_id)
+    if state == 0:
+        return {
+            "success": False,
+            "message": "이미 사용 중인 아이디입니다."
+        }
+
+    # DB 저장
     info = {
         "user_id": user_id,
         "password_hash": hash_pw(pw),
         "email": email,
         "name": name,
         "birthday": birthday,
-        "phone": phone,
+        "phone": phone,   
         "eco_state": eco_state,
         "gender": gender,
     }
-    # db.py의 회원가입 함수 호출
+
     return db.register_user(info)
+
 
 # 회원가입 시 아이디 중복 확인
 def check_user_id(user_id: str) -> dict:

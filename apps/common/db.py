@@ -11,6 +11,7 @@ information = {
     "gender": "남"
 }
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
@@ -21,7 +22,7 @@ port = 3306
 db = 'trendscope'
 
 url = f'mysql+pymysql://{user_id}:{pw}@{host}:{port}/{db}'
-engine = create_engine(url,echo=True,
+engine = create_engine(url,echo=False,
                        pool_size=10,
                        max_overflow=20,
                        pool_timeout=30,
@@ -198,10 +199,15 @@ def register_user(info):
             sql = text("INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, '1')")
             db.execute(sql, {'user_id': info['user_id']})
         result = "등록 완료"
-    except Exception as e:
-        print(f'Registration error: {e}')
+    except IntegrityError as e:
+        print(f'Registration error: {e.orig}')
+        contain = {e.orig.args[1].split("for key '")[-1].rstrip("'")}
+        if "uq_users_email" in contain:
+            result = "중복된 이메일입니다."
+        else:
+            result = "등록 실패"
         db.rollback()
-        result = "등록 실패"
+        
     finally:
         db.commit()
         db.close()

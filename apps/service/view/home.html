@@ -12,7 +12,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap"
     rel="stylesheet">
 
-  <link rel="icon" href="view/img/favicon.png">
+  <link rel="icon" href="/view/img/favicon.png">
   <link rel="stylesheet" href="/view/css/home_style.css" />
 </head>
 
@@ -23,14 +23,18 @@
 
   <header class="topbar">
     <div class="shell topbar__inner">
-      <a class="brand" href="#">
-        </span>
-        <span class="topbar_logo"><img src="./img/logo_blue.png" alt=""></span>
+      <a class="brand" href="/">
+        <span class="topbar_logo"><img src="/view/img/logo_blue.png" alt=""></span>
       </a>
 
       <nav class="topbar__actions" aria-label="상단 메뉴">
-        <a class="topbar__link" href="./login.html">로그인</a>
-        <a class="btn btn--primary btn--sm" href="./signup.html">회원가입</a>
+        <!-- 비로그인 상태 -->
+        <a class="topbar__link js-auth-out" href="/login">로그인</a>
+        <a class="btn btn--primary btn--sm js-auth-out" href="/signup">회원가입</a>
+
+        <!-- 로그인 상태 -->
+        <a class="topbar__link js-auth-in" href="/my_page">마이페이지</a>
+        <a class="btn btn--soft btn--sm js-auth-in" href="/logout">로그아웃</a>
       </nav>
     </div>
   </header>
@@ -42,7 +46,7 @@
       <h1 class="hero__title">TrendScope</h1>
       <p class="hero__subtitle">새로운 경험을 해보세요</p>
 
-      <a class="btn btn--primary btn--lg hero__cta" href="./main.html">지금 시작하기</a>
+      <a class="btn btn--primary btn--lg hero__cta" href="/main">지금 시작하기</a>
     </section>
 
     <!-- PRODUCT SHOT -->
@@ -51,15 +55,15 @@
         <div class="product-slider" aria-label="기능 미리보기 슬라이더">
           <div class="product-slider__track">
             <!-- 0 -->
-            <img class="product-slider__slide" src="./img/home_slider_1.png" alt="키워드 트렌딩 분석 미리보기" />
+            <img class="product-slider__slide" src="/view/img/home_slider_1.png" alt="키워드 트렌딩 분석 미리보기" />
             <!-- 1 -->
-            <img class="product-slider__slide" src="./img/home_slider_2.png" alt="낚시성 기사 판별 미리보기" />
+            <img class="product-slider__slide" src="/view/img/home_slider_2.png" alt="낚시성 기사 판별 미리보기" />
             <!-- 2 -->
-            <img class="product-slider__slide" src="./img/home_slider_2.png" alt="기사 감정 분석 미리보기" />
+            <img class="product-slider__slide" src="/view/img/home_slider_2.png" alt="기사 감정 분석 미리보기" />
             <!-- 3 -->
-            <img class="product-slider__slide" src="./img/home_slider_4.png" alt="키워드 언급량 분석 미리보기" />
+            <img class="product-slider__slide" src="/view/img/home_slider_4.png" alt="키워드 언급량 분석 미리보기" />
             <!-- 4 -->
-            <img class="product-slider__slide" src="./img/home_slider_2.png" alt="기사 요약 서비스 미리보기" />
+            <img class="product-slider__slide" src="/view/img/home_slider_2.png" alt="기사 요약 서비스 미리보기" />
           </div>
         </div>
       </div>
@@ -143,7 +147,7 @@
 
         <div class="usecase__media">
           <div class="media-frame">
-            <img src="./img/home_1.png" alt="용어 정리 화면 예시" />
+            <img src="/view/img/home_1.png" alt="용어 정리 화면 예시" />
           </div>
         </div>
       </div>
@@ -160,7 +164,7 @@
 
         <div class="usecase__media">
           <div class="media-frame">
-            <img src="./img/home_2.png" alt="키워드 비교 화면 예시" />
+            <img src="/view/img/home_2.png" alt="키워드 비교 화면 예시" />
           </div>
         </div>
       </div>
@@ -177,7 +181,7 @@
 
         <div class="usecase__media">
           <div class="media-frame">
-            <img src="./img/home_3.png" alt="오늘의 이슈 화면 예시" />
+            <img src="/view/img/home_3.png" alt="오늘의 이슈 화면 예시" />
           </div>
         </div>
       </div>
@@ -193,7 +197,7 @@
       </div>
     </div>
   </footer>
-
+  <script src="/static/base.js"></script>
   <script src="/static/home.js"> </script>
 </body>
 

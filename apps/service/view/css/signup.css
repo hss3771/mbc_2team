@@ -26,7 +26,11 @@
     #tsShell{ width:min(1080px,100%); display:flex; gap:32px; align-items:flex-start; }
 
     #tsLeft{flex:1.2;color:var(--text);padding:12px 8px;}
-    #tsLeft .logo{font-size:44px;font-weight:800;letter-spacing:-0.02em;color:var(--brand);}
+    #tsJoinWrap a{
+      color: inherit;
+      text-decoration: none;
+    }
+    #tsLeft .logo{ font-size:44px; font-weight:800; letter-spacing:-0.02em; color:#0462D2; }
     #tsLeft .desc{margin:10px 0 0;color:#475569;line-height:1.6;font-size:15px;}
     #tsLeft .status{
       display:inline-flex;align-items:center;gap:10px;margin-top:18px;
@@ -119,9 +123,34 @@
     }
 
     .tsHelp{ margin:8px 2px 0; font-size:12px; color:#94a3b8; line-height:1.4; }
-    .tsMsg{ margin:10px 0 0; font-size:12px; line-height:1.4; padding:10px 12px; border-radius:12px; display:none; }
-    .tsMsg.ok{ display:block; color:#166534; background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.18); }
-    .tsMsg.err{ display:block; color:#b91c1c; background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.18); }
+
+    /* 기본 tsMsg(박스형) */
+    .tsMsg{
+      margin:10px 0 0;
+      font-size:12px;
+      line-height:1.4;
+      padding:10px 12px;
+      border-radius:12px;
+      display:none;
+    }
+
+    /* 성공(초록) */
+    .tsMsg.ok{
+      display:block;
+      color:#166534;
+      background:rgba(34,197,94,.10);
+      border:1px solid rgba(34,197,94,.18);
+    }
+
+    /* 실패(빨강): err / bad 둘 다 지원 */
+    .tsMsg.err,
+    .tsMsg.bad{
+      display:block;
+      color:#b91c1c;
+      background:rgba(239,68,68,.08);
+      border:1px solid rgba(239,68,68,.18);
+    }
+
 
     .tsRadioWrap{
       border:1px solid #e5e7eb; border-radius:12px; padding:10px 12px;
@@ -159,6 +188,23 @@
     background: rgba(15, 23, 42, 0.08);
     padding: 24px;
     }
+
+    /* 비밀번호 메시지도 tsMsg 박스형을 그대로 사용하도록(통일) */
+    #pwRuleMsg,
+    #pwMatchMsg {
+      display: none; /* 기본 숨김은 tsMsg와 동일 */
+    }
+
+    /* ok/bad 클래스 붙으면 박스형으로 보이게 */
+    #pwRuleMsg.ok,
+    #pwMatchMsg.ok,
+    #pwRuleMsg.bad,
+    #pwMatchMsg.bad,
+    #pwRuleMsg.err,
+    #pwMatchMsg.err {
+      display: block;
+    }
+
 
     .tsModal{
     width: min(760px, 92vw);

@@ -1,15 +1,44 @@
 (function () {
-  const authInEls  = document.querySelectorAll(".js-auth-in");
-  const authOutEls = document.querySelectorAll(".js-auth-out");
+  const authInEls  = document.querySelectorAll(".js-auth-in");   // 로그인 상태 UI (로그아웃 등)
+  const authOutEls = document.querySelectorAll(".js-auth-out");  // 비로그인 상태 UI (로그인, 회원가입)
 
   if (!authInEls.length && !authOutEls.length) return;
 
-  function setUI(loggedIn) {
-    authInEls.forEach(el  => el.hidden = !loggedIn);
-    authOutEls.forEach(el => el.hidden =  loggedIn);
+  // 최초 한 번, 원래 display 값을 백업해 둔다.
+  const allAuthEls = [...authInEls, ...authOutEls];
+  allAuthEls.forEach(el => {
+    if (!el.dataset.tsDisplayBackup) {
+      const d = getComputedStyle(el).display;
+      // 원래 display가 none이면 빈 문자열로 두고, 나중에 브라우저 기본값 쓰게 함
+      el.dataset.tsDisplayBackup = (d === "none" ? "" : d);
+    }
+  });
+
+  function setVisible(list, visible) {
+    list.forEach(el => {
+      if (visible) {
+        // 원래 display로 되돌리기
+        el.style.display = el.dataset.tsDisplayBackup || "";
+        el.removeAttribute("hidden");
+      } else {
+        // 어떤 CSS보다 강하게 inline 스타일로 숨기기
+        el.style.display = "none";
+        el.setAttribute("hidden", "true");
+      }
+    });
   }
 
-  // 기본값: 로그아웃 상태
+  function setUI(loggedIn) {
+    // loggedIn === true  → in 보이고 out 숨김  → 로그아웃만 보이게
+    // loggedIn === false → out 보이고 in 숨김  → 로그인/회원가입 보이게
+    setVisible(authInEls,  loggedIn);
+    setVisible(authOutEls, !loggedIn);
+  }
+
+  // 디버깅용으로 전역에 노출 (원하면 나중에 제거해도 됨)
+  window.__tsSetAuthUI = setUI;
+
+  // 기본값: 로그아웃 상태 UI
   setUI(false);
 
   fetch("/api/session", { credentials: "include" })

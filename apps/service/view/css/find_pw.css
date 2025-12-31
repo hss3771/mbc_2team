@@ -28,7 +28,7 @@
     #tsShell{ width:min(1080px,100%); display:flex; gap:32px; align-items:center; }
 
     #tsLeft{flex:1.2; padding:12px 8px;}
-    #tsLeft .logo{font-size:44px;font-weight:800;letter-spacing:-0.02em;color:var(--brand);}
+    #tsLeft .logo{ font-size:44px; font-weight:800; letter-spacing:-0.02em; color:#0462D2; }
     #tsLeft .desc{margin:10px 0 0;color:#475569;line-height:1.6;font-size:15px;}
     #tsLeft .status{
       display:inline-flex;align-items:center;gap:10px;margin-top:18px;

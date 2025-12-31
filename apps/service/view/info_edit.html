@@ -6,17 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>마이페이지</title>
 
-  <link rel="icon" href="./img/favicon.png">
+  <link rel="icon" href="/view/img/favicon.png">
   <link rel="stylesheet" href="/view/css/my_page_style.css" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 
 <body>
   <header class="header">
     <div class="header-inner">
-      <a class="brand" href="./home.html">
-        <span class="sidebar_logo"><img src="./img/logo_white.png" alt=""></span>
+      <a class="brand" href="/">
+        <span class="sidebar_logo"><img src="/view/img/logo_white.png" alt=""></span>
       </a>
-      <a href="./home.html" class="logout-button">로그아웃</a>
+      <a href="/logout" class="logout-button">로그아웃</a>
     </div>
   </header>
 
@@ -39,40 +40,45 @@
 
         <div class="card-scroll">
           <form id="editForm" class="form">
-            <span>비밀번호</span>
-            <input type="password" id="password" name="password" placeholder="비밀번호를 입력해 주세요." required />
+            <span>비밀번호 (변경 시에만 입력)</span>
+            <input type="password" id="password" name="pw" placeholder="비밀번호를 입력해 주세요." />
+
             <span>비밀번호 확인</span>
-            <input type="password" id="confirmPassword" placeholder="비밀번호를 한 번 더 입력해 주세요."
-              required />
+            <input type="password" id="confirmPassword" name="pw_confirm" placeholder="비밀번호를 한 번 더 입력해 주세요." />
             <p class="error" id="passwordError" aria-live="polite"></p>
+
             <span>이름</span>
-            <input type="text" name="userName" placeholder="이름" value="김기자" required />
+            <input type="text" name="name" placeholder="이름" required />
 
             <span>성별</span>
             <div class="radio-field">
-              남<input id="male" type="radio" name="gender" value="M" checked />
-              여<input id="female" type="radio" name="gender" value="F" />
+              남 <input id="male" type="radio" name="gender" value="M" checked />
+              여 <input id="female" type="radio" name="gender" value="F" />
             </div>
 
             <span>생년월일</span>
-            <input type="date" name="birth" value="2025-12-21" required />
+            <input type="date" name="birthday" required />
+
             <span>휴대전화</span>
-            <input type="text" name="phone" placeholder="휴대전화" value="01012345678" required />
+            <input type="text" name="phone" placeholder="휴대전화" required />
+
             <span>이메일</span>
-            <input type="email" name="email" placeholder="이메일" value="hello@trendscope.com" required />
+            <input type="email" name="email" placeholder="이메일" required />
 
             <span>경제 지식 수준</span>
             <div class="radio-group">
-              <label><input type="radio" name="knowledge" value="HIGH" /> 상</label>
-              <label><input type="radio" name="knowledge" value="MID_HIGH" checked /> 중상</label>
-              <label><input type="radio" name="knowledge" value="MID" /> 중</label>
-              <label><input type="radio" name="knowledge" value="MID_LOW" /> 중하</label>
-              <label><input type="radio" name="knowledge" value="LOW" /> 하</label>
+              <label><input type="radio" name="eco_state" value="HIGH" /> 상</label>
+              <label><input type="radio" name="eco_state" value="MID_HIGH" checked /> 중상</label>
+              <label><input type="radio" name="eco_state" value="MID" /> 중</label>
+              <label><input type="radio" name="eco_state" value="MID_LOW" /> 중하</label>
+              <label><input type="radio" name="eco_state" value="LOW" /> 하</label>
             </div>
           </form>
+
+
         </div>
         <div class="button-group">
-          <button type="button" class="cancel" onclick="location.href='./my_page.html'">취소</button>
+          <button type="button" class="cancel" onclick="location.href='/view/my_page.html'">취소</button>
           <button type="submit" class="revise" form="editForm">수정하기</button>
         </div>
         <div class="withdrawal">

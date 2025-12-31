@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import FastAPI, Form
 import apps.service.user as user
 from fastapi.staticfiles import StaticFiles
@@ -22,6 +23,14 @@ def read_root():
 @app.get("/main")
 def read_main():
     return RedirectResponse('/view/main.html')
+
+@app.get("/main2")
+def read_main2():
+    return RedirectResponse('/view/main.html#main2')
+
+@app.get("/main3")
+def read_main3():
+    return RedirectResponse('/view/main.html#main3')
 
 @app.get("/my_page")
 def read_my_page():
@@ -104,8 +113,8 @@ def register(
     email: str = Form(...),
     name: str = Form(...),
     birthday: str = Form(...),
-    phone: str = Form(...),
-    eco_state: str = Form(...),
+    phone: Optional[str] = Form(None),      # 선택
+    eco_state: Optional[str] = Form(None),  # 선택
     gender: str = Form(...),
 ):
     # user.py 회원가입 로직 호출
@@ -116,8 +125,8 @@ def register(
         email=email,
         name=name,
         birthday=birthday,
-        phone=phone,
-        eco_state=eco_state,
+        phone=phone or "",
+        eco_state=eco_state or "",
         gender=gender,
     )
 

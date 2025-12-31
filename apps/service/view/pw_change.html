@@ -13,7 +13,7 @@
 
       <!-- LEFT -->
       <div id="tsLeft">
-        <div class="logo">TrendScope</div>
+        <div class="logo" href="/">TrendScope</div>
         <p class="desc">
           통합 ID로 TrendScope의 모든 서비스를 이용할 수 있습니다.<br>
           경제 이슈와 키워드를 한 번에 탐색하세요.
@@ -67,120 +67,151 @@
     </div>
   </div>
 
-  <script>
-    const TS_USERS_KEY = "ts_users";
-    const PW_CHANGE_ID_KEY = "ts_pw_change_memberId"; // 있으면 업데이트에 사용(없어도 팝업은 뜸)
+<script>
+  // =========================
+  // TrendScope - pw_change (AJAX)
+  // POST /new_pw (FormData)
+  // =========================
 
-    function loadUsers(){
-      try { return JSON.parse(localStorage.getItem(TS_USERS_KEY) || "[]"); }
-      catch { return []; }
+  const API_BASE = window.location.origin; // 보통 http://127.0.0.1:8000
+
+  function n(s){ return (s || "").trim(); }
+
+  // ===== Popup =====
+  const layer = document.getElementById("tsPopupLayer");
+  const textEl = document.getElementById("tsPopupText");
+  const btnEl  = document.getElementById("tsPopupBtn");
+
+  let popupOnClose = null;
+
+  function openPopup(message, onClose){
+    textEl.textContent = message;
+    popupOnClose = (typeof onClose === "function") ? onClose : null;
+
+    layer.style.display = "flex";
+    layer.setAttribute("aria-hidden", "false");
+    btnEl.focus();
+  }
+
+  function closePopup(){
+    layer.style.display = "none";
+    layer.setAttribute("aria-hidden", "true");
+    if (popupOnClose) {
+      const fn = popupOnClose;
+      popupOnClose = null;
+      fn();
     }
-    function saveUsers(users){
-      localStorage.setItem(TS_USERS_KEY, JSON.stringify(users));
-    }
-    function n(s){ return (s || "").trim(); }
+  }
 
-    async function sha256(str){
-      if (window.crypto && crypto.subtle) {
-        const buf = new TextEncoder().encode(str);
-        const hash = await crypto.subtle.digest("SHA-256", buf);
-        return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,"0")).join("");
-      }
-      return "plain:" + str;
-    }
+  btnEl.addEventListener("click", closePopup);
+  window.addEventListener("keydown", (e)=>{
+    if (e.key === "Escape" && layer.style.display === "flex") closePopup();
+  });
 
-    // ===== Popup =====
-    const layer = document.getElementById("tsPopupLayer");
-    const textEl = document.getElementById("tsPopupText");
-    const btnEl  = document.getElementById("tsPopupBtn");
+  // ===== Form =====
+  const form = document.getElementById("pwChangeForm");
+  const newPw = document.getElementById("newPw");
+  const newPw2 = document.getElementById("newPw2");
+  const btnChange = document.getElementById("btnChange");
+  const formMsg = document.getElementById("formMsg");
 
-    function openPopup(message, onClose){
-      textEl.textContent = message;
-      layer.style.display = "flex";
-      layer.setAttribute("aria-hidden", "false");
-      btnEl.focus();
+  function showMsg(type, msg){
+    formMsg.className = "tsMsg " + (type === "ok" ? "ok" : "err");
+    formMsg.textContent = msg;
+    formMsg.style.display = "block";
+  }
+  function hideMsg(){
+    formMsg.style.display = "none";
+    formMsg.textContent = "";
+  }
 
-      btnEl.onclick = () => {
-        layer.style.display = "none";
-        layer.setAttribute("aria-hidden", "true");
-        if (typeof onClose === "function") onClose();
-      };
-    }
+  function canSubmit(){
+    const p1 = newPw.value || "";
+    const p2 = newPw2.value || "";
+    const ok = p1.length >= 8 && p1 === p2;
+    btnChange.disabled = !ok;
+    btnChange.style.cursor = ok ? "pointer" : "not-allowed";
+    btnChange.style.background = ok ? "#0462D2" : "#d1d5db";
+  }
 
-    // ===== Form =====
-    const form = document.getElementById("pwChangeForm");
-    const newPw = document.getElementById("newPw");
-    const newPw2 = document.getElementById("newPw2");
-    const btnChange = document.getElementById("btnChange");
-    const formMsg = document.getElementById("formMsg");
+  newPw.addEventListener("input", () => { hideMsg(); canSubmit(); });
+  newPw2.addEventListener("input", () => { hideMsg(); canSubmit(); });
+  canSubmit();
 
-    function showMsg(type, msg){
-      formMsg.className = "tsMsg " + (type === "ok" ? "ok" : "err");
-      formMsg.textContent = msg;
-      formMsg.style.display = "block";
-    }
-    function hideMsg(){
-      formMsg.style.display = "none";
-      formMsg.textContent = "";
-    }
+  async function requestNewPassword(p1, p2){
+    const url = `${API_BASE}/new_pw`;
 
-    // memberId는 있으면 업데이트용으로만 사용 (없어도 진행)
-    const qs = new URLSearchParams(location.search);
-    const memberId = n(qs.get("memberId")) || n(localStorage.getItem(PW_CHANGE_ID_KEY));
+    const fd = new FormData();
+    fd.append("new_pw", p1);
+    fd.append("new_pw_confirm", p2);
 
-    function canSubmit(){
-      const p1 = newPw.value || "";
-      const p2 = newPw2.value || "";
-      const ok = p1.length >= 8 && p1 === p2;
-      btnChange.disabled = !ok;
-      btnChange.style.cursor = ok ? "pointer" : "not-allowed";
-      btnChange.style.background = ok ? "#0462D2" : "#d1d5db";
-    }
+    // ✅ 콘솔 확인용 로그 (F12 Console)
+    console.groupCollapsed("[pw_change] /new_pw request");
+    console.log("URL:", url);
+    console.log("payload:", { new_pw_len: p1.length, new_pw_confirm_len: p2.length, same: p1 === p2 });
+    console.groupEnd();
 
-    newPw.addEventListener("input", () => { hideMsg(); canSubmit(); });
-    newPw2.addEventListener("input", () => { hideMsg(); canSubmit(); });
-    canSubmit();
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      hideMsg();
-
-      const p1 = newPw.value || "";
-      const p2 = newPw2.value || "";
-
-      // 필수 조건만 체크(요구사항)
-      if (p1.length < 8) { showMsg("err", "비밀번호는 8자 이상으로 입력해 주세요."); return; }
-      if (p1 !== p2) { showMsg("err", "비밀번호 확인이 일치하지 않습니다."); return; }
-
-      btnChange.disabled = true;
-      btnChange.textContent = "변경 중...";
-
-      try{
-        //  (가능하면) 실제 로컬 DB 업데이트
-        if (memberId) {
-          const users = loadUsers();
-          const idx = users.findIndex(u => n(u.memberId) === memberId);
-          if (idx >= 0) {
-            const hash = await sha256(p1);
-            users[idx].passwordHash = hash;
-            users[idx].pwUpdatedAt = new Date().toISOString();
-            saveUsers(users);
-          }
-        }
-
-        //  요구사항: 버튼 누르면 2-1 팝업 제공 → L1=login
-        openPopup("비밀번호 변경이 완료되었습니다.\n로그인을 다시 시도해주세요.", () => {
-          localStorage.removeItem(PW_CHANGE_ID_KEY); // 선택: 인증 흔적 제거
-          location.href = "login.html"; // L1
-        });
-
-      } catch(err){
-        showMsg("err", "비밀번호 변경 중 오류가 발생했어요.");
-      } finally {
-        btnChange.textContent = "비밀번호 변경하기";
-        canSubmit();
-      }
+    const res = await fetch(url, {
+      method: "POST",
+      body: fd,
+      credentials: "include", // 세션 쿠키 포함(중요)
     });
-  </script>
+
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch { data = { success: false, message: "서버 응답이 JSON이 아닙니다." }; }
+
+    console.groupCollapsed("[pw_change] /new_pw response");
+    console.log("status:", res.status);
+    console.log("data:", data);
+    console.groupEnd();
+
+    return data;
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideMsg();
+
+    const p1 = n(newPw.value);
+    const p2 = n(newPw2.value);
+
+    // 프론트 검증(UX)
+    if (!p1) { openPopup("새 비밀번호를 입력해주세요."); newPw.focus(); return; }
+    if (!p2) { openPopup("비밀번호 확인을 입력해주세요."); newPw2.focus(); return; }
+    if (p1.length < 8) { showMsg("err", "비밀번호는 8자 이상으로 입력해 주세요."); return; }
+    if (p1 !== p2) { showMsg("err", "비밀번호 확인이 일치하지 않습니다."); return; }
+
+    btnChange.disabled = true;
+    const prevText = btnChange.textContent;
+    btnChange.textContent = "변경 중...";
+
+    try {
+      const result = await requestNewPassword(p1, p2);
+
+      if (!result || result.success !== true) {
+        // 세션 없으면 여기로 떨어짐: "비밀번호 변경 권한이 없습니다..." :contentReference[oaicite:6]{index=6}
+        showMsg("err", result?.message || "비밀번호 변경에 실패했습니다.");
+        // 권한이 없으면 비번찾기부터 다시 유도해도 됨
+        // (원하면 자동 이동으로 바꿀 수 있음)
+        return;
+      }
+
+      // 성공 팝업 -> 로그인으로 이동
+      openPopup("비밀번호 변경이 완료되었습니다.\n로그인을 다시 시도해주세요.", () => {
+        window.location.href = `${API_BASE}/login`;
+      });
+
+    } catch (err) {
+      console.error("[pw_change] error:", err);
+      showMsg("err", "서버 요청 중 오류가 발생했습니다. 콘솔을 확인해주세요.");
+    } finally {
+      btnChange.textContent = prevText;
+      canSubmit();
+    }
+  });
+</script>
+  
 </body>
 </html>

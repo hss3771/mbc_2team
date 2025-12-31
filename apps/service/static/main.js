@@ -929,14 +929,16 @@ selectKeyword(bootKeyword);
             }
             return href.endsWith(`#${id}`);
         });
+        console.log("[target for]", id, "=", target);
 
         target?.closest('li')?.classList.add('active');
     }
 
     function setActiveByLocation() {
         const file = (location.pathname.split('/').pop() || '').split('?')[0].split('#')[0];
+        console.log('file : '+file)
         const hash = location.hash || '';
-
+        console.log('hash : '+hash)
         // main.html에서만 해시 기반 활성화
         if (file === 'main.html') {
             if (hash === '#main2') return setActiveBySectionId('main2');

@@ -177,53 +177,57 @@
 
   if (lockBtn) lockBtn.addEventListener("click", closeLockModal);
 
-  // ====== login submit ======
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+ // ====== login submit ======
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-    const memberId = (idEl.value || "").trim();
-    const passwd = (pwEl.value || "");
+  hideFailMessage();
+  const memberId = (idEl.value || "").trim();
+  const passwd = (pwEl.value || "").trim();
 
-    if (!memberId || !passwd) return;
+  if (!memberId || !passwd) {
+    return;
+  }
+  btn.disabled = true
 
-    // 1) 잠금 상태면: “같은 아이디로 요청 시 8번 팝업” (24h 동안)
-    if (isLocked(memberId)) {
-      openLockModal();
+  try {
+
+    const res = await fetch("/login_check", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Accept": "application/json"
+      },
+      body: new URLSearchParams({
+        user_id: memberId,
+        pw: passwd
+      })
+    });
+
+    if (!res.ok) {
+      showFailMessage(0);
       return;
     }
 
-    // 2) 로컬 유저(회원가입 데이터)로 인증
-    const users = loadUsers();
-    const user = users.find(u => u.memberId === memberId);
+    const body = await res.json();
 
-    // user가 없거나 비번 불일치면 실패 처리
-    const inputHash = await sha256(passwd);
-    const storedHash = user?.passwordHash || "";
-
-    const ok = !!user && (storedHash === inputHash || storedHash === ("plain:" + passwd));
-
-    if (ok) {
-      // ✅ 정상 로그인: count 0으로 저장
-      resetFail(memberId);
-
-      // (샘플) 세션 저장 + 이동
-      setSession(user.name || "사용자", memberId);
-      location.href = "dashboard.html";
+    if (body.success) {
+      location.href = "/";
       return;
     }
 
-    // 3) 실패 처리: 카운트 증가 + 7번 표시 / 5회면 8번 팝업
-    const st = bumpFail(memberId);
+    const failCount = body.count ?? 0;
 
-    if (st.count >= MAX_FAIL) {
-      // 5번째 실패한 "그 순간"부터 로그인 누르면(=이번 submit) 팝업
+    showFailMessage(failCount);
+
+    if (failCount >= MAX_FAIL) {
       openLockModal();
-      // (원하면 실패 메시지도 같이 보이게 할 수 있는데, 보통은 팝업만 띄우는 게 깔끔)
-      showFailMessage(MAX_FAIL);
-    } else {
-      showFailMessage(st.count);
     }
-  });
+
+  } catch (err) {
+    showFailMessage(0);
+  }
+});
 
   // ====== boot ======
   loadSavedId();

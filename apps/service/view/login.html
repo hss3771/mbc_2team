@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TrendScope - Login</title>
-  <link rel="stylesheet" href="view/css/login.css">
+  <link rel="stylesheet" href="/view/css/login.css">
 </head>
 
 <body>
@@ -14,7 +14,7 @@
       <!-- LEFT -->
       <div id="tsLeft">
         <div>
-          <div class="logo">TrendScope</div>
+          <div class="logo"><a href="/">TrendScope</a></div>
           <p class="desc">
             통합 ID로 TrendScope의 모든 서비스를 이용할 수 있습니다.<br>
             경제 이슈와 키워드를 한 번에 탐색하세요.
@@ -67,7 +67,6 @@
                 <input id="tsRemember" type="checkbox" name="save_id" value="T">
                 아이디 저장
               </label>
-              <a class="tsLink" href="./find_pw.html">비밀번호 찾기</a>
             </div>
 
             <button id="tsLoginBtn" type="submit" disabled>로그인</button>
@@ -80,14 +79,14 @@
               <span></span>
             </div>
 
-            <a id="tsSignup" href="signup.html">회원가입</a>
+            <a id="tsSignup" href="/signup">회원가입</a>
           </form>
         </div>
 
         <div id="tsFoot">
-          <a class="tsLinkBlue" href="./find_id.html">아이디 찾기</a>
+          <a class="tsLinkBlue" href="/find_id">아이디 찾기</a>
           <span class="sep">|</span>
-          <a class="tsLinkBlue" href="./find_pw.html">비밀번호 찾기</a>
+          <a class="tsLinkBlue" href="/find_pw">비밀번호 찾기</a>
         </div>
       </div>
 
