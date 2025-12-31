@@ -279,7 +279,6 @@ main {
   flex: 0 0 auto;
   align-self: stretch;
   padding: 10px 14px;
-  display: flex;
   align-items: center;
   gap: 8px;
   background: #fff;
@@ -289,7 +288,6 @@ main {
 .index-pill {
   width: 100%;
   min-width: 0;
-  overflow-x: auto;
   scrollbar-gutter: stable;
   flex: 1 1 auto;
   display: inline-flex;
@@ -406,6 +404,9 @@ main {
 }
 
 .star-mini {
+  padding: 0;
+  line-height: 1;
+  font-size: 16px;
   width: 26px;
   height: 26px;
   border-radius: 10px;
@@ -546,14 +547,22 @@ main {
 
 /* 상세 별 버튼 */
 .icon-star-btn {
+  appearance: none;
+  -webkit-appearance: none;
+
   width: 34px;
   height: 34px;
+  padding: 0;
+
+  display: grid;
+  place-items: center;
+
+  line-height: 0;
+  /* ⭐ 핵심: 버튼 내부 베이스라인 여백 제거 */
+
   border-radius: 12px;
   border: 1px solid #dfe8f7;
   background: #fff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   cursor: pointer;
   transition: .15s;
 }
@@ -564,9 +573,15 @@ main {
 }
 
 .icon-star {
+  display: block;
+  line-height: 1;
   font-size: 18px;
   font-weight: 900;
   color: #8a97ad;
+
+  margin-top: -5px;
+
+  transform: translateY(-1px);
 }
 
 .icon-star.is-on {

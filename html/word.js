@@ -44,42 +44,90 @@ document.addEventListener('DOMContentLoaded', function () {
 (() => {
     "use strict";
 
-    /** =========================
-     *  임시 데이터 (나중에 API로 교체하면 여기만 바꾸면 됨)
-     *  ========================= */
-    const WORDS = [
-        {
-            id: "w1",
-            seg: "ko",
-            term: "가격차별",
-            en: "Price Discrimination, Price Differentiation",
-            updatedAt: "25.12.18 수정",
-            body: [
-                "소비자의 나이, 신분, 재화가 판매되는 공간의 지리적 요인에 따라 가격을 다르게 책정하는 것을 가격차별이라고 한다.",
-                "기업은 가격을 차별함으로써 이윤을 극대화하기도 한다. 일상에서 찾아볼 수 있는 가격차별의 대표적인 예로는 나이에 따라 다르게 매겨지는 대중교통 요금이 있다.",
-                "또한 동일한 상품이라도 국내에서 출시하는 상품과 해외에서 출시하는 상품의 가격을 다르게 책정한다면 역시 가격차별이 이뤄진 경우다.",
-                "가격차별이 가능하려면 첫째, 소비자를 몇 개의 그룹으로 분류할 수 있어야 하고, 둘째, 가격차별을 실시하는 기업이 소비자의 유형을 식별할 수 있어야 하며, 셋째, 소비자 사이에 재판매가 불가능해야 한다.",
-                "경제학에서 가격차별은 제1급/제2급/제3급 가격차별로 구분되며, 대중교통 요금은 제3급 가격차별의 예시로 자주 언급된다."
-            ]
-        },
-        { id: "w2", seg: "ko", term: "가격거품", en: "Price Bubble", updatedAt: "25.10.02 수정", body: ["특정 자산의 가격이 내재가치 대비 과도하게 상승한 상태를 의미한다.", "기대 심리와 투기적 수요가 결합되며, 붕괴 시 급락이 발생할 수 있다."] },
-        { id: "w3", seg: "ko", term: "가격고정", en: "Price Fixing", updatedAt: "25.08.21 수정", body: ["경쟁사 간 가격을 인위적으로 합의해 고정하는 행위를 말한다.", "독점 규제/공정거래 측면에서 불법으로 다뤄지는 경우가 많다."] },
-        { id: "w4", seg: "ko", term: "가격약속", en: "Price Commitment", updatedAt: "25.07.11 수정", body: ["향후 일정 기간 가격을 유지하겠다는 약속/정책을 의미한다.", "소비자 신뢰 확보 목적이 있을 수 있으나 시장 상황 변화에 취약할 수 있다."] },
-        { id: "w5", seg: "ko", term: "가격통제", en: "Price Control", updatedAt: "25.06.03 수정", body: ["정부가 특정 재화 가격의 상한/하한을 규정하거나 개입하는 정책이다.", "공급/수요 왜곡, 품귀, 암시장 등 부작용이 발생할 수 있다."] },
-        { id: "w6", seg: "ko", term: "가격파리티", en: "Price Parity", updatedAt: "25.05.19 수정", body: ["판매 채널 간 동일(또는 유사) 가격을 유지하도록 하는 조건/정책을 말한다.", "플랫폼/유통 계약에서 논쟁이 되기도 한다."] },
-        { id: "w7", seg: "ko", term: "가계부채", en: "Household Debt", updatedAt: "25.04.08 수정", body: ["가계가 보유한 대출/채무의 총량을 의미한다.", "금리, 주택시장, 소비여력과 밀접하게 연관된다."] },
-        { id: "w8", seg: "ko", term: "가동기담보", en: "Floating Charge", updatedAt: "25.03.01 수정", body: ["기업이 변동하는 자산(재고, 매출채권 등)을 담보로 설정하는 형태를 말한다.", "일부 관할권에서 법/회계 처리 차이가 존재한다."] },
+    let WORDS = [];
 
-        { id: "e1", seg: "en", term: "Arbitrage", en: "Arbitrage", updatedAt: "25.12.01 수정", body: ["동일/유사 자산의 가격 차이를 이용해 무위험 또는 저위험 수익을 추구하는 거래를 의미한다."] },
-        { id: "e2", seg: "en", term: "Benchmark", en: "Benchmark", updatedAt: "25.11.10 수정", body: ["성과 평가/비교를 위한 기준 지표 또는 기준 포트폴리오를 말한다."] },
-        { id: "e3", seg: "en", term: "Capital", en: "Capital", updatedAt: "25.10.07 수정", body: ["생산을 위해 사용되는 자산 또는 금융자본을 통칭한다."] },
-        { id: "e4", seg: "en", term: "Deflation", en: "Deflation", updatedAt: "25.09.18 수정", body: ["전반적인 물가 수준이 지속적으로 하락하는 현상이다."] },
+    // ---- JSON -> WORDS 변환 로더 ----
+    async function loadWordsFromJson(url = "./word.json") {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw new Error(`JSON load failed: ${res.status} ${res.statusText}`);
 
-        { id: "n1", seg: "num", term: "1인당 GDP", en: "GDP per Capita", updatedAt: "25.07.30 수정", body: ["국내총생산(GDP)을 인구로 나눈 값으로, 평균 소득/생산 수준의 대략적 지표로 쓰인다."] },
-        { id: "n2", seg: "num", term: "2차시장", en: "Secondary Market", updatedAt: "25.06.14 수정", body: ["이미 발행된 금융자산이 투자자 사이에서 거래되는 시장을 말한다."] },
-        { id: "n3", seg: "num", term: "3자물류", en: "Third-party Logistics (3PL)", updatedAt: "25.05.02 수정", body: ["물류 기능을 외부 전문업체가 대행하는 형태를 의미한다."] },
-        { id: "n4", seg: "num", term: "7% 규칙", en: "Rule of 7%", updatedAt: "25.03.12 수정", body: ["투자/리스크 문맥에서 쓰이는 경험적 규칙을 지칭하는 표현으로, 문맥에 따라 의미가 달라질 수 있다."] }
-    ];
+        const raw = await res.json(); // raw: [{term_id, keyword, content, tab, scraped_at, ...}, ...]
+        if (!Array.isArray(raw)) throw new Error("JSON is not an array");
+
+        // term_id 중복이 있을 수 있어서(데이터에 중복 항목 존재) term_id 기준 dedupe
+        const seen = new Set();
+
+        return raw
+            .filter(Boolean)
+            .map(toWordModel)
+            .filter(w => {
+                if (!w?.id) return false;
+                if (seen.has(w.id)) return false;
+                seen.add(w.id);
+                return true;
+            });
+    }
+
+    function toWordModel(row) {
+        const id = `kdi_${String(row.term_id ?? "").trim()}` || `kdi_${randomId()}`;
+
+        const { term, en } = splitKeyword(row.keyword || "");
+        const seg = tabToSeg(row.tab, term);
+
+        // content는 \n\n 단락 구분이 많아서 p 배열로 쪼개기
+        const body = String(row.content || "")
+            .split(/\n\s*\n/g)
+            .map(s => s.trim())
+            .filter(Boolean);
+
+        const updatedAt = formatUpdatedAt(row.scraped_at);
+
+        return { id, seg, term, en, updatedAt, body };
+    }
+
+    function splitKeyword(keyword) {
+        const s = String(keyword).trim();
+
+        // 예: "가격 차별(Price Discrimination, Price Differentiation)"
+        const m = s.match(/^(.+?)\s*\((.+)\)\s*$/);
+        if (!m) return { term: s, en: "" };
+
+        return {
+            term: m[1].trim(),
+            en: m[2].trim(),
+        };
+    }
+
+    function tabToSeg(tab, term) {
+        const t = String(tab || "").toUpperCase().trim();
+        if (t === "KOR") return "ko";
+        if (t === "ENG") return "en";
+        if (t === "NUM") return "num";
+
+        // 혹시 tab이 이상하면 term 첫 글자로 추정
+        const first = (term || "").trim()[0] || "";
+        if (first >= "0" && first <= "9") return "num";
+        if ((first >= "A" && first <= "Z") || (first >= "a" && first <= "z")) return "en";
+        return "ko";
+    }
+
+    function formatUpdatedAt(iso) {
+        // iso 예: "2025-12-29T19:53:35"
+        const s = String(iso || "").trim();
+        const d = new Date(s);
+        if (Number.isNaN(d.getTime())) return "";
+
+        const yy = String(d.getFullYear()).slice(-2);
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `${yy}.${mm}.${dd} 수정`;
+    }
+
+    function randomId() {
+        return (typeof crypto !== "undefined" && crypto.randomUUID)
+            ? crypto.randomUUID()
+            : `r${Math.random().toString(16).slice(2)}${Date.now()}`;
+    }
 
     /** =========================
      *  DOM
@@ -232,9 +280,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!items.length) {
             listEl.innerHTML = `
         <div class="word-empty" style="min-height:240px;">
-          <div class="word-empty-emoji">🫥</div>
-          <div class="word-empty-title">해당 조건의 단어가 없어요</div>
-          <div class="word-empty-sub">다른 인덱스를 선택해보세요</div>
+          <div class="word-empty-title">해당 조건의 단어가 없어요<br> 다른 인덱스를 선택해보세요</div>
         </div>
       `;
             // 상세 초기화
@@ -250,27 +296,34 @@ document.addEventListener('DOMContentLoaded', function () {
         listEl.innerHTML = items.map(w => {
             const on = isBookmarked(w.id);
             const selected = w.id === selectedId;
+
             return `
-        <button class="word-item ${selected ? "is-selected" : ""}" type="button" data-id="${w.id}" role="option" aria-selected="${selected}">
-          <span class="word-item-title">${escapeHtml(w.term)}</span>
+    <div class="word-item ${selected ? "is-selected" : ""}"
+         data-id="${w.id}"
+         role="option"
+         tabindex="0"
+         aria-selected="${selected}">
+      <span class="word-item-title">${escapeHtml(w.term)}</span>
 
-          <span class="word-item-right">
-            <button class="star-mini ${on ? "is-on" : ""}" type="button" data-star="${w.id}" aria-label="즐겨찾기">
-              ${on ? "★" : "☆"}
-            </button>
-            <span class="play-mini" aria-hidden="true">▶</span>
-          </span>
+      <span class="word-item-right">
+        <button class="star-mini ${on ? "is-on" : ""}"
+                type="button"
+                data-star="${w.id}"
+                aria-label="즐겨찾기">
+          ${on ? "★" : "☆"}
         </button>
-      `;
+        <span class="play-mini" aria-hidden="true">▶</span>
+      </span>
+    </div>
+  `;
         }).join("");
-
         // 아이템 클릭
-        $$(".word-item", listEl).forEach(btn => {
-            btn.addEventListener("click", (e) => {
-                const id = btn.dataset.id;
+        $$(".word-item", listEl).forEach(el => {
+            el.addEventListener("click", (e) => {
                 // 내부 star 버튼 클릭이면 item 선택 이벤트 막음
                 if (e.target && e.target.closest("[data-star]")) return;
-                setSelected(id);
+                
+                setSelected(el.dataset.id);
             });
         });
 
@@ -310,8 +363,6 @@ document.addEventListener('DOMContentLoaded', function () {
             detailContent.innerHTML = `
         <div class="word-empty">
           <div class="word-empty-emoji">📘</div>
-          <div class="word-empty-title">왼쪽 목록에서 단어를 선택해 주세요</div>
-          <div class="word-empty-sub">임시 데이터로 구성되어 있어요. (API/DB 연결 시 쉽게 교체 가능)</div>
         </div>
       `;
             setDetailStar(null);
@@ -499,10 +550,15 @@ document.addEventListener('DOMContentLoaded', function () {
             .replaceAll("'", "&#039;");
     }
 
-    /** =========================
-     *  초기화
-     *  ========================= */
-    function init() {
+    async function init() {
+        try {
+            WORDS = await loadWordsFromJson("./word.json");
+        } catch (err) {
+            console.error(err);
+            WORDS = [];
+            // 로딩 실패 시 화면에 힌트 주고 싶으면 여기서 detailContent에 메시지 넣어도 됨
+        }
+
         bindSegEvents();
         bindModalEvents();
         syncSegButtons();
@@ -510,5 +566,7 @@ document.addEventListener('DOMContentLoaded', function () {
         renderList();
     }
 
-    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("DOMContentLoaded", () => {
+        init();
+    });
 })();

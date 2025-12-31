@@ -8,6 +8,7 @@
 
   <link rel="icon" href="./img/favicon.png">
   <link rel="stylesheet" href="my_page_style.css" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 
 <body>
@@ -51,95 +52,100 @@
   </div>
 
   <script>
-    function setSidebarActive() {
-      const curFileRaw = (location.pathname.split('/').pop() || '').split('?')[0].split('#')[0];
-      const curHash = location.hash || '';
+  // ====== 사이드바 active ======
+  function setSidebarActive() {
+    const curFileRaw = (location.pathname.split('/').pop() || '').split('?')[0].split('#')[0];
+    const curHash = location.hash || '';
 
-      // 하위 페이지를 상위 메뉴로 묶고 싶으면 여기 추가
-      const alias = {
-        'info_edit.html': 'my_page.html',
-      };
-      const curFile = alias[curFileRaw] || curFileRaw;
+    const alias = { 'info_edit.html': 'my_page.html' };
+    const curFile = alias[curFileRaw] || curFileRaw;
 
-      // active 초기화
-      document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
+    document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
+    const links = Array.from(document.querySelectorAll('.menu a'));
 
-      const links = Array.from(document.querySelectorAll('.menu a'));
-
-      // 1) main.html에서 해시가 있으면(main2/main3) 그 해시에 해당하는 링크를 우선 활성화
-      if (curFile === 'main.html' && (curHash === '#main2' || curHash === '#main3')) {
-        const hashTarget = links.find(a => {
-          const href = a.getAttribute('href') || '';
-          const [filePart, hashPart] = href.split('#');
-          const file = (filePart.split('/').pop() || '');
-          const hash = hashPart ? ('#' + hashPart) : '';
-          return file === 'main.html' && hash === curHash;
-        });
-
-        if (hashTarget) {
-          hashTarget.closest('li')?.classList.add('active');
-          return;
-        }
-      }
-
-      // 2) 기본: 파일명만 비교해서 활성화 (해시는 무시)
-      const fileTarget = links.find(a => {
+    if (curFile === 'main.html' && (curHash === '#main2' || curHash === '#main3')) {
+      const hashTarget = links.find(a => {
         const href = a.getAttribute('href') || '';
-        const file = (href.split('#')[0].split('/').pop() || '');
-        return file === curFile;
+        const [filePart, hashPart] = href.split('#');
+        const file = (filePart.split('/').pop() || '');
+        const hash = hashPart ? ('#' + hashPart) : '';
+        return file === 'main.html' && hash === curHash;
       });
-
-      fileTarget?.closest('li')?.classList.add('active');
+      if (hashTarget) {
+        hashTarget.closest('li')?.classList.add('active');
+        return;
+      }
     }
 
-    // 최초 1회
-    setSidebarActive();
+    const fileTarget = links.find(a => {
+      const href = a.getAttribute('href') || '';
+      const file = (href.split('#')[0].split('/').pop() || '');
+      return file === curFile;
+    });
 
-    // main.html에서 #main2/#main3로 바뀔 때도 active 바뀌게
-    window.addEventListener('hashchange', setSidebarActive);
+    fileTarget?.closest('li')?.classList.add('active');
+  }
 
-    // 비밀번호 검증 완료시 이동
-     const pwForm = document.getElementById('pwForm');
-  const pwInput = document.getElementById('password');
-  const pwError = document.getElementById('pwError');
+  setSidebarActive();
+  window.addEventListener('hashchange', setSidebarActive);
 
-  pwForm.addEventListener('submit', async (e) => {
+  // ====== 비밀번호 확인(AJAX) ======
+  const ENDPOINT_VERIFY_PW = "/mypage/password_check";
+
+  function requestVerifyPassword(pw) {
+    return $.ajax({
+      url: ENDPOINT_VERIFY_PW,
+      method: "POST",
+      dataType: "text", // ✅ 성공 시 redirect(HTML)가 올 수 있어 text로
+      data: { pw },     // ✅ FastAPI Form(pw)에 맞춤
+      timeout: 10000,
+      xhrFields: { withCredentials: true }
+    });
+  }
+
+  // ✅ my_page.html의 실제 요소 id에 맞춤
+  // - form: #pwForm
+  // - password input: #password
+  // - error p: #pwError
+  $("#pwForm").on("submit", function (e) {
     e.preventDefault();
-    pwError.textContent = '';
 
-    const password = pwInput.value.trim();
-    if (!password) {
-      pwError.textContent = '비밀번호를 입력해 주세요.';
+    const pw = $("#password").val().trim();
+    if (!pw) {
+      $("#pwError").text("비밀번호를 입력해 주세요.");
       return;
     }
+    $("#pwError").text("");
 
-    try {
-      // 나중에 백엔드 주소에 맞춰 URL만 바꾸면 됨
-      const res = await fetch('/api/mypage/verify-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // 세션/쿠키 쓰면 필수
-        body: JSON.stringify({ password })
-      });
-
-      if (res.ok) {
-        // 검증 성공 → info_edit로 이동
-        location.href = './info_edit.html';
-      } else {
-        // 실패 메시지 받기(서버가 보내주면)
-        let msg = '비밀번호가 올바르지 않습니다.';
+    requestVerifyPassword(pw)
+      .done((raw) => {
+        // 실패면 JSON 문자열이 올 수 있음: {"success":false,"message":"..."}
         try {
-          const data = await res.json();
-          if (data && data.message) msg = data.message;
-        } catch (_) {}
-        pwError.textContent = msg;
-      }
-    } catch (err) {
-      pwError.textContent = '비밀번호가 올바르지 않습니다. 다시 확인해 주세요.';
-      console.error(err);
-    }
+          const json = JSON.parse(raw);
+          if (json && json.success === false) {
+            $("#pwError").text(json.message || "비밀번호 확인 실패");
+            return;
+          }
+        } catch (_) {
+          // JSON 파싱 실패 = redirect 결과 HTML일 가능성이 큼 → 성공 처리
+        }
+
+        // ✅ info_edit에서 /info_update가 pw/pw_confirm 필수라서 저장(백 수정 없이 우회)
+        sessionStorage.setItem("verifiedPw", pw);
+
+        // ✅ ajax는 서버 redirect를 브라우저 이동으로 못 하니까 직접 이동
+        window.location.href = "/view/info_edit.html";
+      })
+      .fail((xhr) => {
+        if (xhr.status === 0) {
+          $("#pwError").text("네트워크 오류가 발생했습니다.");
+          return;
+        }
+        $("#pwError").text("비밀번호 확인 중 오류가 발생했습니다.");
+      });
   });
-  </script>
+</script>
+
 </body>
 
 </html>

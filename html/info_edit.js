@@ -1,162 +1,232 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // ====== 사이드바 active ======
-  const alias = { 'info_edit.html': 'my_page.html' };
+$(function () {
+  // ====== refs ======
+  const $form = $("#editForm");
+  const $reviseBtn = $("button.revise");
 
-  function setSidebarActive() {
-    const curFileRaw = (location.pathname.split('/').pop() || '').split('?')[0];
-    const curFile = alias[curFileRaw] || curFileRaw;
-    const curHash = location.hash || '';
+  const $pw = $("#password");              // (변경 시에만 입력)
+  const $pw2 = $("#confirmPassword");
+  const $pwMsg = $("#passwordError");
 
-    document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
-    const links = Array.from(document.querySelectorAll('.menu a'));
+  const $updateModal = $("#updateModal");
+  const $updateModalText = $("#updateModal .modal-content p");
 
-    if (curFile === 'main.html' && (curHash === '#main2' || curHash === '#main3')) {
-      const hashTarget = links.find(a => {
-        const href = a.getAttribute('href') || '';
-        const parts = href.split('#');
-        const file = (parts[0].split('/').pop() || '').split('?')[0];
-        const hash = parts[1] ? ('#' + parts[1]) : '';
-        return file === 'main.html' && hash === curHash;
-      });
-      if (hashTarget) {
-        hashTarget.closest('li')?.classList.add('active');
-        return;
-      }
-    }
+  const $withdrawModal = $("#withdrawModal"); // ✅ 추가
 
-    const fileTarget = links.find(a => {
-      const href = a.getAttribute('href') || '';
-      const file = (href.split('#')[0].split('/').pop() || '').split('?')[0];
-      return file === curFile;
-    });
+  // ✅ main.py 최종 기준으로 변경
+  const ENDPOINT_LOAD = "/my_page_load/data"; // ✅ 여기 바뀜!!
+  const ENDPOINT_UPDATE = "/info_update";
 
-    fileTarget?.closest('li')?.classList.add('active');
-  }
+  let passwordChanged = false;
 
-  setSidebarActive();
-  window.addEventListener('hashchange', setSidebarActive);
-
-  // ====== DOM refs ======
-  const editForm = document.getElementById('editForm');
-  const reviseBtn = document.querySelector('button.revise');
-
-  const pwInput = document.getElementById('password');
-  const pwConfirmInput = document.getElementById('confirmPassword');
-  const pwMsg = document.getElementById('passwordError');
-
-  const withdrawModal = document.getElementById('withdrawModal');
-  const updateModal = document.getElementById('updateModal');
-
-  // ====== inline onclick에서 쓰는 함수들을 전역(window)에 걸어주기 ======
-  window.openModal = () => { withdrawModal.style.display = 'flex'; };
-  window.closeModal = () => { withdrawModal.style.display = 'none'; };
-  window.confirmWithdraw = () => { window.location.href = './home.html'; };
-
+  // =========================
+  // 모달 전역 (update)
+  // =========================
   window.openUpdateModal = () => {
-    updateModal.style.display = 'flex';
-    updateModal.setAttribute('aria-hidden', 'false');
+    $updateModal.css("display", "flex").attr("aria-hidden", "false");
   };
-
   window.closeUpdateModal = () => {
-    updateModal.style.display = 'none';
-    updateModal.setAttribute('aria-hidden', 'true');
-    window.location.href = './my_page.html';
+    $updateModal.hide().attr("aria-hidden", "true");
+
+    // ✅ 비번을 바꿨으면 "변경 확인"을 위해 로그아웃 → 새 비번으로 재로그인 유도
+    if (passwordChanged) {
+      sessionStorage.removeItem("verifiedPw");
+      window.location.href = "/logout";
+      return;
+    }
+
+    window.location.href = "./my_page.html";
   };
 
-  // ====== 비밀번호 일치 여부에 따라 버튼 disable ======
+  // =========================
+  // 모달 전역 (withdraw)  ✅ 추가
+  // =========================
+  window.openModal = () => { $withdrawModal.css("display", "flex"); };
+  window.closeModal = () => { $withdrawModal.hide(); };
+
+  // ❗ 백엔드에 "탈퇴" API가 없어서 실제 DB 삭제는 불가
+  // 지금은 동작만 하게 안내/로그아웃 처리로 대체
+  window.confirmWithdraw = () => {
+    alert("현재 백엔드에 '탈퇴 처리(API/DB 삭제)'가 없어 실제 탈퇴는 불가능합니다.\n(원하면 main.py에 탈퇴 API 추가해줄게요)");
+    closeModal();
+    // 원하면 로그아웃으로 보내기:
+    // window.location.href = "/logout";
+  };
+
+  // =========================
+  // 버튼 enable/disable
+  // =========================
   function setReviseEnabled(enabled) {
-    reviseBtn.disabled = !enabled;
-    reviseBtn.setAttribute('aria-disabled', String(!enabled));
+    $reviseBtn.prop("disabled", !enabled).attr("aria-disabled", String(!enabled));
   }
 
+  // 비번 일치 검사(변경 시에만)
   function validatePasswordMatch() {
-    const pw = pwInput.value;
-    const confirm = pwConfirmInput.value;
+    const pw = $pw.val().trim();
+    const confirm = $pw2.val().trim();
 
-    // 확인란 비어있으면: 메시지 숨기고 버튼 비활성
-    if (confirm === '') {
-      pwMsg.textContent = '';
-      pwMsg.classList.remove('success');
+    if (pw === "" && confirm === "") {
+      $pwMsg.text("").removeClass("success");
+      setReviseEnabled(true);
+      return true;
+    }
+    if (pw === "" || confirm === "") {
+      $pwMsg.text("비밀번호를 변경하려면 동일하게 2번 입력해 주세요.").removeClass("success");
       setReviseEnabled(false);
       return false;
     }
-
-    // 확인란만 입력되어도(비번이 비어도) 불일치로 계속 표시 + 버튼 비활성
     if (pw !== confirm) {
-      pwMsg.textContent = '비밀번호가 일치하지 않습니다.';
-      pwMsg.classList.remove('success');
+      $pwMsg.text("비밀번호가 일치하지 않습니다.").removeClass("success");
       setReviseEnabled(false);
       return false;
     }
 
-    // 일치
-    pwMsg.textContent = '비밀번호가 일치합니다.';
-    pwMsg.classList.add('success');
+    $pwMsg.text("비밀번호가 일치합니다.").addClass("success");
     setReviseEnabled(true);
     return true;
   }
 
-  pwInput.addEventListener('input', validatePasswordMatch);
-  pwConfirmInput.addEventListener('input', validatePasswordMatch);
+  $pw.on("input", validatePasswordMatch);
+  $pw2.on("input", validatePasswordMatch);
 
-  // 시작 시 버튼 비활성(둘 다 입력 + 일치해야 활성)
-  setReviseEnabled(false);
-
-  // ====== (백엔드 연결용) payload 만들고 서버에 보내는 함수 ======
-  async function submitProfileUpdate() {
-    const fd = new FormData(editForm);
-    const payload = Object.fromEntries(fd.entries());
-
-    // confirmPassword는 서버로 보낼 필요 없으면 제거
-    delete payload.confirmPassword;
-
-    // 나중에 실제 API로 변경하기!!!!!!
-    const res = await fetch('/api/users/me', {
-      method: 'PUT', // 또는 PATCH
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      credentials: 'include', // 쿠키 세션 기반이면 유지
+  // =========================
+  // AJAX
+  // =========================
+  function requestLoad() {
+    return $.ajax({
+      url: ENDPOINT_LOAD,
+      method: "GET",
+      dataType: "json",
+      timeout: 10000,
+      xhrFields: { withCredentials: true }
     });
-
-    if (!res.ok) {
-      // 서버가 에러 메시지를 주면 읽어서 던짐
-      const text = await res.text().catch(() => '');
-      throw new Error(text || `HTTP ${res.status}`);
-    }
-
-    // 서버가 JSON 주면 받기(없어도 OK)
-    return res.json().catch(() => ({}));
   }
 
-  // ====== submit: 일치 안하면 아예 제출 X, 일치면 저장 후 모달 ======
-  editForm.addEventListener('submit', async (e) => {
+  function requestUpdate(payload) {
+    return $.ajax({
+      url: ENDPOINT_UPDATE,
+      method: "POST",
+      dataType: "json",
+      data: payload, // ✅ Form 전송 (FastAPI Form(...) 호환)
+      timeout: 10000,
+      xhrFields: { withCredentials: true }
+    });
+  }
+
+  function fillForm(res) {
+    // 서버가 {success, data} 형태로 줄 가능성 고려
+    const data = res.data || res;
+
+    $form[0].elements.name.value = data.name ?? "";
+    $form[0].elements.email.value = data.email ?? "";
+    $form[0].elements.birthday.value = data.birthday ?? "";
+    $form[0].elements.phone.value = data.phone ?? "";
+
+    const $g = $form.find(`input[name="gender"][value="${data.gender}"]`);
+    if ($g.length) $g.prop("checked", true);
+
+    const $e = $form.find(`input[name="eco_state"][value="${data.eco_state}"]`);
+    if ($e.length) $e.prop("checked", true);
+  }
+
+  function buildPayload() {
+    const payload = {
+      email: $form.find('input[name="email"]').val().trim(),
+      name: $form.find('input[name="name"]').val().trim(),
+      birthday: $form.find('input[name="birthday"]').val(),
+      phone: $form.find('input[name="phone"]').val().trim(),
+      eco_state: $form.find('input[name="eco_state"]:checked').val(),
+      gender: $form.find('input[name="gender"]:checked').val(),
+    };
+
+    // main.py는 pw/pw_confirm을 Form(...) 필수로 요구함 ❗
+    const newPw = $pw.val().trim();
+    const newPw2 = $pw2.val().trim();
+
+    if (newPw === "" && newPw2 === "") {
+      const verifiedPw = sessionStorage.getItem("verifiedPw") || "";
+      if (!verifiedPw) {
+        throw new Error("비밀번호 확인이 필요합니다. 마이페이지에서 비밀번호 확인 후 다시 시도해 주세요.");
+      }
+      payload.pw = verifiedPw;
+      payload.pw_confirm = verifiedPw;
+      passwordChanged = false;
+    } else {
+      payload.pw = newPw;
+      payload.pw_confirm = newPw2;
+      passwordChanged = true;
+    }
+
+    return payload;
+  }
+
+  // =========================
+  // submit
+  // =========================
+  $form.on("submit", function (e) {
     e.preventDefault();
 
     if (!validatePasswordMatch()) {
-      pwConfirmInput.focus();
+      $pw2.focus();
       return;
     }
 
-    // 백엔드 아직 없으면 아래 2줄만 쓰면 됨:!!!!!!!!!!!!!!!!!!!
-    openUpdateModal();
-    return;
-
-    const originalText = reviseBtn.textContent;
-    reviseBtn.textContent = '저장 중...';
-    reviseBtn.disabled = true;
-
+    let payload;
     try {
-      await submitProfileUpdate();
-      openUpdateModal();
+      payload = buildPayload();
     } catch (err) {
-      console.error(err);
-      pwMsg.textContent = '저장에 실패했습니다. 다시 시도해 주세요.';
-      pwMsg.classList.remove('success');
-      setReviseEnabled(false);
-    } finally {
-      reviseBtn.textContent = originalText;
-      // 현재 입력값 기준으로 버튼 상태 재평가
-      validatePasswordMatch();
+      alert(err.message || "비밀번호 확인이 필요합니다.");
+      window.location.href = "/view/my_page.html";
+      return;
     }
+
+    const originalText = $reviseBtn.text();
+    $reviseBtn.text("저장 중...").prop("disabled", true);
+
+    requestUpdate(payload)
+      .done((res) => {
+        if (!res.success) {
+          $pwMsg.text(res.message || "저장 실패").removeClass("success");
+          setReviseEnabled(false);
+          return;
+        }
+
+        $updateModalText.text(
+          passwordChanged
+            ? "회원정보가 수정되었습니다. 비밀번호가 변경되어 로그아웃됩니다."
+            : "회원정보가 수정되었습니다."
+        );
+        openUpdateModal();
+      })
+      .fail((xhr) => {
+        const msg =
+          (xhr.responseJSON && (xhr.responseJSON.message || xhr.responseJSON.detail)) ||
+          "저장에 실패했습니다.";
+        alert(msg);
+
+        if (String(msg).includes("비밀번호 확인")) {
+          window.location.href = "/view/my_page.html";
+        }
+      })
+      .always(() => {
+        $reviseBtn.text(originalText);
+        validatePasswordMatch();
+      });
   });
+
+  // =========================
+  // init
+  // =========================
+  setReviseEnabled(false);
+  requestLoad()
+    .done((res) => {
+      if (res.success === false) {
+        alert(res.message || "접근할 수 없습니다.");
+        if ((res.message || "").includes("로그인")) window.location.href = "/view/login.html";
+        else window.location.href = "/view/my_page.html";
+        return;
+      }
+      fillForm(res);
+    })
+    .fail(() => window.location.href = "/view/login.html")
+    .always(() => validatePasswordMatch());
 });
