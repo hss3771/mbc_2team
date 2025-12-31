@@ -10,7 +10,7 @@ logger = Logger().get_logger(__name__)
 BASE_DIR = Path(__file__).resolve().parent  # apps/service
 
 app = FastAPI()
-
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 app.mount("/view", StaticFiles(directory=BASE_DIR / "view"), name="view")
 app.add_middleware(SessionMiddleware,secret_key='session_secret_key',max_age=1800)
 
@@ -21,7 +21,7 @@ def read_root():
 
 @app.get("/main")
 def read_main():
-    return RedirectResponse('/view/info_edit.html')
+    return RedirectResponse('/view/main.html')
 
 @app.get("/my_page")
 def read_my_page():
@@ -35,13 +35,25 @@ def read_login():
 def read_info_edit():
     return RedirectResponse('/view/info_edit.html')
 
-@app.get("/id_find")
-def read_id_find():
-    return RedirectResponse('/view/id_find.html')
+@app.get("/find_id")
+def read_find_id():
+    return RedirectResponse('/view/find_id.html')
 
-@app.get("/pw_find")
-def read_pw_find():
-    return RedirectResponse('/view/pw_find.html')
+@app.get("/find_pw")
+def read_find_pw():
+    return RedirectResponse('/view/find_pw.html')
+
+@app.get("/pw_change")
+def read_pw_change():
+    return RedirectResponse('/view/pw_change.html')
+
+@app.get("/signup")
+def read_signup():
+    return RedirectResponse('/view/signup.html')
+
+@app.get("/word")
+def read_word():
+    return RedirectResponse('/view/word.html')
 
 
 # API Routes
