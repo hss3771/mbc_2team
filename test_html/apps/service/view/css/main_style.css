@@ -1,0 +1,1497 @@
+#authArea {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* 회원가입 버튼을 “보조 버튼” 느낌으로 주고 싶으면 */
+#authArea .btn-secondary {
+  background: #fff;
+  color: #0462D2;
+  border: 1px solid #a6c8ef;
+}
+
+
+/* mains은 기존 my_page_style.css 위에 덮어씌우는 전용 스타일 */
+.mains {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  box-sizing: border-box;
+
+  align-items: stretch;
+}
+
+.main-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  /* flex 스크롤 필수 패턴 */
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  padding-top: 14px;
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
+}
+
+.main-scroll::-webkit-scrollbar {
+  width: 10px;
+  /* 세로 스크롤 두께 */
+}
+
+.main-scroll::-webkit-scrollbar-track {
+  background: #f1f4fb;
+  /* 트랙 배경 */
+  border-radius: 999px;
+}
+
+.main-scroll::-webkit-scrollbar-thumb {
+  background: #c7d6f5;
+  /* 썸(움직이는 바) */
+  border-radius: 999px;
+  border: 0;
+}
+
+.main-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a9c2f2;
+  /* 호버 색 */
+}
+
+.main-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.main1-panel {
+  height: auto;
+  width: 100%;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== 상단 툴바 ===== */
+.main-toolbar {
+  width: 100%;
+  align-self: stretch;
+  box-sizing: border-box;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: #f1f5fb;
+  border-bottom: 1px solid #e6edf8;
+  border-radius: 14px;
+}
+
+#main2,
+#main3 {
+  scroll-margin-top: 90px;
+  /* 툴바 높이에 맞춰 조절 */
+}
+
+.toolbar-right {
+  margin-left: auto;
+}
+
+.date-range {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.date-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #dfe8f7;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(15, 40, 90, 0.06);
+}
+
+.date-icon {
+  font-size: 14px;
+}
+
+.date-label {
+  font-size: 12px;
+  color: #6a7a93;
+  font-weight: 600;
+}
+
+.mains .date-pill input[type="date"] {
+  width: auto;
+  /* my_page_style.css에서 100%로 되어있어서 덮음 */
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  color: #24324a;
+  outline: none;
+}
+
+/* ===== 세그먼트 버튼 ===== */
+.segmented {
+  margin-left: 0;
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #dfe8f7;
+  box-shadow: 0 6px 16px rgba(15, 40, 90, 0.06);
+}
+
+.seg-btn {
+  border: none;
+  background: transparent;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #6a7a93;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.seg-btn:hover {
+  background: #f3f7ff;
+  color: #2a4f98;
+}
+
+.seg-btn.is-active {
+  background: #e8f1ff;
+  color: #0462D2;
+  box-shadow: inset 0 0 0 1px #a6c8ef;
+}
+
+.cselect {
+  position: relative;
+  width: 180px;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.cselect.cselect--sm {
+  width: 150px;
+  /* 필요하면 120~180 조절 */
+}
+
+.cselect.cselect--sm .cselect__btn {
+  height: 34px;
+  /* 기존 ts2-select 높이 */
+  padding: 0 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.cselect.cselect--sm .cselect__opt {
+  font-size: 12px;
+  padding: 9px 10px;
+}
+
+.cselect__btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #dfe8f7;
+  background: #fff;
+
+  font-weight: 800;
+  font-size: 13px;
+  color: #24324a;
+
+  box-shadow: 0 6px 16px rgba(15, 40, 90, 0.06);
+  cursor: pointer;
+}
+
+.cselect__btn:focus {
+  outline: none;
+  border-color: #a6c8ef;
+  box-shadow: 0 0 0 3px rgba(4, 98, 210, 0.12);
+}
+
+.cselect__caret {
+  color: #6a7a93;
+}
+
+.cselect__list {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+
+  border: 1px solid #dfe8f7;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(15, 40, 90, 0.14);
+
+  display: none;
+  z-index: 50;
+}
+
+.cselect.is-open .cselect__list {
+  display: block;
+}
+
+.cselect__opt {
+  padding: 10px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #24324a;
+  cursor: pointer;
+}
+
+.cselect__opt:hover {
+  background: #e8f1ff;
+  color: #0462D2;
+}
+
+.cselect__opt.is-selected {
+  background: #1b66d1;
+  color: #fff;
+}
+
+/* ===== 본문 레이아웃 ===== */
+.main1-body {
+  align-items: stretch;
+  flex: 0 0 auto;
+  min-height: 0;
+  display: flex;
+  gap: 18px;
+  padding: 5px 14px 0px;
+  overflow: visible;
+}
+
+/* ===== 랭킹 영역 ===== */
+.ranking {
+  flex: 1 1 auto;
+  min-width: 520px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px 12px 4px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #1d2b42;
+}
+
+.pill {
+  font-size: 12px;
+  font-weight: 800;
+  color: #0462D2;
+  background: #e8f1ff;
+  border: 1px solid #a6c8ef;
+  border-radius: 999px;
+  padding: 5px 10px;
+}
+
+/* “표” 대신 div grid 형태로 (스크린샷 느낌) */
+.rank-table {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e8eef8;
+  border-radius: 14px;
+  overflow: visible;
+  background: #ffffff;
+}
+
+/* ===== 증감률/변동 안내 줄 ===== */
+.section-head-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-note {
+  margin-left: auto;
+}
+
+.rate-move-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  position: relative;
+  /* tooltip 기준점 */
+  font-size: 12px;
+  color: #8a97ad;
+}
+
+.info-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid #c7d6f5;
+  background: #fff;
+  color: #0462D2;
+  font-weight: 900;
+  font-size: 12px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.info-btn:hover {
+  background: #e8f1ff;
+  border-color: #a6c8ef;
+}
+
+/* 툴팁 */
+.tooltip {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 320px;
+  padding: 10px 12px;
+
+  background: #fff;
+  border: 1px solid #dfe8f7;
+  border-radius: 12px;
+  box-shadow: 0 18px 45px rgba(15, 40, 90, 0.14);
+
+  color: #24324a;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+
+  z-index: 9999;
+}
+
+.tooltip::before {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: -6px;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border-left: 1px solid #dfe8f7;
+  border-top: 1px solid #dfe8f7;
+  transform: rotate(45deg);
+}
+
+
+.rank-row {
+  display: grid;
+  grid-template-columns: 0.8fr 1.5fr 1fr 1fr 1fr;
+  align-items: center;
+  gap: 0;
+}
+
+.rank-head {
+  background: #f5f8ff;
+  color: #6a7a93;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 15px 12px;
+  border-bottom: 1px solid #e8eef8;
+}
+
+.rank-head .has-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rank-list {
+  flex: 1;
+  min-height: 0;
+  overflow: visible;
+  max-height: none;
+  background: #ffffff;
+}
+
+.rank-item {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 13.7px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f3fa;
+  transition: 0.15s;
+}
+
+.rank-item:hover {
+  background: #f7fbff;
+}
+
+.rank-item.is-selected {
+  background: #eaf3ff;
+  box-shadow: inset 0 0 0 1px #b8d6ff;
+}
+
+.c-rank {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rank-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 900;
+  color: #0462D2;
+  background: #e8f1ff;
+  border: 1px solid #a6c8ef;
+}
+
+.c-keyword {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1d2b42;
+}
+
+.c-count,
+.c-rate,
+.c-move {
+  font-size: 13px;
+  font-weight: 800;
+  color: #24324a;
+}
+
+.c-rate.is-up {
+  color: #e53935;
+}
+
+.c-rate.is-down {
+  color: #1e63ff;
+}
+
+.c-rate.is-flat {
+  color: #6a7a93;
+}
+
+.c-move.is-new {
+  width: 42%;
+  color: #18a567;
+  font-weight: 900;
+  background: #e9fbf2;
+  border: 1px solid #bfead3;
+  padding: 2px 5px;
+  border-radius: 20px;
+}
+
+.c-move.is-up {
+  color: #e53935;
+  font-weight: 900;
+}
+
+.c-move.is-down {
+  color: #1e63ff;
+  font-weight: 900;
+}
+
+/* 랭킹 스크롤바(스크린샷 느낌) */
+.rank-list::-webkit-scrollbar {
+  width: 12px;
+}
+
+.rank-list::-webkit-scrollbar-track {
+  background: #f1f4fb;
+  border-radius: 999px;
+}
+
+.rank-list::-webkit-scrollbar-thumb {
+  background: #c7d6f5;
+  border-radius: 999px;
+}
+
+.rank-list::-webkit-scrollbar-thumb:hover {
+  background: #a9c2f2;
+}
+
+/* ===== 요약 패널 ===== */
+.summary {
+  width: 420px;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.summary p {
+  margin-top: 14px;
+  font-size: 12px;
+  color: #8a97ad;
+  margin: 0;
+  padding: 12px 4px 5px;
+}
+
+.summary-card {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid #e8eef8;
+  border-radius: 14px;
+  background: #ffffff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0px;
+}
+
+.summary-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid #eef2fb;
+}
+
+.summary-title .tag {
+  font-size: 12px;
+  font-weight: 900;
+  color: #0462D2;
+  background: #e8f1ff;
+  border: 1px solid #a6c8ef;
+  border-radius: 999px;
+  padding: 5px 10px;
+}
+
+.summary-title strong {
+  font-size: 14px;
+  font-weight: 900;
+  color: #1d2b42;
+}
+
+.summary-content {
+  flex: 1;
+  min-height: 0;
+  overflow: visible;
+  padding: 14px;
+}
+
+.summary-subhead {
+  font-size: 13px;
+  font-weight: 900;
+  color: #1d2b42;
+  margin-bottom: 10px;
+}
+
+.summary-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #2c3a52;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* 요약 스크롤바 */
+.summary-content::-webkit-scrollbar {
+  width: 12px;
+}
+
+.summary-content::-webkit-scrollbar-track {
+  background: #f1f4fb;
+  border-radius: 999px;
+}
+
+.summary-content::-webkit-scrollbar-thumb {
+  background: #c7d6f5;
+  border-radius: 999px;
+}
+
+.summary-content::-webkit-scrollbar-thumb:hover {
+  background: #a9c2f2;
+}
+
+/* ===================== TS2: MAIN2 (기사 3열) ===================== */
+.ts2-panel {
+  margin-top: 18px;
+  scroll-margin-top: 14px;
+  /* 앵커 이동시 살짝 여유 */
+}
+
+.ts2-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+/* 컬럼 패널 */
+.ts2-col {
+  border: 1px solid #e8eef8;
+  background: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ts2-colhead {
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #ffffff;
+}
+
+.ts2-coltitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ts2-h {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  color: #1d2b42;
+}
+
+.ts2-pill {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid #dfe8f7;
+  background: #f5f8ff;
+  color: #6a7a93;
+}
+
+.ts2-pill--pos {
+  background: #e8f1ff;
+  border-color: #a6c8ef;
+  color: #0462D2;
+}
+
+.ts2-pill--neu {
+  background: #f5f8ff;
+  border-color: #dfe8f7;
+  color: #6a7a93;
+}
+
+.ts2-pill--neg {
+  background: #ffecec;
+  border-color: #ffb9b9;
+  color: #e53935;
+}
+
+.ts2-select {
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid #dfe8f7;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 900;
+  color: #24324a;
+  background: #fff;
+  outline: none;
+}
+
+.ts2-colbody {
+  border-top: 1px solid #eef2fb;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+/* 리스트 스크롤 */
+.ts2-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ts2-list.is-vscroll {
+  max-height: var(--ts2-list-max, 560px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+}
+
+.ts2-list.is-vscroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.ts2-list.is-vscroll::-webkit-scrollbar-track {
+  background: #f1f4fb;
+  border-radius: 999px;
+}
+
+.ts2-list.is-vscroll::-webkit-scrollbar-thumb {
+  background: #c7d6f5;
+  border-radius: 999px;
+}
+
+.ts2-list.is-vscroll::-webkit-scrollbar-thumb:hover {
+  background: #a9c2f2;
+}
+
+/* 카드 */
+.ts2-card {
+  border: 1px solid #e8eef8;
+  border-radius: 14px;
+  background: #fff;
+  padding: 12px;
+  cursor: pointer;
+  transition: .15s;
+}
+
+.ts2-card:hover {
+  background: #f7fbff;
+}
+
+.ts2-card.is-open {
+  background: #eaf3ff;
+  box-shadow: inset 0 0 0 1px #b8d6ff;
+}
+
+.ts2-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.ts2-src {
+  font-size: 12px;
+  font-weight: 900;
+  color: #2c3a52;
+  background: #f5f8ff;
+  border: 1px solid #dfe8f7;
+  padding: 4px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ts2-mini {
+  font-size: 12px;
+  font-weight: 900;
+  color: #6a7a93;
+  background: #f5f8ff;
+  border: 1px solid #dfe8f7;
+  padding: 4px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ts2-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #1d2b42;
+  line-height: 1.35;
+}
+
+.ts2-desc {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #2c3a52;
+  line-height: 1.6;
+  display: none;
+  /* 기본은 접힘 */
+}
+
+.ts2-card.is-open .ts2-desc {
+  display: block;
+}
+
+.ts2-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ts2-chip {
+  font-size: 12px;
+  font-weight: 900;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid #dfe8f7;
+  background: #f5f8ff;
+  color: #6a7a93;
+}
+
+.ts2-chip--date {
+  background: #ffffff;
+  color: #8a97ad;
+}
+
+.ts2-chip--btn {
+  background: #e8f1ff;
+  border-color: #a6c8ef;
+  color: #0462D2;
+  cursor: pointer;
+}
+
+/* 하단 페이지네이션 */
+.ts2-pager {
+  padding: 10px 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #6a7a93;
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.ts2-pagebtn {
+  border: none;
+  background: transparent;
+  color: #6a7a93;
+  font-weight: 900;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 10px;
+}
+
+.ts2-pagebtn:hover {
+  background: #f1f5fb;
+}
+
+/* 반응형 */
+@media (max-width: 1300px) {
+  .ts2-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ts2-col--neg {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 1100px) {
+  .main1-body {
+    flex-direction: column;
+  }
+
+  .summary {
+    width: 100%;
+  }
+
+  .ranking {
+    min-width: 0;
+  }
+
+  .sidebar {
+    display: none !important;
+  }
+
+  .menu li.active>a {
+    display: block;
+    background: #e8f1ff;
+    color: #0462D2;
+    border-radius: 12px;
+  }
+
+  .menu li.active>a:hover {
+    background: #dcebff;
+  }
+
+  .mains {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .app {
+    gap: 0;
+    /* 사이드바 빠지면서 생기는 여백 방지 */
+    grid-template-columns: 1fr !important;
+  }
+
+  .ts2-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ts2-grid.is-scroll {
+    display: grid;
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+
+  .ts2-menucard {
+    min-height: auto;
+  }
+
+  .ts2-col {
+    min-height: 520px;
+  }
+}
+
+@media (max-width: 768px) {
+  .mains {
+    padding: 12px;
+  }
+
+  /* 툴바: wrap 허용 + 간격/패딩 조금 축소 */
+  .main-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  /* 날짜/세그먼트 묶음 */
+  .date-range {
+    display: contents;
+  }
+
+  /* 날짜 pill 2개: 2열로 (공간 부족하면 자동 줄바꿈) */
+  .date-pill {
+    flex: 1 1 calc(50% - 5px);
+    min-width: 180px;
+    /* 필요하면 160~200 사이로 조절 */
+  }
+
+  /* 키워드 드롭다운: 한 줄을 통째로 차지 (날짜 다음 줄) */
+  .toolbar-right {
+    flex: 1 1 100%;
+    order: 3;
+    margin-left: 0;
+    /* 기존 margin-left:auto 때문에 이상해지는 거 방지 */
+  }
+
+  .cselect {
+    width: 100%;
+  }
+
+  .cselect__btn {
+    width: 100%;
+  }
+
+  /* 일별/주별/월별/연도별: “드롭다운 아래”로 내려오기 */
+  .segmented {
+    flex: 1 1 100%;
+    order: 4;
+    margin-left: 0;
+    justify-content: flex-start;
+
+    /* 버튼이 길면 가로 스크롤로 */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 버튼은 줄바꿈하지 말고 가로로 쭉 */
+  .seg-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 8px 12px;
+  }
+
+  /* 앵커 보정(툴바 높이가 늘어나니까) */
+  #main2,
+  #main3 {
+    scroll-margin-top: 160px;
+  }
+}
+
+@media (max-width: 480px) {
+  .date-pill {
+    flex: 1 1 100%;
+    min-width: 0;
+    padding: 9px 10px;
+    gap: 8px;
+  }
+
+  .date-label {
+    display: none;
+    /* "시작일/종료일" 텍스트 숨겨서 공간 확보 */
+  }
+
+  .seg-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+}
+
+/* ===================== /TS2 ===================== */
+
+/* ===================== TS3: MAIN3 (키워드 언급량 및 감성분석) ===================== */
+.ts3-panel {
+  margin-top: 18px;
+}
+
+.ts3-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.ts3-card {
+  border: 1px solid #e8eef8;
+  background: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ts3-card--wide {
+  grid-column: 1 / -1;
+}
+
+.ts3-head {
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #eef2fb;
+}
+
+.ts3-head--wide {
+  align-items: flex-start;
+}
+
+.ts3-head--space {
+  align-items: flex-start;
+}
+
+.ts3-head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ts3-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  color: #1d2b42;
+}
+
+.ts3-tag {
+  font-size: 12px;
+  font-weight: 900;
+  color: #0462D2;
+  background: #e8f1ff;
+  border: 1px solid #a6c8ef;
+  border-radius: 999px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.ts3-klist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: 6px;
+}
+
+.ts3-kbtn {
+  border: 1px solid #dfe8f7;
+  background: #f5f8ff;
+  color: #6a7a93;
+  font-weight: 900;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: .15s;
+}
+
+.ts3-kbtn:hover {
+  background: #e8f1ff;
+  color: #0462D2;
+  border-color: #a6c8ef;
+}
+
+.ts3-kbtn.is-active {
+  background: #e8f1ff;
+  color: #0462D2;
+  border-color: #a6c8ef;
+  box-shadow: inset 0 0 0 1px #a6c8ef;
+}
+
+.ts3-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 상단 큰 그래프 자리 */
+.ts3-chartbox {
+  height: 330px;
+  border: 1px solid #eef2fb;
+  border-radius: 12px;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    repeating-linear-gradient(0deg, rgba(15, 40, 90, 0.06) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(90deg, rgba(15, 40, 90, 0.04) 0 1px, transparent 1px 80px);
+  position: relative;
+  overflow: hidden;
+}
+
+.ts3-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #8a97ad;
+  font-weight: 900;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.ts3-placeholder small {
+  font-weight: 800;
+  opacity: .8;
+}
+
+.ts3-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 워드클라우드 자리 */
+.ts3-cloud {
+  height: 220px;
+  border: 1px solid #eef2fb;
+  border-radius: 12px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  overflow: hidden;
+}
+
+.ts3-cloud-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-content: center;
+  justify-content: center;
+}
+
+.ts3-w {
+  font-weight: 900;
+  color: var(--c, #6a7a93);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ts3-w.lg {
+  font-size: 40px;
+  color: #6b6b6b;
+}
+
+.ts3-w.md {
+  font-size: 26px;
+}
+
+.ts3-w.sm {
+  font-size: 16px;
+  opacity: .9;
+}
+
+/* 도넛 자리 */
+.ts3-donutwrap {
+  height: 220px;
+  border: 1px solid #eef2fb;
+  border-radius: 12px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+}
+
+.ts3-donut {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: conic-gradient(#1e63ff 0 40%, #8a97ad 40% 70%, #e53935 70% 100%);
+  position: relative;
+}
+
+.ts3-donut::after {
+  content: "";
+  position: absolute;
+  inset: 52px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #eef2fb;
+}
+
+/* 범례 */
+.ts3-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #6a7a93;
+  font-weight: 900;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ts3-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ts3-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.ts3-dot--pos {
+  background: #1e63ff;
+}
+
+.ts3-dot--neu {
+  background: #8a97ad;
+}
+
+.ts3-dot--neg {
+  background: #e53935;
+}
+
+/* 반응형 */
+@media (max-width: 1100px) {
+  .ts3-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===================== /TS3 ===================== */
+
+/* 바깥(페이지) 스크롤 제거: 이중 스크롤 방지 */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+}
+
+/* 헤더 아래 영역을 정확히 화면 높이로 고정 */
+.app {
+  height: calc(100vh - 70px);
+  /* 헤더가 70px이면 그대로 */
+  min-height: 0;
+  overflow: hidden;
+  /* 앱 밖으로 스크롤 안 새게 */
+}
+
+/* 사이드바도 같은 높이로 */
+.sidebar {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  /* 메뉴 길면 사이드바만 스크롤 */
+}
+
+/* main도 app 높이에 맞추고 내부에서만 스크롤 */
+.mains {
+  height: 100%;
+  min-height: 0;
+  /* 기존에 mains에 height: calc(100vh - 70px) 있으면 지워도 됨 */
+}
+
+.main-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* 끝에서 바깥으로 스크롤 튀는 거 방지 */
+}
+
+/* ✅ 로그인 필요 모달 */
+.tsNeedLoginLayer {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  background: rgba(15, 23, 42, 0.12);
+  padding: 24px;
+}
+
+.tsNeedLoginLayer.is-open {
+  display: flex;
+}
+
+.tsNeedLoginModal {
+  width: min(520px, 92vw);
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, .18);
+  padding: 26px 22px 20px;
+  border: 1px solid rgba(15, 23, 42, .06);
+  text-align: center;
+}
+
+.tsNeedLoginTitle {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 900;
+  color: #1d2b42;
+}
+
+.tsNeedLoginDesc {
+  margin: 0 0 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #6a7a93;
+  font-weight: 700;
+}
+
+.tsNeedLoginBtns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.tsNeedLoginBtn {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.tsNeedLoginBtn--ghost {
+  background: #fff;
+  color: #24324a;
+  border-color: #dfe8f7;
+}
+
+.tsNeedLoginBtn--ghost:hover {
+  background: #f5f8ff;
+}
+
+.tsNeedLoginBtn--primary {
+  background: #0462D2;
+  color: #fff;
+}
+
+.tsNeedLoginBtn--primary:hover {
+  filter: brightness(0.98);
+}
+
+/* ===== 원하는 header 모양을 main.html(topbar)에 적용 ===== */
+header.topbar{
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 60px;
+  background: #0462D2;
+  display: flex;
+  align-items: center;
+  z-index: 999;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+}
+
+/* 기존 .shell 영향 제거 + 너가 원한 header-inner 느낌 */
+header.topbar .header-inner{
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+/* 로고/브랜드 */
+header.topbar .brand{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  text-decoration: none;
+  color: #fff;
+}
+header.topbar .topbar_logo img{
+  height: 44px;
+}
+
+/* 오른쪽 메뉴 */
+header.topbar #authArea{
+  margin-left: auto;
+  display:flex;
+  align-items:center;
+  gap: 12px;
+}
+
+/* 링크 색(지금 스샷에서 글자가 어색한 원인) */
+header.topbar #authArea a{
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* “로그아웃/회원가입 버튼”을 흰 pill로 */
+header.topbar #authArea .btn,
+header.topbar #btnLogout{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #0462D2;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+/* 헤더가 fixed니까 본문이 가려지지 않게 */
+.app{
+  margin-top: 60px;
+  height: calc(100vh - 60px);
+}
