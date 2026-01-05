@@ -335,4 +335,4 @@ def info_update(
 # apps/static/base.js 와 연동
 @app.get("/api/session")
 def session_info(request: Request):
-    return {"logged_in": bool(request.session.get("user_id"))}
+    return {"logged_in": bool(request.session.get("user_id")), "admin_in": bool(request.session.get("user_role") == 'admin')}

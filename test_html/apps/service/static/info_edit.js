@@ -3,10 +3,10 @@ function getCurKey() {
   let last = segs[segs.length - 1] || "";      // ex) "info_edit" or "info_edit.html"
   last = last.replace(/\.html$/i, "");
 
-  // ✅ info_edit는 마이페이지 메뉴로 묶기
+  // info_edit는 마이페이지 메뉴로 묶기
   if (last === "info_edit") last = "my_page";
 
-  // ✅ main에서 hash(main2/main3)면 hash까지 포함해서 키 만들기
+  // main에서 hash(main2/main3)면 hash까지 포함해서 키 만들기
   if (last === "main" && (location.hash === "#main2" || location.hash === "#main3")) {
     return "main" + location.hash;            // "main#main2"
   }
@@ -38,7 +38,7 @@ function setSidebarActive() {
   const target = links.find(a => hrefToKey(a.getAttribute("href")) === curKey);
   if (target) target.closest("li")?.classList.add("active");
 
-  // ✅ 디버그(안 되면 이거 콘솔에서 확인)
+  // 디버그(안 되면 이거 콘솔에서 확인)
   // console.log("curKey =", curKey, "pathname =", location.pathname, "hash =", location.hash);
 }
 
@@ -153,7 +153,7 @@ $(function () {
     });
   }
 
-  // ✅ 성공 시 RedirectResponse라 text로 받아서 판별
+  // 성공 시 RedirectResponse라 text로 받아서 판별
   function requestVerifyPassword(pw) {
     return $.ajax({
       url: ENDPOINT_VERIFY_PW,
@@ -174,14 +174,14 @@ $(function () {
   $form[0].elements.birthday.value = data.birthday ?? "";
   $form[0].elements.phone.value = data.phone ?? "";
 
-  // ✅ gender 매핑 (남/여 -> M/F)
+  // gender 매핑 (남/여 -> M/F)
   const genderMap = { "남": "M", "여": "F", "M": "M", "F": "F" };
   const genderVal = genderMap[(data.gender || "").trim()] || "M";
 
   $form.find('input[name="gender"]').prop("checked", false);
   $form.find(`input[name="gender"][value="${genderVal}"]`).prop("checked", true);
 
-  // ✅ eco_state 매핑 (상/중상/중/중하/하 -> HIGH/MID_HIGH/MID/MID_LOW/LOW)
+  // eco_state 매핑 (상/중상/중/중하/하 -> HIGH/MID_HIGH/MID/MID_LOW/LOW)
   const ecoMap = {
     "상": "HIGH",
     "중상": "MID_HIGH",
@@ -311,10 +311,10 @@ $(function () {
           $("#pwVerifyModal").hide().attr("aria-hidden", "true");
           $("#pwVerifyInput").val("");
 
-          // ✅ 1) info_edit 페이지 진입용이면 데이터 로드 재시도
+          // 1) info_edit 페이지 진입용이면 데이터 로드 재시도
           attemptLoad();
 
-          // ✅ 2) 저장 중에 필요해서 띄운 거면 자동으로 저장 이어서
+          // 2) 저장 중에 필요해서 띄운 거면 자동으로 저장 이어서
           if (pendingPayload) {
             const p = pendingPayload;
             pendingPayload = null;
@@ -467,7 +467,7 @@ $(function () {
   btn.addEventListener("click", (e) => {
     e.preventDefault();
 
-    // ✅ 프로젝트에서 로그인 판단에 쓰는 값들 싹 제거
+    // 프로젝트에서 로그인 판단에 쓰는 값들 싹 제거
     localStorage.removeItem("access_token");
     localStorage.removeItem("user_id");
     localStorage.removeItem("refresh_token");
@@ -476,12 +476,12 @@ $(function () {
     sessionStorage.removeItem("user_id");
     sessionStorage.removeItem("refresh_token");
 
-    // ✅ 너 코드에서 체크하던 쿠키들
+    // 체크하는 쿠키들
     clearCookie("loginId");
     clearCookie("access_token");
     clearCookie("user_id");
 
-    // UI 즉시 반영(가장 확실)
-    location.href = "./home.html"; // 또는 "./login.html"
+    // UI 즉시 반영
+    location.href = "./home.html";
   });
 })();

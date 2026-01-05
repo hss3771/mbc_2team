@@ -15,11 +15,22 @@
 <body>
   <header class="header">
     <div class="header-inner">
-      <a class="brand" href="/">
-        <span class="sidebar_logo"><img src="/view/img/logo_white.png" alt=""></span>
-      </a>
 
-      <a href="/logout" class="logout-button">로그아웃</a>
+      <div class="header-left">
+        <button id="btnSidebarToggle" class="tsHamburger" type="button" aria-label="메뉴 열기" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <a class="brand" href="/">
+          <span class="sidebar_logo">
+            <img src="/view/img/logo_white.png" alt="">
+          </span>
+        </a>
+      </div>
+
+      <div id="authArea" class="header-right">
+        <a href="/logout" class="logout-button">로그아웃</a>
+      </div>
     </div>
   </header>
 
@@ -51,12 +62,12 @@
       const res = await fetch(ENDPOINT_VERIFY_PW, {
         method: "POST",
         credentials: "include",
-        redirect: "manual",               // ✅ 중요: 307 redirect 따라가지 않기
+        redirect: "manual",               // 중요: 307 redirect 따라가지 않기
         headers: { "Accept": "application/json" },
         body: new URLSearchParams({ pw })
       });
 
-      // ✅ redirect 응답이면(성공 케이스) 여기서 OK 처리
+      // redirect 응답이면(성공 케이스) 여기서 OK 처리
       // 브라우저마다 manual redirect가 'opaqueredirect'(status 0)로 오기도 함
       if (res.type === "opaqueredirect") return { ok: true };
       if (res.status >= 300 && res.status < 400) return { ok: true };
@@ -92,10 +103,10 @@
           return;
         }
 
-        // ✅ 백엔드가 info_update에서 pw 필수라서(수정 불가 조건) 저장
+        // 백엔드가 info_update에서 pw 필수라서(수정 불가 조건) 저장
         sessionStorage.setItem("verifiedPw", pw);
 
-        // ✅ 성공 이동은 우리가 직접 GET 라우트로 이동
+        // 성공 이동은 우리가 직접 GET 라우트로 이동
         location.href = "/info_edit";
       } catch {
         err.textContent = "비밀번호 확인 중 오류가 발생했습니다.";
@@ -117,7 +128,7 @@
       btn.addEventListener("click", (e) => {
         e.preventDefault();
 
-        // ✅ 프로젝트에서 로그인 판단에 쓰는 값들 싹 제거
+        // 프로젝트에서 로그인 판단에 쓰는 값들 싹 제거
         localStorage.removeItem("access_token");
         localStorage.removeItem("user_id");
         localStorage.removeItem("refresh_token");
@@ -126,7 +137,7 @@
         sessionStorage.removeItem("user_id");
         sessionStorage.removeItem("refresh_token");
 
-        // ✅ 너 코드에서 체크하던 쿠키들
+        // 코드에서 체크하는 쿠키들
         clearCookie("loginId");
         clearCookie("access_token");
         clearCookie("user_id");

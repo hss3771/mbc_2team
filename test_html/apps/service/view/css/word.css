@@ -1,6 +1,5 @@
 * {
   box-sizing: border-box;
-  font-family: 'Noto Sans KR', sans-serif;
 }
 
 /* 바깥 스크롤 막기 */
@@ -35,9 +34,10 @@ body {
   flex-shrink: 0;
 
   position: sticky;
-  top: 82px;
-  height: calc(100vh - 60px - 44px);
+  top: calc(var(--header-h) + 22px);
+  height: calc(100vh - var(--header-h) - 44px);
   overflow: auto;
+  
 }
 
 .sidebar_logo {
@@ -80,9 +80,14 @@ body {
   font-weight: 700;
 }
 
-.menu li.active::before {
-  background-color: #cde2ff;
-  border-color: #A6C8EF;
+.menu li::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius: 12px;
+  background: transparent;
+  border: 2px solid transparent;
+  z-index: 1;
 }
 
 main {
@@ -776,16 +781,4 @@ main {
   font-size: 14px;
   text-decoration: none;
   box-shadow: 0 2px 6px rgba(0,0,0,0.10);
-}
-
-/* 헤더 fixed라서 본문 내려주기 */
-.app{
-  margin-top: 60px;
-  height: calc(100vh - 60px);
-}
-
-/* sidebar sticky 기준도 헤더 높이 반영 */
-.sidebar{
-  top: calc(var(--header-h) + 22px);
-  height: calc(100vh - var(--header-h) - 44px);
 }

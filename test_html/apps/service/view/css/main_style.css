@@ -886,164 +886,6 @@
   background: #f1f5fb;
 }
 
-/* 반응형 */
-@media (max-width: 1300px) {
-  .ts2-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .ts2-col--neg {
-    grid-column: auto;
-  }
-}
-
-@media (max-width: 1100px) {
-  .main1-body {
-    flex-direction: column;
-  }
-
-  .summary {
-    width: 100%;
-  }
-
-  .ranking {
-    min-width: 0;
-  }
-
-  .sidebar {
-    display: none !important;
-  }
-
-  .menu li.active>a {
-    display: block;
-    background: #e8f1ff;
-    color: #0462D2;
-    border-radius: 12px;
-  }
-
-  .menu li.active>a:hover {
-    background: #dcebff;
-  }
-
-  .mains {
-    width: 100%;
-    max-width: 100%;
-    padding: 0;
-  }
-
-  .app {
-    gap: 0;
-    /* 사이드바 빠지면서 생기는 여백 방지 */
-    grid-template-columns: 1fr !important;
-  }
-
-  .ts2-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .ts2-grid.is-scroll {
-    display: grid;
-    overflow-x: visible;
-    padding-bottom: 0;
-  }
-
-  .ts2-menucard {
-    min-height: auto;
-  }
-
-  .ts2-col {
-    min-height: 520px;
-  }
-}
-
-@media (max-width: 768px) {
-  .mains {
-    padding: 12px;
-  }
-
-  /* 툴바: wrap 허용 + 간격/패딩 조금 축소 */
-  .main-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: stretch;
-    gap: 10px;
-    padding: 10px;
-    border-radius: 12px;
-  }
-
-  /* 날짜/세그먼트 묶음 */
-  .date-range {
-    display: contents;
-  }
-
-  /* 날짜 pill 2개: 2열로 (공간 부족하면 자동 줄바꿈) */
-  .date-pill {
-    flex: 1 1 calc(50% - 5px);
-    min-width: 180px;
-    /* 필요하면 160~200 사이로 조절 */
-  }
-
-  /* 키워드 드롭다운: 한 줄을 통째로 차지 (날짜 다음 줄) */
-  .toolbar-right {
-    flex: 1 1 100%;
-    order: 3;
-    margin-left: 0;
-    /* 기존 margin-left:auto 때문에 이상해지는 거 방지 */
-  }
-
-  .cselect {
-    width: 100%;
-  }
-
-  .cselect__btn {
-    width: 100%;
-  }
-
-  /* 일별/주별/월별/연도별: “드롭다운 아래”로 내려오기 */
-  .segmented {
-    flex: 1 1 100%;
-    order: 4;
-    margin-left: 0;
-    justify-content: flex-start;
-
-    /* 버튼이 길면 가로 스크롤로 */
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* 버튼은 줄바꿈하지 말고 가로로 쭉 */
-  .seg-btn {
-    flex: 0 0 auto;
-    white-space: nowrap;
-    padding: 8px 12px;
-  }
-
-  /* 앵커 보정(툴바 높이가 늘어나니까) */
-  #main2,
-  #main3 {
-    scroll-margin-top: 160px;
-  }
-}
-
-@media (max-width: 480px) {
-  .date-pill {
-    flex: 1 1 100%;
-    min-width: 0;
-    padding: 9px 10px;
-    gap: 8px;
-  }
-
-  .date-label {
-    display: none;
-    /* "시작일/종료일" 텍스트 숨겨서 공간 확보 */
-  }
-
-  .seg-btn {
-    padding: 8px 10px;
-    font-size: 12px;
-  }
-}
-
 /* ===================== /TS2 ===================== */
 
 /* ===================== TS3: MAIN3 (키워드 언급량 및 감성분석) ===================== */
@@ -1295,13 +1137,6 @@
   background: #e53935;
 }
 
-/* 반응형 */
-@media (max-width: 1100px) {
-  .ts3-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* ===================== /TS3 ===================== */
 
 /* 바깥(페이지) 스크롤 제거: 이중 스크롤 방지 */
@@ -1316,8 +1151,7 @@ body {
 
 /* 헤더 아래 영역을 정확히 화면 높이로 고정 */
 .app {
-  height: calc(100vh - 70px);
-  /* 헤더가 70px이면 그대로 */
+  height: calc(100vh - 60px);
   min-height: 0;
   overflow: hidden;
   /* 앱 밖으로 스크롤 안 새게 */
@@ -1421,20 +1255,21 @@ body {
 }
 
 /* ===== 원하는 header 모양을 main.html(topbar)에 적용 ===== */
-header.topbar{
+header.topbar {
   position: fixed;
-  top: 0; left: 0;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 60px;
   background: #0462D2;
   display: flex;
   align-items: center;
   z-index: 999;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
 }
 
 /* 기존 .shell 영향 제거 + 너가 원한 header-inner 느낌 */
-header.topbar .header-inner{
+header.topbar .header-inner {
   width: 100%;
   margin: 0 auto;
   padding: 0 20px;
@@ -1445,27 +1280,28 @@ header.topbar .header-inner{
 }
 
 /* 로고/브랜드 */
-header.topbar .brand{
-  display:flex;
-  align-items:center;
+header.topbar .brand {
+  display: flex;
+  align-items: center;
   gap: 10px;
   text-decoration: none;
   color: #fff;
 }
-header.topbar .topbar_logo img{
+
+header.topbar .topbar_logo img {
   height: 44px;
 }
 
 /* 오른쪽 메뉴 */
-header.topbar #authArea{
+header.topbar #authArea {
   margin-left: auto;
-  display:flex;
-  align-items:center;
+  display: flex;
+  align-items: center;
   gap: 12px;
 }
 
 /* 링크 색(지금 스샷에서 글자가 어색한 원인) */
-header.topbar #authArea a{
+header.topbar #authArea a {
   color: #fff;
   text-decoration: none;
   font-size: 14px;
@@ -1474,7 +1310,7 @@ header.topbar #authArea a{
 
 /* “로그아웃/회원가입 버튼”을 흰 pill로 */
 header.topbar #authArea .btn,
-header.topbar #btnLogout{
+header.topbar #btnLogout {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1485,13 +1321,189 @@ header.topbar #btnLogout{
   border-radius: 20px;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
   text-decoration: none;
   font-size: 14px;
 }
 
 /* 헤더가 fixed니까 본문이 가려지지 않게 */
-.app{
+.app {
   margin-top: 60px;
   height: calc(100vh - 60px);
+}
+
+/* 반응형 */
+@media (max-width: 1300px) {
+  .ts2-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ts2-col--neg {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 1100px) {
+  .main1-body {
+    flex-direction: column;
+  }
+
+  .summary {
+    width: 100%;
+  }
+
+  .ranking {
+    min-width: 0;
+  }
+
+  .sidebar {
+    display: none !important;
+  }
+
+  .menu li.active>a {
+    display: block;
+    background: #e8f1ff;
+    color: #0462D2;
+    border-radius: 12px;
+  }
+
+  .menu li.active>a:hover {
+    background: #dcebff;
+  }
+
+  .mains {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .app {
+    gap: 0;
+    /* 사이드바 빠지면서 생기는 여백 방지 */
+    grid-template-columns: 1fr !important;
+  }
+
+  .ts2-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ts2-grid.is-scroll {
+    display: grid;
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+
+  .ts2-menucard {
+    min-height: auto;
+  }
+
+  .ts2-col {
+    min-height: 520px;
+  }
+
+  .ts3-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 920px) {
+  .mains {
+    padding: 12px;
+  }
+
+  /* 툴바: wrap 허용 + 간격/패딩 조금 축소 */
+  .main-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  /* 날짜/세그먼트 묶음 */
+  .date-range {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 10px;
+  }
+
+    /* input이 너무 커서 라벨을 밀어버리면, 모바일에서 폭을 살짝 고정 */
+  .mains .date-pill input[type="date"]{
+    width: 140px;          /* 130~160 사이에서 취향대로 */
+  }
+
+  /* 날짜 pill 2개: 2열로 (공간 부족하면 자동 줄바꿈) */
+  .date-pill {
+    flex: 1 1 calc(50% - 5px);
+    min-width: 180px;
+    /* 필요하면 160~200 사이로 조절 */
+  }
+
+  /* 키워드 드롭다운: 한 줄을 통째로 차지 (날짜 다음 줄) */
+  .toolbar-right {
+    flex: 1 1 100%;
+    order: 3;
+    margin-left: 0;
+    /* 기존 margin-left:auto 때문에 이상해지는 거 방지 */
+  }
+
+  .cselect {
+    width: 100%;
+  }
+
+  .cselect__btn {
+    width: 100%;
+  }
+
+  /* 일별/주별/월별/연도별: “드롭다운 아래”로 내려오기 */
+  .segmented {
+    flex: 1 1 100%;
+    order: 4;
+    margin-left: 0;
+    justify-content: flex-start;
+
+    /* 버튼이 길면 가로 스크롤로 */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  /* 버튼은 줄바꿈하지 말고 가로로 쭉 */
+  .seg-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 8px 12px;
+    word-break: keep-all;
+  }
+
+  /* 앵커 보정(툴바 높이가 늘어나니까) */
+  #main2,
+  #main3 {
+    scroll-margin-top: 160px;
+  }
+}
+
+@media (max-width: 480px) {
+  .date-pill {
+    flex: 1 1 100%;
+    min-width: 0;
+    padding: 9px 10px;
+    gap: 8px;
+  }
+
+  .date-label {
+    display: none;
+    /* "시작일/종료일" 텍스트 숨겨서 공간 확보 */
+  }
+
+  .seg-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
 }

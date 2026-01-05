@@ -117,18 +117,6 @@ function selectKeyword(keyword) {
 }
 window.selectKeyword = selectKeyword;
 
-// ===== 기간 탭 =====
-segmentedBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-        segmentedBtns.forEach((b) => {
-            b.classList.remove("is-active");
-            b.setAttribute("aria-selected", "false");
-        });
-        btn.classList.add("is-active");
-        btn.setAttribute("aria-selected", "true");
-    });
-});
-
 // ===== 커스텀 드롭다운 =====
 (function () {
     const root = document.getElementById('keywordDropdown');
@@ -274,6 +262,20 @@ selectKeyword(bootKeyword);
 
 
 (function TS2() {
+    function toDateNum(iso) { return Number(String(iso || "").replaceAll("-", "")) || 0; }
+
+    function isInRange(iso, startISO, endISO) {
+        const n = toDateNum(iso);
+        let s = toDateNum(startISO);
+        let e = toDateNum(endISO);
+        if (!n || !s || !e) return true;
+
+        // ✅ start > end면 스왑
+        if (s > e) [s, e] = [e, s];
+
+        return s <= n && n <= e;
+    }
+
     const allData = [
         /* ===================== 주식 ===================== */
         { keyword: '주식', sent: 'pos', source: '매일경제', flag: '정상', date: '2025-12-18', popular: 46, title: '코스피 반등…외국인 매수세 유입', desc: '대형주 중심으로 매수세가 유입되며 지수가 반등했습니다. 환율 안정과 실적 기대가 투자심리를 지지했다는 분석입니다…' },
@@ -374,9 +376,25 @@ selectKeyword(bootKeyword);
 
     function sortItems(items, mode) {
         const arr = [...items];
+
         if (mode === 'recent') arr.sort((a, b) => parseDate(b.date) - parseDate(a.date));
         if (mode === 'old') arr.sort((a, b) => parseDate(a.date) - parseDate(b.date));
         if (mode === 'popular') arr.sort((a, b) => (b.popular || 0) - (a.popular || 0));
+
+        if (mode === 'trust_high') {
+            arr.sort((a, b) =>
+                (trustScore(b.flag) - trustScore(a.flag)) ||
+                (parseDate(b.date) - parseDate(a.date))
+            );
+        }
+
+        if (mode === 'trust_low') {
+            arr.sort((a, b) =>
+                (trustScore(a.flag) - trustScore(b.flag)) ||
+                (parseDate(b.date) - parseDate(a.date))
+            );
+        }
+
         return arr;
     }
 
@@ -398,7 +416,12 @@ selectKeyword(bootKeyword);
     }
 
     function getDataBySent(sent) {
-        return allData.filter(d => d.keyword === currentKeyword && d.sent === sent);
+        const { start, end } = window.getAppRange?.() || {};
+        return allData.filter(d =>
+            d.keyword === currentKeyword &&
+            d.sent === sent &&
+            isInRange(d.date, start, end)
+        );
     }
 
     function px(v) {
@@ -494,31 +517,6 @@ selectKeyword(bootKeyword);
         return 0;
     }
 
-    // 기존 sortItems에 trust 정렬 추가 (함수 내용 교체 or 조건 추가)
-    function sortItems(items, mode) {
-        const arr = [...items];
-
-        if (mode === 'recent') arr.sort((a, b) => parseDate(b.date) - parseDate(a.date));
-        if (mode === 'old') arr.sort((a, b) => parseDate(a.date) - parseDate(b.date));
-        if (mode === 'popular') arr.sort((a, b) => (b.popular || 0) - (a.popular || 0));
-
-        if (mode === 'trust_high') {
-            arr.sort((a, b) =>
-                (trustScore(b.flag) - trustScore(a.flag)) ||
-                (parseDate(b.date) - parseDate(a.date))
-            );
-        }
-
-        if (mode === 'trust_low') {
-            arr.sort((a, b) =>
-                (trustScore(a.flag) - trustScore(b.flag)) ||
-                (parseDate(b.date) - parseDate(a.date))
-            );
-        }
-
-        return arr;
-    }
-
     // cselect 초기화 함수
     function initCSelect(root, onPick) {
         const btn = root.querySelector('.cselect__btn');
@@ -591,10 +589,84 @@ selectKeyword(bootKeyword);
 
     // 초기 렌더
     renderAll();
+
+    document.addEventListener("app:rangechange", () => {
+        renderAll();
+    });
 })();
 
 // main3
 (function TS3() {
+
+    function daysInMonth(y, m) {
+        return new Date(y, m + 1, 0).getDate(); // m: 0~11
+    }
+
+    function addMonthsClamp(date, deltaMonths) {
+        const d = normalize(date);
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        const day = d.getDate();
+
+        const target = new Date(y, m + deltaMonths, 1);
+        const ty = target.getFullYear();
+        const tm = target.getMonth();
+        const last = daysInMonth(ty, tm);
+
+        return new Date(ty, tm, Math.min(day, last));
+    }
+
+    function addYearsClamp(date, deltaYears) {
+        const d = normalize(date);
+        const y = d.getFullYear() + deltaYears;
+        const m = d.getMonth();
+        const day = d.getDate();
+
+        const last = daysInMonth(y, m);
+        return new Date(y, m, Math.min(day, last));
+    }
+
+
+    function makeLabels(startISO, endISO, grain) {
+        const labels = [];
+        if (!startISO || !endISO) return labels;
+
+        let s = new Date(startISO + "T00:00:00");
+        let e = new Date(endISO + "T00:00:00");
+
+        // start > end면 스왑 (사용자가 날짜를 거꾸로 잡아도 동작)
+        if (s > e) [s, e] = [e, s];
+
+        const pad2 = (n) => String(n).padStart(2, "0");
+        const iso = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+        if (grain === "day") {
+            for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) labels.push(iso(d));
+            return labels;
+        }
+
+        if (grain === "week") {
+            // 주 단위: 시작일부터 7일씩
+            for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 7)) labels.push(iso(d));
+            return labels;
+        }
+
+        if (grain === "month") {
+            // 월 단위: 매월 1일
+            for (let d = new Date(s.getFullYear(), s.getMonth(), 1); d <= e; d.setMonth(d.getMonth() + 1)) {
+                labels.push(`${d.getFullYear()}-${pad2(d.getMonth() + 1)}`);
+            }
+            return labels;
+        }
+
+        if (grain === "year") {
+            for (let y = s.getFullYear(); y <= e.getFullYear(); y++) labels.push(String(y));
+            return labels;
+        }
+
+        return labels;
+    }
+
     const root = document.getElementById('main3');
     if (!root) return;
 
@@ -669,143 +741,172 @@ selectKeyword(bootKeyword);
         donutEl.setAttribute('aria-label', `감성 비율 도넛 차트 (긍정 ${p1}%, 중립 ${p2}%, 부정 ${p3}%)`);
     }
 
-    // ===== 기간 라벨 만들기 (x축) =====
-    // ===== 기간 탭 + 날짜 자동 세팅(오늘 기준) =====
+    // ===== 기간 탭 + 날짜 범위(시작일 수동, 종료일은 어제까지만) =====
     const startDateEl = document.getElementById("startDate");
     const endDateEl = document.getElementById("endDate");
 
-    // ✅ startEl/endEl 별칭(기존 코드에서 startEl/endEl을 쓰고 있으니 맞춰줌)
-    const startEl = startDateEl;
-    const endEl = endDateEl;
-
-    // ✅ 현재 활성 탭(day/week/month/year) 읽기
-    function getActiveGrain() {
-        return document.querySelector(".seg-btn.is-active")?.dataset.grain || "day";
-    }
-
-    // ✅ 라벨 생성(샘플용: 데이터 길이만 맞추면 됨)
-    function parseISO(iso) {
-        const [y, m, d] = (iso || "").split("-").map(Number);
-        if (!y || !m || !d) return null;
-        return new Date(y, m - 1, d);
-    }
-
-    function makeLabels(startISO, endISO, grain) {
-        const s = parseISO(startISO);
-        const e = parseISO(endISO);
-        if (!s || !e) return [];
-
-        // day: 24시간 라벨
-        if (grain === "day") {
-            return Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-        }
-
-        // year: 월 단위 라벨
-        if (grain === "year") {
-            const cur = new Date(s.getFullYear(), s.getMonth(), 1);
-            const last = new Date(e.getFullYear(), e.getMonth(), 1);
-            const out = [];
-            while (cur <= last) {
-                out.push(`${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, "0")}`);
-                cur.setMonth(cur.getMonth() + 1);
-            }
-            return out;
-        }
-
-        // week/month: 일 단위 라벨
-        const cur = new Date(s);
-        const out = [];
-        while (cur <= e) {
-            out.push(`${String(cur.getMonth() + 1).padStart(2, "0")}-${String(cur.getDate()).padStart(2, "0")}`);
-            cur.setDate(cur.getDate() + 1);
-        }
-        return out;
-    }
-
+    // 날짜 유틸
     function pad2(n) { return String(n).padStart(2, "0"); }
-    function toISO(d) {
-        return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+    function toISO(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+    function parseISO(iso) {
+        if (!iso) return null;
+        const d = new Date(iso + "T00:00:00");
+        return Number.isNaN(d.getTime()) ? null : d;
+    }
+    function normalize(d) {
+        const x = new Date(d);
+        x.setHours(0, 0, 0, 0);
+        return x;
     }
     function addDays(d, days) {
-        const x = new Date(d);
+        const x = normalize(d);
         x.setDate(x.getDate() + days);
         return x;
     }
 
-    function setRangeByGrain(grain) {
-        if (!startDateEl || !endDateEl) return;
+    let __appRange = null;
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        let start = new Date(today);
-        let end = new Date(today);
-
-        switch (grain) {
-            case "day":
-                // 오늘~오늘
-                start = new Date(today);
-                end = new Date(today);
-                break;
-            case "week":
-                // 최근 7일(오늘 포함)
-                start = addDays(today, -6);
-                end = new Date(today);
-                break;
-            case "month":
-                // 최근 30일(오늘 포함)
-                start = addDays(today, -29);
-                end = new Date(today);
-                break;
-            case "year":
-                // 최근 365일(오늘 포함)
-                start = addDays(today, -364);
-                end = new Date(today);
-                break;
-            default:
-                start = new Date(today);
-                end = new Date(today);
-        }
-
-        startDateEl.value = toISO(start);
-        endDateEl.value = toISO(end);
-
-        // ✅ TS3 차트가 start/end change 이벤트로 갱신되도록 트리거
-        startEl.dispatchEvent(new Event("change", { bubbles: true }));
-        endEl.dispatchEvent(new Event("change", { bubbles: true }));
+    function getActiveGrain() {
+        return document.querySelector(".seg-btn.is-active")?.dataset.grain || "day";
     }
 
-    // ===== 기간 탭 =====
+    // 종료일: "미래만" 금지 (어제까지만), 사용자가 과거로 바꾸는 건 허용
+    function clampEndToYesterdayISO(inputISO) {
+        const yesterdayISO = toISO(addDays(new Date(), -1));
+        return (!inputISO || inputISO > yesterdayISO) ? yesterdayISO : inputISO;
+    }
+
+
+    // (선택) 이전기간 계산: 현재 기간 길이만큼 바로 이전 구간
+    function calcPrevSameLength(start, end) {
+        const msDay = 24 * 60 * 60 * 1000;
+        const diffDays = Math.round((end - start) / msDay); // start==end면 0
+        const prevEnd = addDays(start, -1);
+        const prevStart = addDays(prevEnd, -diffDays);
+        return { prevStart: toISO(prevStart), prevEnd: toISO(prevEnd) };
+    }
+
+    function calcStartByGrain(grain, end) {
+        // ✅ end 포함해서 "최근 N일" 느낌으로 만들려면 week는 -6 (총 7일)
+        //    만약 너가 'start = end-7'을 원하면 -7로 바꿔도 됨.
+        if (grain === "day") return new Date(end);
+        if (grain === "week") return addDays(end, -6);
+
+        // month/year는 "같은 날짜 기준 1개월/1년 전" (원래 네 코드 스타일)
+        if (grain === "month") return addMonthsClamp(end, -1);
+        if (grain === "year") return addYearsClamp(end, -1);
+
+        return new Date(end);
+    }
+
+    // ✅ preset=true면 탭(day/week/month/year) 기준으로 start 자동 세팅
+    function emitRangeChange({ preset = false } = {}) {
+        const grain = getActiveGrain();
+
+        // 1) endISO 결정: 사용자 입력 존중 + 미래만 어제까지 제한
+        const yesterdayISO = toISO(addDays(new Date(), -1));
+        if (endDateEl) endDateEl.max = yesterdayISO;
+
+        const endISO = clampEndToYesterdayISO(endDateEl?.value);
+        if (endDateEl) endDateEl.value = endISO;
+
+        let end = normalize(parseISO(endISO) || addDays(new Date(), -1));
+
+        // 2) start 결정
+        let start;
+        if (preset) {
+            start = normalize(calcStartByGrain(grain, end));
+            if (startDateEl) startDateEl.value = toISO(start);
+        } else {
+            start = normalize(parseISO(startDateEl?.value) || end);
+        }
+
+        // 3) start > end면 start를 end로 내림 (스왑보다 UX 깔끔)
+        if (start > end) {
+            start = new Date(end);
+            if (startDateEl) startDateEl.value = toISO(start);
+        }
+
+        // 4) 서로 제약 걸기 (핵심!!)
+        if (startDateEl) startDateEl.max = toISO(end);       // start는 end 이후 선택 불가
+        if (endDateEl) endDateEl.min = toISO(start);         // end는 start 이전 선택 불가
+
+        const prev = calcPrevSameLength(start, end);
+
+        __appRange = {
+            grain,
+            start: toISO(start),
+            end: toISO(end),
+            prevStart: prev.prevStart,
+            prevEnd: prev.prevEnd,
+        };
+
+        document.dispatchEvent(new CustomEvent("app:rangechange", { detail: __appRange }));
+    }
+
+
+    // 외부(TS2/TS3 등)에서 범위 읽기
+    window.getAppRange = () => __appRange || {
+        grain: getActiveGrain(),
+        start: startDateEl?.value,
+        end: endDateEl?.value,
+        prevStart: null,
+        prevEnd: null
+    };
+
+    // 이벤트
+    startDateEl?.addEventListener("input", () => emitRangeChange({ preset: false }));
+    startDateEl?.addEventListener("change", () => emitRangeChange({ preset: false }));
+
+    endDateEl?.addEventListener("input", () => emitRangeChange({ preset: false }));
+    endDateEl?.addEventListener("change", () => emitRangeChange({ preset: false }));
+
+
+    // 탭 클릭: 프리셋 기간으로 시작일 자동 세팅
     segmentedBtns.forEach((btn) => {
         btn.addEventListener("click", () => {
             segmentedBtns.forEach((b) => {
                 b.classList.remove("is-active");
                 b.setAttribute("aria-selected", "false");
             });
-
             btn.classList.add("is-active");
             btn.setAttribute("aria-selected", "true");
 
-            // ✅ 여기서 날짜를 오늘 기준으로 자동 변경
-            setRangeByGrain(btn.dataset.grain || "day");
+            emitRangeChange({ preset: true }); // 핵심!!
         });
     });
 
-    // (선택) 첫 로드도 오늘로 맞추고 싶으면 한 번 실행
-    setRangeByGrain(document.querySelector(".seg-btn.is-active")?.dataset.grain || "day");
+    // 첫 로드도 프리셋으로 시작일 자동 세팅 + 종료일 어제 고정
+    emitRangeChange({ preset: true });
 
 
-    // ===== (샘플) 키워드별 언급량 시계열 생성 ⚠️나중에 makeSeries()만 실제 데이터로 바꾸기=====
+    // ===== (임시) 라인차트 시계열 생성기 =====
+    // TODO: 나중에 실제 API/DB에서 날짜별 언급량 배열로 교체하면 됨
+    function hash32(str) {
+        let h = 2166136261;
+        for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+        }
+        return h >>> 0;
+    }
+
+    // labels(YYYY-MM-DD / YYYY-MM / YYYY) 각각에 대해 "안정적으로" 같은 값이 나오도록 생성
     function makeSeries(keyword, labels) {
-        // "키워드마다 조금씩 다른" 패턴을 만들기 위한 seed
-        const seed = Array.from(keyword).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-        const base = 80 + (seed % 60);
+        const seed = hash32(keyword);
+        const base = (seed % 25) + 15; // 키워드별 기본 레벨
+        const len = Math.max(1, labels.length);
 
-        return labels.map((_, i) => {
-            const wave = Math.sin((i + 1) * 0.7) * 12;
-            const step = (i % 3) * 6;
-            const noise = ((seed + i * 13) % 7) - 3;
-            return Math.max(0, Math.round(base + wave + step + noise));
+        return labels.map((lab, i) => {
+            const t = i / len;
+
+            // 완만한 추세 + 파동 + 라벨 기반 노이즈(결정적)
+            const drift = t * 8;
+            const wave = Math.sin(t * Math.PI * 2) * 6;
+            const noise = (hash32(keyword + "|" + lab) % 11) - 5;
+
+            const v = Math.round(base + drift + wave + noise);
+            return Math.max(0, v);
         });
     }
 
@@ -829,7 +930,8 @@ selectKeyword(bootKeyword);
     function renderLineChart() {
         if (!canvas || typeof Chart === 'undefined') return;
 
-        const labels = makeLabels(startEl?.value, endEl?.value, getActiveGrain());
+        const { start, end, grain } = window.getAppRange?.() || {};
+        const labels = makeLabels(start, end, grain || "day");
         const datasets = buildDatasets(labels);
 
         if (placeholder) placeholder.style.display = 'none';
@@ -911,15 +1013,6 @@ selectKeyword(bootKeyword);
         });
     });
 
-    // 기간/단위 바뀌면 차트 리렌더
-    startEl?.addEventListener('change', renderLineChart);
-    endEl?.addEventListener('change', renderLineChart);
-    document.querySelectorAll('.seg-btn').forEach(btn => btn.addEventListener('click', () => {
-        // segmented 로직이 is-active 바꾸는 건 이미 위에서 하고 있으니
-        // 여기서는 차트만 갱신
-        renderLineChart();
-    }));
-
     // 외부에서(=selectKeyword) 기준 키워드 바꾸게 노출
     window.ts3Api = {
         setKeyword: setBaseKeyword,
@@ -934,4 +1027,8 @@ selectKeyword(bootKeyword);
             '주식').trim();
 
     setBaseKeyword(init);
+
+    document.addEventListener("app:rangechange", () => {
+        renderLineChart();
+    });
 })();

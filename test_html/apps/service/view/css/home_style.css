@@ -60,7 +60,6 @@ img {
 /* 배경 오브젝트(스크린샷 같은 흐릿한 블롭) */
 .bg-orb {
   position: fixed;
-  inset: auto;
   pointer-events: none;
   filter: blur(60px);
   opacity: .85;
@@ -233,6 +232,15 @@ img {
   border: 1px solid rgba(15, 23, 42, .07);
   background: rgba(255, 255, 255, .55);
   box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
+
+  touch-action: pan-y;
+  /* ✅ 세로 스크롤은 허용, 가로 스와이프는 JS가 처리 */
+  user-select: none;
+  cursor: grab;
+}
+
+.product-slider.is-dragging {
+  cursor: grabbing;
 }
 
 .product-slider__track {
@@ -255,42 +263,47 @@ img {
   --zoom: 1;
   --ox: 50%;
   --oy: 50%;
+
   transform: scale(1);
   transform-origin: var(--ox) var(--oy);
-  transition: none;
+  
+  backface-visibility: hidden;
 }
 
 .product-slider__slide.is-active {
   transform: scale(var(--zoom));
 }
 
-.product-slider__slide:nth-of-type(2) {
+.product-slider__slide[data-idx="1"] {
   --zoom: 1.8;
   --ox: 15%;
   --oy: 70%;
 }
 
-.product-slider__slide:nth-of-type(4) {
-  aspect-ratio: 15 / 10;
-  flex: 0 0 100%;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  /* 핵심 */
-  object-position: 50% 100%;
-  display: block;
+.product-slider__slide[data-idx="3"]{
+  aspect-ratio: auto;
+  object-position: 50% 50%;
+
+  --ox: 50%;
+  --oy: 70%;
 }
 
-.product-slider__slide:nth-of-type(5) {
+
+.product-slider__slide[data-idx="4"] {
   --zoom: 3.5;
-  --ox: 50%;
-  --oy: 8%;
+  --ox: 8%;
+  --oy: 6%;
 }
 
 /* 카드 클릭 가능 느낌 + 활성 상태 */
 .mini-card {
   cursor: pointer;
   transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  background: rgba(255, 255, 255, .70);
+  border: 1px solid rgba(15, 23, 42, .06);
+  border-radius: 14px;
+  padding: 14px 14px 12px;
+  box-shadow: var(--shadow-sm);
 }
 
 .mini-card:hover {
@@ -315,14 +328,6 @@ img {
   grid-template-columns: repeat(5, 1fr);
   gap: 12px;
   width: min(980px, 100%);
-}
-
-.mini-card {
-  background: rgba(255, 255, 255, .70);
-  border: 1px solid rgba(15, 23, 42, .06);
-  border-radius: 14px;
-  padding: 14px 14px 12px;
-  box-shadow: var(--shadow-sm);
 }
 
 .mini-card__icon {

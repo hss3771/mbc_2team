@@ -30,10 +30,10 @@
         </div>
     </header>
 
+    
+
     <div class="app">
         <aside id="sidebarMount" class="sidebar" aria-label="사이드바"></aside>
-
-
         <main class="mains">
 
             <!-- 상단 필터 바 -->
@@ -42,13 +42,13 @@
                     <label class="date-pill">
                         <span class="date-icon" aria-hidden="true">📅</span>
                         <span class="date-label">시작일</span>
-                        <input id="startDate" type="date" value="2025-12-17" />
+                        <input id="startDate" type="date" />
                     </label>
 
                     <label class="date-pill">
                         <span class="date-icon" aria-hidden="true">📅</span>
                         <span class="date-label">종료일</span>
-                        <input id="endDate" type="date" value="2025-12-18" />
+                        <input id="endDate" type="date" />
                     </label>
 
 
@@ -364,10 +364,11 @@
         </main>
     </div>
 
-    <script src="/static/base.js"></script>
+    <script src="/static/base.js" defer></script>
     <script src="/static/sidebar_init.js" defer></script>
     <script src="/static/sidebar.js" defer></script>
-    <script src="/static/main.js"> </script>
+    <script src="/static/main.js" defer></script>
+
 </body>
 
 </html>

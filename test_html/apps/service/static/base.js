@@ -1,11 +1,11 @@
 (function () {
   const authInEls  = document.querySelectorAll(".js-auth-in");   // 로그인 상태 UI (로그아웃 등)
   const authOutEls = document.querySelectorAll(".js-auth-out");  // 비로그인 상태 UI (로그인, 회원가입)
-
-  if (!authInEls.length && !authOutEls.length) return;
+  const authMenu = document.querySelectorAll(".js-auth-menu");
+  if (!authInEls.length && !authOutEls.length && !authMenu) return;
 
   // 최초 한 번, 원래 display 값을 백업해 둔다.
-  const allAuthEls = [...authInEls, ...authOutEls];
+  const allAuthEls = [...authInEls, ...authOutEls, ...authMenu];
   allAuthEls.forEach(el => {
     if (!el.dataset.tsDisplayBackup) {
       const d = getComputedStyle(el).display;
@@ -35,14 +35,21 @@
     setVisible(authOutEls, !loggedIn);
   }
 
-  // 디버깅용으로 전역에 노출 (원하면 나중에 제거해도 됨)
-  window.__tsSetAuthUI = setUI;
-
+  function setMenu(roleAdmin) {
+    setVisible(authMenu, roleAdmin);
+  }
   // 기본값: 로그아웃 상태 UI
   setUI(false);
+  setMenu(false);
 
   fetch("/api/session", { credentials: "include" })
     .then(r => r.ok ? r.json() : Promise.reject())
-    .then(s => setUI(!!s.logged_in))
-    .catch(() => setUI(false));
+    .then(body => {
+      const loggedIn = !!body.logged_in;
+      const isAdmin  = loggedIn && !!body.admin_in;
+
+      setUI(loggedIn);
+      setMenu(isAdmin);
+    })
+    .catch(() => {setUI(false); setMenu(false);});
 })();

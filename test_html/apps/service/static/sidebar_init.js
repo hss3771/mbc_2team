@@ -427,3 +427,112 @@ window.__initRequireLoginModal = function () {
     setAuth(e.detail || {});
   });
 })();
+
+(function () {
+  function $(sel, el = document) { return el.querySelector(sel); }
+
+  function ensureBackdrop() {
+    let b = $("#tsSidebarBackdrop");
+    if (!b) {
+      b = document.createElement("div");
+      b.id = "tsSidebarBackdrop";
+      b.className = "tsSidebarBackdrop";
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+
+  function ensureHamburgerButton() {
+    let btn = $("#btnSidebarToggle");
+    if (btn) return btn;
+
+    btn = document.createElement("button");
+    btn.id = "btnSidebarToggle";
+    btn.className = "tsHamburger";
+    btn.type = "button";
+    btn.setAttribute("aria-label", "메뉴 열기");
+    btn.setAttribute("aria-expanded", "false");
+    btn.innerHTML = "<span></span><span></span><span></span>";
+
+    // ✅ 너 프로젝트에서 자주 나오는 헤더 컨테이너 후보들
+    const headerInner =
+      $("header .header-inner") ||
+      $("header .topbar__inner") ||
+      $(".topbar .header-inner") ||
+      $(".topbar .topbar__inner");
+
+    if (headerInner) {
+      const authArea = $("#authArea", headerInner);
+      if (authArea) headerInner.insertBefore(btn, authArea);
+      else headerInner.appendChild(btn);
+    } else {
+      // 헤더 구조를 못 찾으면: 화면 우측 상단에 떠 있는 버튼으로 대체
+      btn.style.position = "fixed";
+      btn.style.top = "12px";
+      btn.style.right = "12px";
+      btn.style.zIndex = "100000";
+      btn.style.display = "inline-flex";
+      document.body.appendChild(btn);
+    }
+    return btn;
+  }
+
+  function initMobileSidebarToggle() {
+    const sidebar = $("#sidebarMount");
+    if (!sidebar) return;
+
+    const backdrop = ensureBackdrop();
+    const btnToggle = ensureHamburgerButton();
+
+    function open() {
+      sidebar.classList.add("is-open");
+      backdrop.classList.add("is-open");
+      btnToggle.setAttribute("aria-expanded", "true");
+    }
+    function close() {
+      sidebar.classList.remove("is-open");
+      backdrop.classList.remove("is-open");
+      btnToggle.setAttribute("aria-expanded", "false");
+    }
+    function toggle() {
+      sidebar.classList.contains("is-open") ? close() : open();
+    }
+
+    btnToggle.addEventListener("click", (e) => { e.preventDefault(); toggle(); });
+    backdrop.addEventListener("click", close);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+
+    // ✅ 메뉴 클릭 시 닫기(모바일 UX)
+    sidebar.addEventListener("click", (e) => {
+      const a = e.target.closest("a");
+      if (a) close();
+    }, true);
+
+    // ✅ 데스크톱으로 커지면 열린 상태 정리
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > 1100) close();
+    });
+
+    close();
+  }
+
+  // sidebar.js가 fetch로 sidebar를 꽂아넣어도, 감지해서 자동 초기화
+  function onSidebarMounted(cb) {
+    const mount = document.getElementById("sidebarMount");
+    if (!mount) return;
+
+    if (mount.querySelector(".menu")) return cb();
+
+    const mo = new MutationObserver(() => {
+      if (mount.querySelector(".menu")) {
+        mo.disconnect();
+        cb();
+      }
+    });
+    mo.observe(mount, { childList: true, subtree: true });
+  }
+
+  function boot() { onSidebarMounted(initMobileSidebarToggle); }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+})();
