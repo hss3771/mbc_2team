@@ -132,7 +132,7 @@ def register(
 
     # db.register_user 반환: {"message": "등록 완료" 또는 "등록 실패"}
     return {
-        "success": result.get("message") == "등록 완료", # True 반환
+        "success": result.get("success"), # True 반환
         "msg": result.get("message"),
     }
 
@@ -257,12 +257,12 @@ def mypage_password_check(
     result = user.check_my_page_pw(user_id, pw)
 
     # 4) 성공 시 세션 플래그 저장 (회원정보 수정 페이지 접근 허용)
-    if result.get("success"):
+    if result.get("success"): # type: ignore
         request.session["my_page_verified"] = True
         # 성공 즉시 회원정보 수정 화면으로 이동
         return RedirectResponse("/view/info_edit.html")
 
-    return {"success": False, "message": result.get("message")}
+    return {"success": False, "message": result.get("message")} # type: ignore
 
 
 # 마이페이지 - 회원정보 불러오기
@@ -324,15 +324,14 @@ def info_update(
 
     result = user.update_my_page_info(user_id, info)
 
-    if result.get("success"):
+    if result.get("success"): # type: ignore
         request.session.pop("my_page_verified", None)
 
     return result
-
 
 # session api : 로그인 정보 확인 (bool)
 # 모든 페이지에서 로그인 정보를 확인하여 상단에 로그인/로그아웃 표시하기 위함
 # apps/static/base.js 와 연동
 @app.get("/api/session")
 def session_info(request: Request):
-    return {"logged_in": bool(request.session.get("user_id"))}
+    return {"logged_in": bool(request.session.get("user_id")), "admin_in": bool(request.session.get("user_role") == 'admin')}
