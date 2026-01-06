@@ -110,66 +110,68 @@ window.selectKeyword = selectKeyword;
 
 // ===== 커스텀 드롭다운 =====
 (function () {
-    const root = document.getElementById('keywordDropdown');
-    if (!root) return;
+  const root = document.getElementById('keywordDropdown');
+  if (!root) return;
 
-    const btn = root.querySelector('.cselect__btn');
-    const valueEl = root.querySelector('.cselect__value');
-    const hidden = root.querySelector('input[type="hidden"]');
-    const options = Array.from(root.querySelectorAll('.cselect__opt'));
+  const btn = root.querySelector('.cselect__btn');
+  const list = root.querySelector('.cselect__list'); // ✅ 추가
+  const valueEl = root.querySelector('.cselect__value');
+  const hidden = root.querySelector('input[type="hidden"]');
+  const options = Array.from(root.querySelectorAll('.cselect__opt'));
 
-    if (!btn || !list || !valueEl || options.length === 0) return;
+  let activeIndex = 0; // ✅ 추가(아래에서 사용하니까)
 
-    function close() {
-        root.classList.remove('is-open');
-        btn.setAttribute('aria-expanded', 'false');
-    }
-    function toggle() {
-        root.classList.toggle('is-open');
-        btn.setAttribute('aria-expanded', root.classList.contains('is-open') ? 'true' : 'false');
-    }
+  if (!btn || !list || !valueEl || options.length === 0) return;
 
-    function applyValue(v) {
-        options.forEach(o => {
-            const isMatch = (o.dataset.value ?? o.textContent.trim()) === v;
-            o.classList.toggle('is-selected', isMatch);
-            if (isMatch) o.setAttribute('aria-selected', 'true');
-            else o.removeAttribute('aria-selected');
-        });
+  function close() {
+    root.classList.remove('is-open');
+    btn.setAttribute('aria-expanded', 'false');
+  }
 
-        valueEl.textContent = v;
-        if (hidden) hidden.value = v;
+  function toggle() {
+    root.classList.toggle('is-open');
+    btn.setAttribute('aria-expanded', root.classList.contains('is-open') ? 'true' : 'false');
+  }
 
-        const idx = options.findIndex(o => (o.dataset.value ?? o.textContent.trim()) === v);
-        if (idx >= 0) activeIndex = idx;
-    }
-
-    options.forEach(opt => {
-        opt.addEventListener('click', () => {
-            const v = opt.dataset.value ?? opt.textContent.trim();
-            applyValue(v);
-            close();
-            selectKeyword(v); // 드롭다운 선택 -> 랭킹/요약 변경
-        });
+  function applyValue(v) {
+    options.forEach(o => {
+      const isMatch = (o.dataset.value ?? o.textContent.trim()) === v;
+      o.classList.toggle('is-selected', isMatch);
+      if (isMatch) o.setAttribute('aria-selected', 'true');
+      else o.removeAttribute('aria-selected');
     });
 
-    btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggle();
+    valueEl.textContent = v;
+    if (hidden) hidden.value = v;
+
+    const idx = options.findIndex(o => (o.dataset.value ?? o.textContent.trim()) === v);
+    if (idx >= 0) activeIndex = idx; // ✅ 이제 안전
+  }
+
+  options.forEach(opt => {
+    opt.addEventListener('click', () => {
+      const v = opt.dataset.value ?? opt.textContent.trim();
+      applyValue(v);
+      close();
+      selectKeyword(v);
     });
+  });
 
-    document.addEventListener('click', (e) => {
-        if (!root.contains(e.target)) close();
-    });
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    toggle();
+  });
 
-    dropdownApi = {
-        setValue(v) { applyValue(v); }
-    };
+  document.addEventListener('click', (e) => {
+    if (!root.contains(e.target)) close();
+  });
 
-    // 드롭다운 초기값 반영만 해둠 (렌더는 아래 boot에서 무조건 1회)
-    const initial = (hidden?.value || valueEl.textContent || "주식").trim();
-    applyValue(initial);
+  dropdownApi = { setValue(v) { applyValue(v); } };
+
+  const initial = (hidden?.value || valueEl.textContent || "주식").trim();
+  applyValue(initial);
 })();
+
 
 // 초기 렌더는 무조건 1번 실행 (TOP10 첫 로드부터 보이게)
 const bootKeyword =

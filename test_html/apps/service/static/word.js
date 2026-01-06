@@ -224,34 +224,104 @@
     return `<button class="index-btn ${on}" type="button" data-key="${key}">${label}</button>`;
   }
 
+  function renderIndexBar() {
+    const list =
+      state.seg === "ko" ? KO_INDEX :
+        state.seg === "en" ? EN_INDEX :
+          NUM_INDEX;
+
+    indexBar.innerHTML = `
+      <div class="index-pill" role="tablist" aria-label="인덱스 선택">
+        ${renderIndexBtn("all", "전체")}
+        ${list.map(k => renderIndexBtn(k, k)).join("")}
+      </div>
+    `;
+  }
+
   /** =========================
-   *  Render: List + Detail
+   *  Render: List
    *  ========================= */
-  function setSelected(id, { render = false } = {}) {
+
+  function getFilteredWords() {
+    let arr = state.words.filter(w => w.seg === state.seg);
+
+    if (state.index !== "all") {
+      arr = arr.filter(w => w.indexKey === state.index);
+    }
+
+    const locale = (state.seg === "en") ? "en" : "ko";
+    return arr.slice().sort((a, b) => a.term.localeCompare(b.term, locale));
+  }
+
+  function setSelected(id) {
     state.selectedId = id;
 
     if (!id) {
       detailTitle.textContent = "단어를 선택하세요";
       detailMeta.textContent = "";
       detailContent.innerHTML = `
-        <div class="word-empty">
-          <div class="word-empty-emoji">📘</div>
-        </div>
-      `;
+      <div class="word-empty">
+        <div class="word-empty-emoji">📘</div>
+      </div>
+    `;
       setDetailStar(null);
       return;
     }
 
-    if (render) renderList();
-    else {
-      // 리스트 선택 표시만 갱신
-      $$(".word-item", listEl).forEach(el => {
-        const on = el.dataset.id === id;
-        el.classList.toggle("is-selected", on);
-        el.setAttribute("aria-selected", on ? "true" : "false");
-      });
-      renderDetail(id);
+    // 리스트 선택 표시 갱신
+    $$(".word-item", listEl).forEach(el => {
+      const on = el.dataset.id === id;
+      el.classList.toggle("is-selected", on);
+      el.setAttribute("aria-selected", on ? "true" : "false");
+    });
+
+    renderDetail(id);
+  }
+
+  function renderList() {
+    const items = getFilteredWords();
+
+    if (!items.length) {
+      listEl.innerHTML = `
+        <div class="word-empty" style="min-height:240px;">
+          <div class="word-empty-title">해당 조건의 단어가 없어요<br> 다른 인덱스를 선택해보세요</div>
+        </div>
+      `;
+      setSelected(null);
+      return;
     }
+
+    // 선택 유지/초기 선택
+    if (!state.selectedId || !items.some(x => x.id === state.selectedId)) {
+      state.selectedId = items[0].id;
+    }
+
+    listEl.innerHTML = items.map(w => {
+      const on = isBookmarked(w.id);
+      const selected = w.id === state.selectedId;
+
+      return `
+        <div class="word-item ${selected ? "is-selected" : ""}"
+             data-id="${w.id}"
+             role="option"
+             tabindex="0"
+             aria-selected="${selected}">
+          <span class="word-item-title">${escapeHtml(w.term)}</span>
+
+          <span class="word-item-right">
+            <button class="star-mini ${on ? "is-on" : ""}"
+                    type="button"
+                    data-star="${w.id}"
+                    aria-label="즐겨찾기">
+              ${on ? "★" : "☆"}
+            </button>
+            <span class="play-mini" aria-hidden="true">▶</span>
+          </span>
+        </div>
+      `;
+    }).join("");
+
+    renderDetail(state.selectedId);
   }
 
   function renderDetail(id) {
