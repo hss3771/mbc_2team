@@ -24,72 +24,6 @@ body {
   min-height: calc(100vh - 60px);
 }
 
-.sidebar {
-  width: 260px;
-  background: #fff;
-  padding: 18px 16px;
-  border-radius: 14px;
-  border-right: none;
-  box-shadow: 0 18px 45px rgba(15, 40, 90, 0.08);
-  flex-shrink: 0;
-
-  position: sticky;
-  top: calc(var(--header-h) + 22px);
-  height: calc(100vh - var(--header-h) - 44px);
-  overflow: auto;
-  
-}
-
-.sidebar_logo {
-  font-size: 22px;
-  font-weight: bold;
-  color: #0462D2;
-  margin-bottom: 30px;
-}
-
-.menu {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.menu li {
-  position: relative;
-  margin-bottom: 8px;
-  border-radius: 12px;
-  transition: background-color 0.3s;
-}
-
-.menu li a {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  position: relative;
-  z-index: 2;
-}
-
-.menu li.active {
-  background-color: #e8f1ff;
-  box-shadow: inset 0 0 0 2px #A6C8EF;
-}
-
-.menu li.active a {
-  color: #0462D2;
-  font-weight: 700;
-}
-
-.menu li::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius: 12px;
-  background: transparent;
-  border: 2px solid transparent;
-  z-index: 1;
-}
-
 main {
   flex: 1;
   height: 100%;
@@ -559,11 +493,6 @@ main {
   color: #6a7a93;
 }
 
-.word-empty-sub {
-  font-size: 12px;
-  opacity: .9;
-}
-
 /* 모달 */
 .modal-backdrop {
   position: fixed;
@@ -715,29 +644,6 @@ main {
 
 :root{
   --header-h: 60px;
-}
-
-/* ===== Topbar (word.html용) ===== */
-.topbar{
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%;
-  height: 60px;
-  background: #0462D2;
-  display: flex;
-  align-items: center;
-  z-index: 999;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-}
-
-.topbar__inner{
-  width: 100%;
-  margin: 0 auto;
-  padding: 0 20px;
-  display:flex;
-  align-items:center;
-  justify-content: space-between;
-  box-sizing: border-box;
 }
 
 .brand{

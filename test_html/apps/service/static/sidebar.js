@@ -5,6 +5,7 @@ async function mountSidebar() {
   const res = await fetch("/view/sidebar.html", { cache: "no-cache" });
   const html = await res.text();
   mount.innerHTML = html;
+  window.__initMobileSidebarToggle?.();
 
   // 모달 레이어를 body로 빼기: fixed가 viewport 기준으로 동작하게
   const layer = mount.querySelector("#tsNeedLoginLayer");

@@ -12,26 +12,7 @@
 </head>
 
 <body>
-  <header class="header">
-    <div class="header-inner">
-
-      <div class="header-left">
-        <button id="btnSidebarToggle" class="tsHamburger" type="button" aria-label="메뉴 열기" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
-
-        <a class="brand" href="/">
-          <span class="sidebar_logo">
-            <img src="/view/img/logo_white.png" alt="">
-          </span>
-        </a>
-      </div>
-
-      <div id="authArea" class="header-right">
-        <a href="/logout" class="logout-button">로그아웃</a>
-      </div>
-    </div>
-  </header>
+  <div id="headerMount" aria-label="공통 헤더"></div>
 
   <div class="app">
     <aside id="sidebarMount" class="sidebar" aria-label="사이드바"></aside>
@@ -113,8 +94,8 @@
     </div>
   </div>
 
-  <script src="/static/base.js"></script>
-
+  <script src="/static/header_init.js" defer></script>
+  <script src="/static/base.js" defer></script>
   <script src="/static/sidebar_init.js" defer></script>
   <script src="/static/sidebar.js" defer></script>
 

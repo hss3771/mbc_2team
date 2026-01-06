@@ -11,23 +11,7 @@
 </head>
 
 <body>
-  <header class="topbar">
-    <div class="topbar__inner">
-      <a class="brand" href="./home.html">
-        <span class="topbar_logo"><img src="./img/logo_white.png" alt="TrendScope"></span>
-      </a>
-
-      <nav id="authArea" class="topbar__actions" aria-label="상단 메뉴">
-        <!-- 비로그인 -->
-        <a class="topbar__link js-auth-out" href="./login.html">로그인</a>
-        <a class="topbar__btn js-auth-out" href="./signup.html">회원가입</a>
-
-        <!-- 로그인 -->
-        <a class="topbar__link js-auth-in" href="./my_page.html">마이페이지</a>
-        <a class="topbar__btn js-auth-in" href="/logout" id="btnLogout">로그아웃</a>
-      </nav>
-    </div>
-  </header>
+  <div id="headerMount" aria-label="공통 헤더"></div>
 
   <div class="app">
     <aside id="sidebarMount" class="sidebar" aria-label="사이드바"></aside>
@@ -104,6 +88,7 @@
       </div>
     </main>
   </div>
+  <script src="/static/header_init.js" defer></script>
   <script src="/static/base.js" defer></script>
   <script src="/static/sidebar_init.js" defer></script>
   <script src="/static/sidebar.js" defer></script>

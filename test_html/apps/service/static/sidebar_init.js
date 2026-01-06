@@ -361,7 +361,7 @@ window.__initRequireLoginModal = function () {
 };
 
 // ==============================
-// ✅ Role 기반 메뉴 토글 브릿지
+// Role 기반 메뉴 토글 브릿지
 // - base.js에서 setAuth({loggedIn, roleId}) 호출하면 admin-only 메뉴 표시
 // - sidebar가 mount 전이어도 상태를 저장했다가 mount 후 적용 가능
 // ==============================
@@ -369,10 +369,10 @@ window.__initRequireLoginModal = function () {
   const SIDEBAR_ROOT = "#sidebarMount";
   const ADMIN_SELECTOR = ".admin-only, [data-require-admin='true']";
 
-  // ✅ 여기만 네 규칙에 맞게 수정하면 됨 (예: role_id 1이 관리자)
+  // 여기만 네 규칙에 맞게 수정하면 됨 (예: role_id 1이 관리자)
   let ADMIN_ROLE_IDS = new Set([1]);
 
-  // ✅ base.js가 주입할 상태(기본값: 비로그인/일반)
+  // base.js가 주입할 상태(기본값: 비로그인/일반)
   let authState = { loggedIn: false, roleId: null };
 
   function isAdmin() {
@@ -397,37 +397,41 @@ window.__initRequireLoginModal = function () {
     }
   }
 
-  // ✅ base.js에서 호출할 함수(권한 상태 주입)
+  // base.js에서 호출할 함수(권한 상태 주입)
   function setAuth(next) {
     authState.loggedIn = !!next?.loggedIn;
     authState.roleId = (next?.roleId ?? null);
     applyRoleMenu();
   }
 
-  // ✅ 관리자 role_id 목록을 바꾸고 싶을 때(옵션)
+  // 관리자 role_id 목록을 바꾸고 싶을 때(옵션)
   function setAdminRoleIds(ids) {
     ADMIN_ROLE_IDS = new Set((ids || []).map(Number).filter(v => !Number.isNaN(v)));
     applyRoleMenu();
   }
 
-  // ✅ sidebar.js가 mount 후 호출할 훅
+  // sidebar.js가 mount 후 호출할 훅
   window.__initRoleBasedMenu = function () {
     applyRoleMenu();
   };
 
-  // ✅ 전역 노출: base.js에서 window.SidebarRoleBridge.setAuth(...)로 사용
+  // 전역 노출: base.js에서 window.SidebarRoleBridge.setAuth(...)로 사용
   window.SidebarRoleBridge = {
     setAuth,
     setAdminRoleIds,
     apply: applyRoleMenu,
   };
 
-  // ✅ (선택) 이벤트 방식도 지원: base.js에서 dispatchEvent로 느슨하게 연결 가능
+  // 이벤트 방식도 지원: base.js에서 dispatchEvent로 느슨하게 연결 가능
   window.addEventListener("app:auth", (e) => {
     setAuth(e.detail || {});
   });
 })();
 
+// ==============================
+// Mobile sidebar toggle (hamburger + backdrop + X close)
+// 여러 번 호출돼도 안전(idempotent)하게 설계
+// ==============================
 (function () {
   function $(sel, el = document) { return el.querySelector(sel); }
 
@@ -443,38 +447,102 @@ window.__initRequireLoginModal = function () {
   }
 
   function ensureHamburgerButton() {
-    let btn = $("#btnSidebarToggle");
+    let btn = document.querySelector("#btnSidebarToggle");
+
+    // 지금은 header.html이 #headerMount 안에 들어오니까 그 케이스까지 커버
+    const headerInner =
+      document.querySelector("#headerMount header .header-inner") ||
+      document.querySelector("#headerMount header .topbar__inner") ||
+      document.querySelector("header .header-inner") ||
+      document.querySelector("header .topbar__inner");
+
+    // 없으면 생성
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.id = "btnSidebarToggle";
+      btn.className = "tsHamburger";
+      btn.type = "button";
+      btn.setAttribute("aria-label", "메뉴 열기");
+      btn.setAttribute("aria-expanded", "false");
+      btn.innerHTML = "<span></span><span></span><span></span>";
+    }
+
+    // 헤더가 있으면: 무조건 헤더 안으로 “이동”
+    if (headerInner) {
+      const brand = headerInner.querySelector(".brand");
+
+      if (!headerInner.contains(btn)) {
+        // fallback으로 줬던 fixed 인라인 스타일 제거
+        btn.style.position = "";
+        btn.style.top = "";
+        btn.style.right = "";
+        btn.style.zIndex = "";
+        btn.style.display = "";
+
+        if (brand) headerInner.insertBefore(btn, brand);
+        else headerInner.prepend(btn);
+      }
+      return btn;
+    }
+
+    // 아직 헤더가 없으면: body fixed로 임시 배치
+    if (!btn.isConnected) document.body.appendChild(btn);
+
+    btn.style.position = "fixed";
+    btn.style.top = "12px";
+    btn.style.right = "12px";
+    btn.style.zIndex = "100000";
+    btn.style.display = "inline-flex";
+
+    return btn;
+  }
+
+
+  function ensureSidebarCloseButton(sidebar) {
+    // 이미 있으면 재사용
+    let btn = sidebar.querySelector("#btnSidebarClose");
     if (btn) return btn;
 
-    btn = document.createElement("button");
-    btn.id = "btnSidebarToggle";
-    btn.className = "tsHamburger";
-    btn.type = "button";
-    btn.setAttribute("aria-label", "메뉴 열기");
-    btn.setAttribute("aria-expanded", "false");
-    btn.innerHTML = "<span></span><span></span><span></span>";
+    // 상단바 + X 버튼 생성
+    const top = document.createElement("div");
+    top.className = "tsSidebarTop";
+    top.innerHTML = `
+      <button id="btnSidebarClose" class="tsSidebarClose" type="button" aria-label="메뉴 닫기">×</button>
+    `;
 
-    // ✅ 너 프로젝트에서 자주 나오는 헤더 컨테이너 후보들
-    const headerInner =
-      $("header .header-inner") ||
-      $("header .topbar__inner") ||
-      $(".topbar .header-inner") ||
-      $(".topbar .topbar__inner");
+    const menu = sidebar.querySelector(".menu");
+    if (menu) sidebar.insertBefore(top, menu);
+    else sidebar.prepend(top);
 
-    if (headerInner) {
-      const authArea = $("#authArea", headerInner);
-      if (authArea) headerInner.insertBefore(btn, authArea);
-      else headerInner.appendChild(btn);
-    } else {
-      // 헤더 구조를 못 찾으면: 화면 우측 상단에 떠 있는 버튼으로 대체
-      btn.style.position = "fixed";
-      btn.style.top = "12px";
-      btn.style.right = "12px";
-      btn.style.zIndex = "100000";
-      btn.style.display = "inline-flex";
-      document.body.appendChild(btn);
-    }
-    return btn;
+    return top.querySelector("#btnSidebarClose");
+  }
+
+  function openSidebar() {
+    const sidebar = $("#sidebarMount");
+    const backdrop = $("#tsSidebarBackdrop");
+    const btnToggle = $("#btnSidebarToggle");
+    if (!sidebar || !backdrop || !btnToggle) return;
+
+    sidebar.classList.add("is-open");
+    backdrop.classList.add("is-open");
+    btnToggle.setAttribute("aria-expanded", "true");
+  }
+
+  function closeSidebar() {
+    const sidebar = $("#sidebarMount");
+    const backdrop = $("#tsSidebarBackdrop");
+    const btnToggle = $("#btnSidebarToggle");
+    if (!sidebar || !backdrop || !btnToggle) return;
+
+    sidebar.classList.remove("is-open");
+    backdrop.classList.remove("is-open");
+    btnToggle.setAttribute("aria-expanded", "false");
+  }
+
+  function toggleSidebar() {
+    const sidebar = $("#sidebarMount");
+    if (!sidebar) return;
+    sidebar.classList.contains("is-open") ? closeSidebar() : openSidebar();
   }
 
   function initMobileSidebarToggle() {
@@ -483,56 +551,59 @@ window.__initRequireLoginModal = function () {
 
     const backdrop = ensureBackdrop();
     const btnToggle = ensureHamburgerButton();
+    const btnClose = ensureSidebarCloseButton(sidebar);
 
-    function open() {
-      sidebar.classList.add("is-open");
-      backdrop.classList.add("is-open");
-      btnToggle.setAttribute("aria-expanded", "true");
-    }
-    function close() {
-      sidebar.classList.remove("is-open");
-      backdrop.classList.remove("is-open");
-      btnToggle.setAttribute("aria-expanded", "false");
-    }
-    function toggle() {
-      sidebar.classList.contains("is-open") ? close() : open();
+    // ✅ 이벤트 중복 바인딩 방지 (버튼/백드롭 각각에 표시)
+    if (btnToggle && btnToggle.dataset.bound !== "1") {
+      btnToggle.dataset.bound = "1";
+      btnToggle.addEventListener("click", (e) => { e.preventDefault(); toggleSidebar(); });
     }
 
-    btnToggle.addEventListener("click", (e) => { e.preventDefault(); toggle(); });
-    backdrop.addEventListener("click", close);
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+    if (backdrop && backdrop.dataset.bound !== "1") {
+      backdrop.dataset.bound = "1";
+      backdrop.addEventListener("click", closeSidebar);
+    }
 
-    // ✅ 메뉴 클릭 시 닫기(모바일 UX)
-    sidebar.addEventListener("click", (e) => {
-      const a = e.target.closest("a");
-      if (a) close();
-    }, true);
+    // ✅ X 버튼은 mount 때마다 새로 생길 수 있으니, onclick으로 "덮어쓰기" (중복 걱정 없음)
+    if (btnClose) {
+      btnClose.onclick = (e) => { e.preventDefault(); closeSidebar(); };
+    }
 
-    // ✅ 데스크톱으로 커지면 열린 상태 정리
-    window.addEventListener("resize", () => {
-      if (window.innerWidth > 1100) close();
-    });
+    // ✅ 사이드바 메뉴 클릭 시 닫기: sidebar 요소에 1회만
+    if (sidebar.dataset.menuCloseBound !== "1") {
+      sidebar.dataset.menuCloseBound = "1";
+      sidebar.addEventListener("click", (e) => {
+        const a = e.target.closest("a");
+        if (a) closeSidebar();
+      }, true);
+    }
 
-    close();
+    // ✅ ESC / resize는 document/window에 1회만
+    if (document.documentElement.dataset.sidebarKeyBound !== "1") {
+      document.documentElement.dataset.sidebarKeyBound = "1";
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSidebar(); }, { passive: true });
+    }
+
+    if (window.__tsSidebarResizeBound !== true) {
+      window.__tsSidebarResizeBound = true;
+      window.addEventListener("resize", () => { if (window.innerWidth > 1100) closeSidebar(); }, { passive: true });
+    }
+
+    // 초기 상태 닫기
+    closeSidebar();
   }
 
-  // sidebar.js가 fetch로 sidebar를 꽂아넣어도, 감지해서 자동 초기화
-  function onSidebarMounted(cb) {
-    const mount = document.getElementById("sidebarMount");
-    if (!mount) return;
+  // sidebar.js에서 mount 직후 호출할 수 있게 공개
+  window.__initMobileSidebarToggle = initMobileSidebarToggle;
 
-    if (mount.querySelector(".menu")) return cb();
-
-    const mo = new MutationObserver(() => {
-      if (mount.querySelector(".menu")) {
-        mo.disconnect();
-        cb();
-      }
-    });
-    mo.observe(mount, { childList: true, subtree: true });
+  // 혹시 mount가 이미 끝난 페이지면 한 번 실행
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initMobileSidebarToggle); // DOMContentLoaded 동작 
+  } else {
+    initMobileSidebarToggle();
   }
-
-  function boot() { onSidebarMounted(initMobileSidebarToggle); }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
-  else boot();
 })();
+
+document.addEventListener("header:loaded", () => {
+  window.__initMobileSidebarToggle?.();
+});

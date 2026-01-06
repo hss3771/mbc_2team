@@ -13,24 +13,7 @@
 </head>
 
 <body>
-    <header class="topbar">
-        <div class="header-inner">
-            <a class="brand" href="/">
-                <span class="topbar_logo"><img src="./img/logo_white.png" alt=""></span>
-            </a>
-
-            <nav id="authArea" class="topbar__actions" aria-label="상단 메뉴">
-                <a class="topbar__link js-auth-out" href="./login.html">로그인</a>
-                <a class="btn btn--primary btn--sm js-auth-out" href="./signup.html">회원가입</a>
-
-                <a class="topbar__link js-auth-in" href="./my_page.html">마이페이지</a>
-                <a class="btn btn--soft btn--sm js-auth-in" href="/logout" id="btnLogout">로그아웃</a>
-
-            </nav>
-        </div>
-    </header>
-
-    
+    <div id="headerMount" aria-label="공통 헤더"></div>
 
     <div class="app">
         <aside id="sidebarMount" class="sidebar" aria-label="사이드바"></aside>
@@ -363,6 +346,7 @@
             </div>
         </main>
     </div>
+    <script src="/static/header_init.js" defer></script>
 
     <script src="/static/base.js" defer></script>
     <script src="/static/sidebar_init.js" defer></script>

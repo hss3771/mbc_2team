@@ -156,6 +156,38 @@
     pointer-events: auto;
   }
 
+  /* ✅ 모바일 사이드바 내부 상단 바 + X 닫기 버튼 */
+  .tsSidebarTop {
+    display: none;
+    /* 기본 숨김(데스크톱) */
+    align-items: center;
+    justify-content: flex-end;
+    padding: 10px 12px;
+    position: sticky;
+    /* 스크롤 내려도 상단에 붙게 */
+    top: 0;
+    background: #fff;
+    z-index: 2;
+    border-bottom: 1px solid rgba(15, 40, 90, .08);
+  }
+
+  .tsSidebarClose {
+    padding-bottom: 7px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid rgba(15, 40, 90, .15);
+    background: #fff;
+    color: #0462D2;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
   /* 모바일 사이드바 오버레이 */
   @media (max-width: 1230px) {
     .tsHamburger {
@@ -178,6 +210,10 @@
 
     #sidebarMount.is-open {
       transform: translateX(0);
+    }
+
+    #sidebarMount .tsSidebarTop {
+      display: flex;
     }
 
     /* main(topbar) + 다른 페이지(header) 둘 다 커버 */

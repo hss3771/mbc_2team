@@ -1,18 +1,3 @@
-#authArea {
-  margin-left: auto;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-/* 회원가입 버튼을 “보조 버튼” 느낌으로 주고 싶으면 */
-#authArea .btn-secondary {
-  background: #fff;
-  color: #0462D2;
-  border: 1px solid #a6c8ef;
-}
-
-
 /* mains은 기존 my_page_style.css 위에 덮어씌우는 전용 스타일 */
 .mains {
   display: flex;
@@ -421,14 +406,6 @@
   gap: 6px;
 }
 
-.rank-list {
-  flex: 1;
-  min-height: 0;
-  overflow: visible;
-  max-height: none;
-  background: #ffffff;
-}
-
 .rank-item {
   width: 100%;
   border: none;
@@ -514,26 +491,6 @@
   color: #1e63ff;
   font-weight: 900;
 }
-
-/* 랭킹 스크롤바(스크린샷 느낌) */
-.rank-list::-webkit-scrollbar {
-  width: 12px;
-}
-
-.rank-list::-webkit-scrollbar-track {
-  background: #f1f4fb;
-  border-radius: 999px;
-}
-
-.rank-list::-webkit-scrollbar-thumb {
-  background: #c7d6f5;
-  border-radius: 999px;
-}
-
-.rank-list::-webkit-scrollbar-thumb:hover {
-  background: #a9c2f2;
-}
-
 /* ===== 요약 패널 ===== */
 .summary {
   width: 420px;
@@ -589,13 +546,6 @@
   color: #1d2b42;
 }
 
-.summary-content {
-  flex: 1;
-  min-height: 0;
-  overflow: visible;
-  padding: 14px;
-}
-
 .summary-subhead {
   font-size: 13px;
   font-weight: 900;
@@ -609,25 +559,6 @@
   color: #2c3a52;
   font-size: 13px;
   line-height: 1.7;
-}
-
-/* 요약 스크롤바 */
-.summary-content::-webkit-scrollbar {
-  width: 12px;
-}
-
-.summary-content::-webkit-scrollbar-track {
-  background: #f1f4fb;
-  border-radius: 999px;
-}
-
-.summary-content::-webkit-scrollbar-thumb {
-  background: #c7d6f5;
-  border-radius: 999px;
-}
-
-.summary-content::-webkit-scrollbar-thumb:hover {
-  background: #a9c2f2;
 }
 
 /* ===================== TS2: MAIN2 (기사 3열) ===================== */
@@ -702,18 +633,6 @@
   background: #ffecec;
   border-color: #ffb9b9;
   color: #e53935;
-}
-
-.ts2-select {
-  height: 34px;
-  border-radius: 12px;
-  border: 1px solid #dfe8f7;
-  padding: 0 10px;
-  font-size: 12px;
-  font-weight: 900;
-  color: #24324a;
-  background: #fff;
-  outline: none;
 }
 
 .ts2-colbody {
@@ -1252,84 +1171,6 @@ body {
 
 .tsNeedLoginBtn--primary:hover {
   filter: brightness(0.98);
-}
-
-/* ===== 원하는 header 모양을 main.html(topbar)에 적용 ===== */
-header.topbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 60px;
-  background: #0462D2;
-  display: flex;
-  align-items: center;
-  z-index: 999;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
-}
-
-/* 기존 .shell 영향 제거 + 너가 원한 header-inner 느낌 */
-header.topbar .header-inner {
-  width: 100%;
-  margin: 0 auto;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-sizing: border-box;
-}
-
-/* 로고/브랜드 */
-header.topbar .brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  color: #fff;
-}
-
-header.topbar .topbar_logo img {
-  height: 44px;
-}
-
-/* 오른쪽 메뉴 */
-header.topbar #authArea {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* 링크 색(지금 스샷에서 글자가 어색한 원인) */
-header.topbar #authArea a {
-  color: #fff;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-/* “로그아웃/회원가입 버튼”을 흰 pill로 */
-header.topbar #authArea .btn,
-header.topbar #btnLogout {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-  color: #0462D2;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
-  text-decoration: none;
-  font-size: 14px;
-}
-
-/* 헤더가 fixed니까 본문이 가려지지 않게 */
-.app {
-  margin-top: 60px;
-  height: calc(100vh - 60px);
 }
 
 /* 반응형 */

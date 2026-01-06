@@ -1,12 +1,3 @@
-// ===== 로그인 상태 판별(프로젝트 상황에 맞게 1개만 써도 됨) =====
-function isLoggedIn() {
-    // 로컬스토리지 토큰/아이디로 보는 방식(프론트만으로 임시 구현할 때)
-    if (localStorage.getItem('user_id')) return true;
-    if (localStorage.getItem('access_token')) return true;
-
-    return false;
-}
-
 // ===== 샘플 데이터 =====
 const KEYWORDS = [
     { rank: 1, keyword: "주식", count: 223, rate: +94, move: "NEW" },
@@ -123,14 +114,11 @@ window.selectKeyword = selectKeyword;
     if (!root) return;
 
     const btn = root.querySelector('.cselect__btn');
-    const list = root.querySelector('.cselect__list');
     const valueEl = root.querySelector('.cselect__value');
     const hidden = root.querySelector('input[type="hidden"]');
     const options = Array.from(root.querySelectorAll('.cselect__opt'));
 
     if (!btn || !list || !valueEl || options.length === 0) return;
-
-    let activeIndex = Math.max(0, options.findIndex(o => o.classList.contains('is-selected')));
 
     function close() {
         root.classList.remove('is-open');
@@ -227,39 +215,6 @@ selectKeyword(bootKeyword);
         if (e.key === 'Escape') closeAll();
     });
 })();
-
-// 스크롤
-(function () {
-    const scroller = document.querySelector('.main-scroll'); // 변경
-    const toolbar = document.querySelector('.main-toolbar'); // 추가
-    const links = document.querySelectorAll('.menu a.js-scroll[href^="#"]');
-    if (!scroller || !links.length) return;
-
-    function scrollToInContainer(target) {
-        const top =
-            target.getBoundingClientRect().top -
-            scroller.getBoundingClientRect().top +
-            scroller.scrollTop;
-
-        const offset = (toolbar?.offsetHeight || 0) + 12; // 툴바 높이만큼 빼기
-        scroller.scrollTo({ top: Math.max(0, top - offset), behavior: 'smooth' });
-    }
-
-    links.forEach(a => {
-        a.addEventListener('click', (e) => {
-            const id = a.getAttribute('href').slice(1);
-            const target = document.getElementById(id);
-            if (!target) return;
-
-            e.preventDefault();
-            scrollToInContainer(target);
-
-            history.replaceState(null, '', `#${id}`);
-        });
-    });
-})();
-
-
 
 (function TS2() {
     function toDateNum(iso) { return Number(String(iso || "").replaceAll("-", "")) || 0; }
