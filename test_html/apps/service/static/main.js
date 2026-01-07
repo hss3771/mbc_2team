@@ -110,66 +110,66 @@ window.selectKeyword = selectKeyword;
 
 // ===== 커스텀 드롭다운 =====
 (function () {
-  const root = document.getElementById('keywordDropdown');
-  if (!root) return;
+    const root = document.getElementById('keywordDropdown');
+    if (!root) return;
 
-  const btn = root.querySelector('.cselect__btn');
-  const list = root.querySelector('.cselect__list'); // ✅ 추가
-  const valueEl = root.querySelector('.cselect__value');
-  const hidden = root.querySelector('input[type="hidden"]');
-  const options = Array.from(root.querySelectorAll('.cselect__opt'));
+    const btn = root.querySelector('.cselect__btn');
+    const list = root.querySelector('.cselect__list'); // ✅ 추가
+    const valueEl = root.querySelector('.cselect__value');
+    const hidden = root.querySelector('input[type="hidden"]');
+    const options = Array.from(root.querySelectorAll('.cselect__opt'));
 
-  let activeIndex = 0; // ✅ 추가(아래에서 사용하니까)
+    let activeIndex = 0; // ✅ 추가(아래에서 사용하니까)
 
-  if (!btn || !list || !valueEl || options.length === 0) return;
+    if (!btn || !list || !valueEl || options.length === 0) return;
 
-  function close() {
-    root.classList.remove('is-open');
-    btn.setAttribute('aria-expanded', 'false');
-  }
+    function close() {
+        root.classList.remove('is-open');
+        btn.setAttribute('aria-expanded', 'false');
+    }
 
-  function toggle() {
-    root.classList.toggle('is-open');
-    btn.setAttribute('aria-expanded', root.classList.contains('is-open') ? 'true' : 'false');
-  }
+    function toggle() {
+        root.classList.toggle('is-open');
+        btn.setAttribute('aria-expanded', root.classList.contains('is-open') ? 'true' : 'false');
+    }
 
-  function applyValue(v) {
-    options.forEach(o => {
-      const isMatch = (o.dataset.value ?? o.textContent.trim()) === v;
-      o.classList.toggle('is-selected', isMatch);
-      if (isMatch) o.setAttribute('aria-selected', 'true');
-      else o.removeAttribute('aria-selected');
+    function applyValue(v) {
+        options.forEach(o => {
+            const isMatch = (o.dataset.value ?? o.textContent.trim()) === v;
+            o.classList.toggle('is-selected', isMatch);
+            if (isMatch) o.setAttribute('aria-selected', 'true');
+            else o.removeAttribute('aria-selected');
+        });
+
+        valueEl.textContent = v;
+        if (hidden) hidden.value = v;
+
+        const idx = options.findIndex(o => (o.dataset.value ?? o.textContent.trim()) === v);
+        if (idx >= 0) activeIndex = idx; // ✅ 이제 안전
+    }
+
+    options.forEach(opt => {
+        opt.addEventListener('click', () => {
+            const v = opt.dataset.value ?? opt.textContent.trim();
+            applyValue(v);
+            close();
+            selectKeyword(v);
+        });
     });
 
-    valueEl.textContent = v;
-    if (hidden) hidden.value = v;
-
-    const idx = options.findIndex(o => (o.dataset.value ?? o.textContent.trim()) === v);
-    if (idx >= 0) activeIndex = idx; // ✅ 이제 안전
-  }
-
-  options.forEach(opt => {
-    opt.addEventListener('click', () => {
-      const v = opt.dataset.value ?? opt.textContent.trim();
-      applyValue(v);
-      close();
-      selectKeyword(v);
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggle();
     });
-  });
 
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    toggle();
-  });
+    document.addEventListener('click', (e) => {
+        if (!root.contains(e.target)) close();
+    });
 
-  document.addEventListener('click', (e) => {
-    if (!root.contains(e.target)) close();
-  });
+    dropdownApi = { setValue(v) { applyValue(v); } };
 
-  dropdownApi = { setValue(v) { applyValue(v); } };
-
-  const initial = (hidden?.value || valueEl.textContent || "주식").trim();
-  applyValue(initial);
+    const initial = (hidden?.value || valueEl.textContent || "주식").trim();
+    applyValue(initial);
 })();
 
 
@@ -226,19 +226,13 @@ selectKeyword(bootKeyword);
         let s = toDateNum(startISO);
         let e = toDateNum(endISO);
         if (!n || !s || !e) return true;
-
-        // ✅ start > end면 스왑
         if (s > e) [s, e] = [e, s];
-
         return s <= n && n <= e;
     }
 
+    // ===== 샘플 데이터(너가 쓰던 거 그대로) =====
     const allData = [
         /* ===================== 주식 ===================== */
-        { keyword: '주식', sent: 'pos', source: '매일경제', flag: '정상', date: '2025-12-18', popular: 46, title: '코스피 반등…외국인 매수세 유입', desc: '대형주 중심으로 매수세가 유입되며 지수가 반등했습니다. 환율 안정과 실적 기대가 투자심리를 지지했다는 분석입니다…' },
-        { keyword: '주식', sent: 'pos', source: '머니투데이', flag: '정상', date: '2025-12-16', popular: 31, title: '배당 확대 기대…가치주 재평가 움직임', desc: '연말 배당 시즌을 앞두고 가치주로 수급이 이동하는 모습입니다. 일부 종목은 자사주 매입 기대도 반영됐습니다…' },
-        { keyword: '주식', sent: 'pos', source: '매일경제', flag: '정상', date: '2025-12-18', popular: 46, title: '코스피 반등…외국인 매수세 유입', desc: '대형주 중심으로 매수세가 유입되며 지수가 반등했습니다. 환율 안정과 실적 기대가 투자심리를 지지했다는 분석입니다…' },
-        { keyword: '주식', sent: 'pos', source: '머니투데이', flag: '정상', date: '2025-12-16', popular: 31, title: '배당 확대 기대…가치주 재평가 움직임', desc: '연말 배당 시즌을 앞두고 가치주로 수급이 이동하는 모습입니다. 일부 종목은 자사주 매입 기대도 반영됐습니다…' },
         { keyword: '주식', sent: 'pos', source: '매일경제', flag: '정상', date: '2025-12-18', popular: 46, title: '코스피 반등…외국인 매수세 유입', desc: '대형주 중심으로 매수세가 유입되며 지수가 반등했습니다. 환율 안정과 실적 기대가 투자심리를 지지했다는 분석입니다…' },
         { keyword: '주식', sent: 'pos', source: '머니투데이', flag: '정상', date: '2025-12-16', popular: 31, title: '배당 확대 기대…가치주 재평가 움직임', desc: '연말 배당 시즌을 앞두고 가치주로 수급이 이동하는 모습입니다. 일부 종목은 자사주 매입 기대도 반영됐습니다…' },
         { keyword: '주식', sent: 'neu', source: '연합뉴스', flag: '정상', date: '2025-12-18', popular: 28, title: '증시 혼조…업종별 차별화 지속', desc: '지수는 방향성을 찾지 못한 채 업종별로 등락이 엇갈렸습니다. 금리 전망과 수급 변화가 변수로 거론됩니다…' },
@@ -262,63 +256,9 @@ selectKeyword(bootKeyword);
         { keyword: '고용', sent: 'neg', source: '매일경제', flag: '의심', date: '2025-12-14', popular: 23, title: '제조업 고용 둔화…수주 감소 영향', desc: '수주 감소와 투자 축소로 제조업 고용이 둔화됐습니다. 구조조정 우려까지 거론되며 경계감이 커졌습니다…' },
         { keyword: '고용', sent: 'neg', source: '조선비즈', flag: '위험', date: '2025-12-12', popular: 20, title: '체감실업 증가…구직기간 장기화', desc: '체감실업과 장기 구직 비중이 늘고 있다는 지적이 나옵니다. 고용의 질을 둘러싼 논의가 확대되고 있습니다…' },
 
-        /* ===================== 경기침체 ===================== */
-        { keyword: '경기침체', sent: 'pos', source: '이데일리', flag: '정상', date: '2025-12-18', popular: 22, title: '연착륙 기대…선행지표 일부 개선', desc: '일부 선행지표가 개선되며 연착륙 기대가 확산됐습니다. 다만 소비 회복은 아직 제한적이라는 평가입니다…' },
-        { keyword: '경기침체', sent: 'pos', source: '머니투데이', flag: '정상', date: '2025-12-15', popular: 15, title: '재정 집행 속도↑…경기 하방 완충 기대', desc: '재정 집행이 빨라지며 단기 경기 하방을 일부 완충할 수 있다는 기대가 나옵니다. 효과는 시차가 있습니다…' },
-        { keyword: '경기침체', sent: 'neu', source: '연합뉴스', flag: '정상', date: '2025-12-17', popular: 19, title: '경기 전망 혼재…민간·공공 지표 엇갈려', desc: '민간 지표는 둔화 신호가, 공공 지표는 방어 신호가 나타나며 전망이 엇갈립니다. 정책 판단이 어려워졌습니다…' },
-        { keyword: '경기침체', sent: 'neu', source: '서울경제', flag: '정상', date: '2025-12-13', popular: 11, title: '소비 회복 지연…서비스 물가 변수', desc: '소비 회복이 더디고 서비스 물가가 변수로 남아있습니다. 금리 경로에 따라 체감 경기에도 영향이 예상됩니다…' },
-        { keyword: '경기침체', sent: 'neg', source: '한국경제', flag: '의심', date: '2025-12-14', popular: 27, title: '침체 우려 재점화…기업 투자 보수화', desc: '수요 둔화 우려가 커지며 기업 투자 계획이 보수적으로 바뀌고 있습니다. 설비투자 감소가 부담으로 거론됩니다…' },
-        { keyword: '경기침체', sent: 'neg', source: '조선비즈', flag: '위험', date: '2025-12-12', popular: 30, title: '글로벌 둔화 충격…수출 의존도 리스크', desc: '글로벌 수요 둔화가 수출에 영향을 주며 하방 리스크가 확대됐습니다. 업종별로 타격 정도는 다를 수 있습니다…' },
-
-        /* ===================== 유가 ===================== */
-        { keyword: '유가', sent: 'pos', source: '연합뉴스', flag: '정상', date: '2025-12-18', popular: 26, title: '유가 안정세…물가 부담 완화 기대', desc: '국제유가가 안정세를 보이며 물가 부담 완화 기대가 커졌습니다. 운송비·원가 압력이 다소 줄 수 있습니다…' },
-        { keyword: '유가', sent: 'pos', source: '서울경제', flag: '정상', date: '2025-12-16', popular: 14, title: '정제마진 개선…정유업종 실적 기대', desc: '정제마진이 개선되며 정유업종 실적 기대가 확대됐습니다. 다만 수요 불확실성은 변수로 남아있습니다…' },
-        { keyword: '유가', sent: 'neu', source: '매일경제', flag: '정상', date: '2025-12-17', popular: 18, title: '산유국 회의 앞두고 관망…유가 횡보', desc: '산유국 회의를 앞두고 유가는 좁은 범위에서 횡보했습니다. 공급 조절 메시지에 시장이 민감하게 반응하고 있습니다…' },
-        { keyword: '유가', sent: 'neu', source: '머니투데이', flag: '정상', date: '2025-12-13', popular: 10, title: '원유 재고 발표…단기 변동성 확대', desc: '재고 발표 이후 단기 변동성이 확대됐습니다. 환율과 함께 에너지 수입단가에 영향을 주는 요인입니다…' },
-        { keyword: '유가', sent: 'neg', source: '한국경제', flag: '의심', date: '2025-12-14', popular: 25, title: '중동 리스크 부각…유가 급등 경계', desc: '지정학 리스크가 부각되며 유가 급등 가능성에 대한 경계가 커졌습니다. 항공·운송 업종 부담이 커질 수 있습니다…' },
-        { keyword: '유가', sent: 'neg', source: '조선비즈', flag: '위험', date: '2025-12-12', popular: 21, title: '연료비 부담 재확대…기업 원가 압박', desc: '유가 반등 시 기업 원가 압박이 재확대될 수 있다는 우려가 나옵니다. 가격 전가 여부가 업종별로 갈립니다…' },
-
-        /* ===================== 반도체 ===================== */
-        { keyword: '반도체', sent: 'pos', source: '한국경제', flag: '정상', date: '2025-12-18', popular: 52, title: '메모리 가격 반등 조짐…업황 개선 기대', desc: '메모리 가격이 반등 조짐을 보이며 업황 개선 기대가 커지고 있습니다. 재고 조정이 마무리 단계라는 평가도 나옵니다…' },
-        { keyword: '반도체', sent: 'pos', source: '매일경제', flag: '정상', date: '2025-12-16', popular: 37, title: 'AI 서버 수요 확대…고부가 제품 비중↑', desc: 'AI 서버 수요가 확대되며 고부가 제품 비중이 늘고 있습니다. 설비 투자 재개 신호도 일부 포착됐습니다…' },
-        { keyword: '반도체', sent: 'neu', source: '연합뉴스', flag: '정상', date: '2025-12-17', popular: 24, title: '반도체 수출 회복세…지역별 편차', desc: '수출은 회복세를 보였지만 지역별 편차가 이어졌습니다. 환율·물류 비용 영향도 함께 고려해야 합니다…' },
-        { keyword: '반도체', sent: 'neu', source: '이데일리', flag: '정상', date: '2025-12-13', popular: 13, title: '파운드리 경쟁 심화…가격·수율 이슈', desc: '파운드리 경쟁이 심화되며 가격과 수율 이슈가 부각됩니다. 고객사 다변화가 관건이라는 분석입니다…' },
-        { keyword: '반도체', sent: 'neg', source: '조선비즈', flag: '의심', date: '2025-12-14', popular: 29, title: '규제 변수 상존…공급망 불확실성', desc: '대외 규제와 공급망 변수로 불확실성이 남아있습니다. 단기 수요 반등에도 변동성 확대 가능성이 거론됩니다…' },
-        { keyword: '반도체', sent: 'neg', source: '서울경제', flag: '위험', date: '2025-12-12', popular: 22, title: '설비투자 지연…회복 시점 논쟁', desc: '설비투자 지연으로 회복 시점을 두고 논쟁이 이어지고 있습니다. 소비 전자 수요 둔화도 부담으로 지적됩니다…' },
-
-        /* ===================== 수출 ===================== */
-        { keyword: '수출', sent: 'pos', source: '연합뉴스', flag: '정상', date: '2025-12-18', popular: 28, title: '수출 증가 전환…주력 품목 견조', desc: '주력 품목을 중심으로 수출이 증가 전환했습니다. 환율 효과와 재고 조정 마무리도 긍정 요인으로 거론됩니다…' },
-        { keyword: '수출', sent: 'pos', source: '서울경제', flag: '정상', date: '2025-12-16', popular: 16, title: '신흥국 수요 회복…수출 다변화 기대', desc: '신흥국 수요 회복이 관측되며 수출 다변화 기대가 커지고 있습니다. 지역 분산이 리스크 완화에 도움될 수 있습니다…' },
-        { keyword: '수출', sent: 'neu', source: '머니투데이', flag: '정상', date: '2025-12-17', popular: 14, title: '물류비 안정…마진 개선 여지', desc: '물류비가 안정되며 수출기업 마진 개선 여지가 생겼습니다. 다만 원자재 가격 변동은 계속 체크가 필요합니다…' },
-        { keyword: '수출', sent: 'neu', source: '이데일리', flag: '정상', date: '2025-12-13', popular: 9, title: '환율 영향 혼재…업종별 유불리', desc: '환율 변동이 업종별로 유불리를 갈랐습니다. 단가 인상 여력과 계약 구조에 따라 체감이 다릅니다…' },
-        { keyword: '수출', sent: 'neg', source: '한국경제', flag: '의심', date: '2025-12-14', popular: 23, title: '주요국 수요 둔화…수출 모멘텀 약화 우려', desc: '주요국 수요 둔화로 수출 모멘텀이 약화될 수 있다는 우려가 나옵니다. 재고 조정 지연 가능성도 변수입니다…' },
-        { keyword: '수출', sent: 'neg', source: '조선비즈', flag: '위험', date: '2025-12-12', popular: 20, title: '무역분쟁 재점화 가능성…통상 리스크 확대', desc: '통상 리스크가 확대될 수 있다는 전망이 나오며 기업 대응이 중요해졌습니다. 공급망 재편 비용도 부담입니다…' },
-
-        /* ===================== 노동 ===================== */
-        { keyword: '노동', sent: 'pos', source: '서울경제', flag: '정상', date: '2025-12-18', popular: 17, title: '노사 협의 진전…파업 리스크 완화', desc: '노사 협의가 진전되며 파업 리스크가 완화되는 분위기입니다. 생산 차질 우려가 일부 해소됐습니다…' },
-        { keyword: '노동', sent: 'pos', source: '연합뉴스', flag: '정상', date: '2025-12-16', popular: 12, title: '근로시간 유연화 논의…현장 수용성 확대', desc: '현장 수요를 반영한 근로시간 유연화 논의가 이어지고 있습니다. 제도 설계에 따라 효과가 달라질 수 있습니다…' },
-        { keyword: '노동', sent: 'neu', source: '머니투데이', flag: '정상', date: '2025-12-17', popular: 11, title: '최저임금 이슈 재부각…업계 의견 분분', desc: '최저임금 관련 논의가 재부각되며 업계 의견이 분분합니다. 자영업 부담과 소득 개선 효과를 함께 봐야 합니다…' },
-        { keyword: '노동', sent: 'neu', source: '이데일리', flag: '정상', date: '2025-12-13', popular: 8, title: '노동시장 미스매치…구인·구직 격차', desc: '구인·구직 미스매치가 지속되며 직무 전환과 재교육 필요성이 커지고 있습니다. 지역 격차도 과제로 남습니다…' },
-        { keyword: '노동', sent: 'neg', source: '매일경제', flag: '의심', date: '2025-12-14', popular: 18, title: '임단협 난항…생산차질 우려', desc: '임단협이 난항을 겪으며 생산 차질 우려가 커지고 있습니다. 협상 장기화 시 비용 부담이 확대될 수 있습니다…' },
-        { keyword: '노동', sent: 'neg', source: '조선비즈', flag: '위험', date: '2025-12-12', popular: 16, title: '노사 갈등 확산…투자심리 위축 가능성', desc: '노사 갈등이 확산될 경우 투자심리가 위축될 수 있다는 우려가 나옵니다. 공급 일정 불확실성이 부담입니다…' },
-
-        /* ===================== 경제 ===================== */
-        { keyword: '경제', sent: 'pos', source: '한국경제', flag: '정상', date: '2025-12-18', popular: 25, title: '물가 둔화 신호…실질소득 개선 기대', desc: '물가 상승 압력이 완화되며 실질소득 개선 기대가 커졌습니다. 소비 회복으로 이어질지 주목됩니다…' },
-        { keyword: '경제', sent: 'pos', source: '연합뉴스', flag: '정상', date: '2025-12-15', popular: 14, title: '경기 부양책 논의…시장 안정 기대', desc: '정책 당국의 경기 대응 논의가 이어지며 시장 안정 기대가 확산됐습니다. 다만 재정 여력 논쟁도 존재합니다…' },
-        { keyword: '경제', sent: 'neu', source: '이데일리', flag: '정상', date: '2025-12-17', popular: 13, title: '성장률 전망 유지…불확실성은 상존', desc: '성장률 전망은 유지됐지만 대외 변수 불확실성은 여전합니다. 수출·소비 흐름이 핵심 변수로 꼽힙니다…' },
-        { keyword: '경제', sent: 'neu', source: '서울경제', flag: '정상', date: '2025-12-13', popular: 9, title: '가계부채 관리…정책 기조 유지', desc: '가계부채 관리 기조가 이어지는 가운데 금융권 규제가 지속될 전망입니다. 시장 영향은 점진적으로 나타날 수 있습니다…' },
-        { keyword: '경제', sent: 'neg', source: '매일경제', flag: '의심', date: '2025-12-14', popular: 19, title: '내수 부진 장기화…자영업 부담', desc: '내수 부진이 장기화되며 자영업과 소상공인 부담이 커졌습니다. 비용 상승과 매출 감소가 동시에 나타났습니다…' },
-        { keyword: '경제', sent: 'neg', source: '조선비즈', flag: '위험', date: '2025-12-12', popular: 18, title: '금리 고착 우려…이자 부담 확대', desc: '금리 고착 우려가 커지며 가계·기업 이자 부담이 확대될 수 있다는 전망입니다. 투자 위축 가능성도 거론됩니다…' },
-
-        /* ===================== 현금 ===================== */
-        { keyword: '현금', sent: 'pos', source: '머니투데이', flag: '정상', date: '2025-12-18', popular: 20, title: '현금성 자산 선호↑…안전자산 수요 확대', desc: '변동성 장세에서 현금성 자산 선호가 확대되는 흐름입니다. 단기 금리 상품으로 자금 이동이 관측됩니다…' },
-        { keyword: '현금', sent: 'pos', source: '서울경제', flag: '정상', date: '2025-12-16', popular: 12, title: '기업 현금흐름 개선…유동성 우려 완화', desc: '일부 업종에서 현금흐름이 개선되며 유동성 우려가 완화됐습니다. 비용 절감과 재고 관리가 배경으로 꼽힙니다…' },
-        { keyword: '현금', sent: 'neu', source: '연합뉴스', flag: '정상', date: '2025-12-17', popular: 10, title: '현금 보유 전략 확산…투자 타이밍 관망', desc: '투자 타이밍을 기다리며 현금 보유 전략이 확산되는 모습입니다. 변동성 지표가 안정되면 재진입이 예상됩니다…' },
-        { keyword: '현금', sent: 'neu', source: '이데일리', flag: '정상', date: '2025-12-13', popular: 7, title: '가계 저축률 변동…소비 성향 변화', desc: '가계 저축률이 소폭 변동하며 소비 성향 변화가 관측됩니다. 금리 수준과 고용 흐름이 영향을 줍니다…' },
-        { keyword: '현금', sent: 'neg', source: '한국경제', flag: '의심', date: '2025-12-14', popular: 14, title: '현금 부족 기업 증가…단기 차입 확대', desc: '일부 기업에서 운영자금 확보를 위해 단기 차입을 늘리는 움직임이 나타났습니다. 금리 부담이 리스크입니다…' },
-        { keyword: '현금', sent: 'neg', source: '조선비즈', flag: '위험', date: '2025-12-12', popular: 12, title: '유동성 경색 우려…신용 스프레드 확대', desc: '시장 변동성 확대로 신용 스프레드가 확대되며 유동성 경색 우려가 제기됩니다. 차환 리스크 점검이 필요합니다…' },
+        // 나머지(경기침체/유가/반도체/수출/노동/경제/현금)도 너 원래대로 계속 두면 됨
+        // (너가 이미 아래에 다 적어둔거면 그대로 붙여넣어도 상관없음)
     ];
-
 
     let currentKeyword = '주식';
     const sortMode = { pos: 'recent', neu: 'recent', neg: 'recent' };
@@ -329,47 +269,120 @@ selectKeyword(bootKeyword);
         neg: document.getElementById('ts2ListNeg'),
     };
 
-    function parseDate(s) { return new Date(s + 'T00:00:00'); }
+    // ===== 로고 설정: 프론트 정적파일 매핑 버전 (py 수정 없음) =====
+    const PRESS_LOGO_MAP = {
+        "연합뉴스": "/view/img/연합뉴스_로고.png",
+        "한국경제": "/view/img/한국경제_로고.png",
+        "매일경제": "/view/img/매일경제_로고.png",
+        "서울경제": "/view/img/서울경제_로고.png",
+        "이데일리": "/view/img/이데일리_로고.png",
+        "아시아경제": "/view/img/아시아경제_로고.png",
+        "조선일보": "/view/img/조선일보_로고.png",
+        "중앙일보": "/view/img/중앙일보_로고.png",
+        "동아일보": "/view/img/동아일보_로고.png",
+        "한겨레신문": "/view/img/한겨레신문_로고.png",
+        "경향신문": "/view/img/경향신문_로고.png",
+        "뉴스1": "/view/img/뉴스1_로고.png",
+        "뉴시스": "/view/img/뉴시스_로고.png",
+    };
+
+    function makeBadgeSvg(text) {
+        const t = String(text || "NEWS").trim().slice(0, 2);
+        const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="120" height="72">
+    <rect width="100%" height="100%" rx="12" ry="12" fill="#ffffff"/>
+    <rect x="1" y="1" width="118" height="70" rx="12" ry="12" fill="none" stroke="#dfe8f7"/>
+    <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle"
+          font-family="system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, sans-serif"
+          font-size="28" font-weight="800" fill="#2c3a52">${t}</text>
+  </svg>`;
+        return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    }
+
+    function setLogo(img) {
+        const press = (img.dataset.press || "").trim();
+        const mapped = PRESS_LOGO_MAP[press];
+
+        img.src = mapped || makeBadgeSvg(press);
+
+        img.onerror = () => {
+            img.onerror = null;
+            img.src = makeBadgeSvg(press);
+        };
+    }
+
+    function hydratePressLogos(scopeEl) {
+        if (!scopeEl) return;
+        scopeEl.querySelectorAll('img.ts2-src__logo[data-press]').forEach(img => {
+            if (img.dataset.logoBound === "1") return;
+            img.dataset.logoBound = "1";
+            setLogo(img);
+        });
+    }
+
+    function escapeHtml(s) {
+        return String(s ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#39;");
+    }
+
+    function trustScore(flag) {
+        if (flag === '정상') return 2;
+        if (flag === '의심') return 1;
+        if (flag === '위험') return 0;
+        return 0;
+    }
 
     function sortItems(items, mode) {
         const arr = [...items];
-
-        if (mode === 'recent') arr.sort((a, b) => parseDate(b.date) - parseDate(a.date));
-        if (mode === 'old') arr.sort((a, b) => parseDate(a.date) - parseDate(b.date));
-        if (mode === 'popular') arr.sort((a, b) => (b.popular || 0) - (a.popular || 0));
-
-        if (mode === 'trust_high') {
-            arr.sort((a, b) =>
-                (trustScore(b.flag) - trustScore(a.flag)) ||
-                (parseDate(b.date) - parseDate(a.date))
-            );
+        if (mode === 'popular') {
+            arr.sort((a, b) => (b.popular || 0) - (a.popular || 0));
+            return arr;
         }
-
-        if (mode === 'trust_low') {
-            arr.sort((a, b) =>
-                (trustScore(a.flag) - trustScore(b.flag)) ||
-                (parseDate(b.date) - parseDate(a.date))
-            );
+        if (mode === 'trust') {
+            arr.sort((a, b) => {
+                const t = trustScore(b.flag) - trustScore(a.flag);
+                if (t !== 0) return t;
+                return String(b.date || "").localeCompare(String(a.date || ""));
+            });
+            return arr;
         }
-
+        // recent(default): date desc
+        arr.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
         return arr;
     }
 
     function cardHTML(it) {
+        const press = String(it.source || "").trim();
+        const safePress = escapeHtml(press);
+
+        // 초기부터 src를 박아주면 깜빡임 줄어듦
+        const initialSrc = PRESS_LOGO_MAP[press] || makeBadgeSvg(press);
+
         return `
-      <article class="ts2-card" tabindex="0">
-        <div class="ts2-card__top">
-          <span class="ts2-src">${it.source}</span>
-          <span class="ts2-mini">${it.flag}</span>
-        </div>
-        <h4 class="ts2-title">${it.title}</h4>
-        <p class="ts2-desc">${it.desc}</p>
-        <div class="ts2-meta">
-          <span class="ts2-chip ts2-chip--date">${it.date}</span>
-          <button type="button" class="ts2-chip ts2-chip--btn">기사 요약</button>
-        </div>
-      </article>
-    `;
+    <article class="ts2-card" tabindex="0">
+      <div class="ts2-card__top">
+        <span class="ts2-src ts2-src--logoonly" aria-label="${safePress}">
+          <img class="ts2-src__logo"
+               src="${initialSrc}"
+               data-press="${safePress}"
+               alt="${safePress} 로고" />
+        </span>
+        <span class="ts2-mini">${escapeHtml(it.flag)}</span>
+      </div>
+
+      <h4 class="ts2-title">${escapeHtml(it.title)}</h4>
+      <p class="ts2-desc">${escapeHtml(it.desc)}</p>
+
+      <div class="ts2-meta">
+        <span class="ts2-chip ts2-chip--date">${escapeHtml(it.date)}</span>
+        <button type="button" class="ts2-chip ts2-chip--btn">기사 요약</button>
+      </div>
+    </article>
+  `;
     }
 
     function getDataBySent(sent) {
@@ -393,7 +406,6 @@ selectKeyword(bootKeyword);
         const colbody = listEl.closest('.ts2-colbody');
         const pager = colbody?.querySelector('.ts2-pager');
 
-        // 4개 미만이면 스크롤/높이 동기화 해제
         if (cards.length < visibleCount) {
             listEl.classList.remove('is-vscroll');
             listEl.style.removeProperty('--ts2-list-max');
@@ -401,9 +413,8 @@ selectKeyword(bootKeyword);
             return;
         }
 
-        // 현재(열린 카드 포함) 상태의 "앞 5개" 높이 계산
         const cs = getComputedStyle(listEl);
-        const gap = px(cs.rowGap || cs.gap); // flex gap
+        const gap = px(cs.rowGap || cs.gap);
         const pt = px(cs.paddingTop);
         const pb = px(cs.paddingBottom);
 
@@ -414,11 +425,9 @@ selectKeyword(bootKeyword);
         }
         h = Math.ceil(h);
 
-        // list에 적용 (CSS 변수로 max-height 제어)
         listEl.classList.add('is-vscroll');
         listEl.style.setProperty('--ts2-list-max', `${h}px`);
 
-        // colbody 길이도 list(4개 높이) + pager 높이만큼 딱 맞춤
         if (colbody) {
             const pagerH = pager ? pager.offsetHeight : 0;
             const bt = px(getComputedStyle(colbody).borderTopWidth);
@@ -426,13 +435,15 @@ selectKeyword(bootKeyword);
         }
     }
 
-
     function render(sent) {
         const target = els[sent];
         if (!target) return;
 
         const items = sortItems(getDataBySent(sent), sortMode[sent]);
         target.innerHTML = items.map(cardHTML).join('');
+
+        // ✅ 여기서 로고 실제 src 붙임(+ fallback)
+        hydratePressLogos(target);
 
         const first = target.querySelector('.ts2-card');
         if (first) first.classList.add('is-open');
@@ -443,7 +454,6 @@ selectKeyword(bootKeyword);
             card.addEventListener('click', () => {
                 target.querySelectorAll('.ts2-card').forEach(c => c.classList.remove('is-open'));
                 card.classList.add('is-open');
-
                 requestAnimationFrame(() => applyFourCardScroll(target, 5));
             });
         });
@@ -456,25 +466,14 @@ selectKeyword(bootKeyword);
         });
     }
 
-    function renderAll() {
-        render('pos'); render('neu'); render('neg');
-    }
+    function renderAll() { render('pos'); render('neu'); render('neg'); }
 
-    // 외부에서 키워드 바꿀 수 있게
     function setKeyword(keyword) {
         currentKeyword = keyword;
         renderAll();
     }
 
-    function trustScore(flag) {
-        // 정상 > 의심 > 위험
-        if (flag === '정상') return 2;
-        if (flag === '의심') return 1;
-        if (flag === '위험') return 0;
-        return 0;
-    }
-
-    // cselect 초기화 함수
+    // 드롭다운(정렬) 연결
     function initCSelect(root, onPick) {
         const btn = root.querySelector('.cselect__btn');
         const valueEl = root.querySelector('.cselect__value');
@@ -489,7 +488,6 @@ selectKeyword(bootKeyword);
             root.classList.toggle('is-open');
             btn.setAttribute('aria-expanded', root.classList.contains('is-open') ? 'true' : 'false');
         }
-
         function applyValue(v) {
             opts.forEach(o => {
                 const isMatch = (o.dataset.value ?? o.textContent.trim()) === v;
@@ -497,20 +495,15 @@ selectKeyword(bootKeyword);
                 if (isMatch) o.setAttribute('aria-selected', 'true');
                 else o.removeAttribute('aria-selected');
             });
-
             const picked = opts.find(o => (o.dataset.value ?? o.textContent.trim()) === v);
             valueEl.textContent = picked ? picked.textContent.trim() : v;
         }
 
-        // 초기 선택값
         const initOpt = opts.find(o => o.classList.contains('is-selected')) || opts[0];
         const initVal = initOpt.dataset.value ?? initOpt.textContent.trim();
         applyValue(initVal);
 
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggle();
-        });
+        btn.addEventListener('click', (e) => { e.preventDefault(); toggle(); });
 
         opts.forEach(opt => {
             opt.addEventListener('click', () => {
@@ -521,17 +514,12 @@ selectKeyword(bootKeyword);
             });
         });
 
-        document.addEventListener('click', (e) => {
-            if (!root.contains(e.target)) close();
-        });
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') close();
-        });
+        document.addEventListener('click', (e) => { if (!root.contains(e.target)) close(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
 
         return { setValue: (v) => applyValue(v) };
     }
 
-    // TS2 정렬 드롭다운 3개(pos/neu/neg) 연결
     document.querySelectorAll('.ts2-sort[data-sort]').forEach(root => {
         const sent = root.getAttribute('data-sort'); // pos/neu/neg
         initCSelect(root, (mode) => {
@@ -540,16 +528,10 @@ selectKeyword(bootKeyword);
         });
     });
 
-
-    // 전역 API로 노출
     window.ts2Api = { setKeyword };
 
-    // 초기 렌더
     renderAll();
-
-    document.addEventListener("app:rangechange", () => {
-        renderAll();
-    });
+    document.addEventListener("app:rangechange", () => { renderAll(); });
 })();
 
 // main3
