@@ -24,54 +24,37 @@ ISSUE_INDEX = "issue_keyword_count"
 # =====================================================
 # 1️⃣ 워드클라우드
 # =====================================================
-
 @router.get("/wordcloud")
 def issue_wordcloud(
-    start: str | None = Query(None, description="YYYY-MM-DD"),
-    end: str | None = Query(None, description="YYYY-MM-DD"),
-    date: str | None = Query(None, description="YYYY-MM-DD"),
-    keyword: str | None = Query(None, description="이슈 키워드"),
+    start: str = Query(...),   # 예: 2026-01-05
+    keyword: str = Query(...), # 예: 스테이블코인
 ):
-    """
-    우선순위:
-    1) start/end가 있으면 → start 날짜 기준 대표 keyword 자동 선택
-    2) date/keyword가 있으면 → 해당 키워드로 워드클라우드
-    """
-
     es = get_es()
 
-    # ✅ CASE 1: start/end로 호출한 경우
-    if start and end:
-        resp = es.search(
+    doc_id = f"{start}_{keyword}"
+
+    try:
+        res = es.get(
             index="issue_keyword_count",
-            size=1,
-            query={"term": {"date": start}},
-            sort=[{"count": {"order": "desc"}}],
+            id=doc_id
+        )
+    except Exception:
+        return Response(
+            f"document not found: {doc_id}",
+            status_code=404,
+            media_type="text/plain; charset=utf-8",
         )
 
-        hits = resp.get("hits", {}).get("hits", [])
-        if not hits:
-            return Response("no issue keyword", status_code=404)
+    src = res.get("_source", {})
+    sub_keywords = src.get("sub_keywords", [])
 
-        keyword = hits[0]["_source"]["keyword"]
-        date = start
-
-    # ✅ CASE 2: date/keyword로 호출한 경우
-    if not date or not keyword:
-        return Response("date and keyword required", status_code=400)
-
-    # 🔍 sub keywords 조회
-    sub_keywords = get_sub_keywords_by_query(
-        es=es,
-        date=date,
-        keyword=keyword,
-    )
-
-    # ✅ 여기서 드디어 네가 말한 상황 발생
     if not sub_keywords:
-        return Response("no sub keywords", status_code=404)
+        return Response(
+            f"sub_keywords empty in document: {doc_id}",
+            status_code=404,
+            media_type="text/plain; charset=utf-8",
+        )
 
-    # ☁️ 워드클라우드 생성
     img_bytes = generate_issue_wordcloud(sub_keywords)
     return Response(content=img_bytes, media_type="image/png")
 
