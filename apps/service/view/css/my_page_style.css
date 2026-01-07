@@ -15,46 +15,6 @@ body {
   background: linear-gradient(180deg, #eaf2ff 0%, #f4f6fb 240px, #f4f6fb 100%);
 }
 
-.header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 60px;
-  background-color: #0462D2;
-  display: flex;
-  align-items: center;
-  z-index: 999;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.header-inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 0 20px;
-  color: white;
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.logout-button {
-  display: inline-block;
-  background-color: white;
-  color: #0462D2;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  text-decoration: none;
-  font-size: 14px;
-}
-
 .app {
   height: calc(100vh - 60px);
   /* header가 fixed니까 app 높이를 화면에 맞춤 */
@@ -111,7 +71,7 @@ body {
 
 .menu li a {
   display: block;
-  padding: 16px 12px 16px 32px;
+  padding: 16px 12px 16px 0px;
   text-decoration: none;
   color: inherit;
   /* li의 color를 따라감 */

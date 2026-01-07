@@ -1,55 +1,3 @@
-// ===== 로그인 상태 판별(프로젝트 상황에 맞게 1개만 써도 됨) =====
-function isLoggedIn() {
-    // 로컬스토리지 토큰/아이디로 보는 방식(프론트만으로 임시 구현할 때)
-    if (localStorage.getItem('user_id')) return true;
-    if (localStorage.getItem('access_token')) return true;
-
-    return false;
-}
-
-// 서버 연결하면 이 코드로 바꿔야한대 => 서버에서 템플릿으로 주입하는 방식(추천)
-// 예: <script>window.is_logged_in = true;
-//   if (typeof window.is_logged_in === 'boolean') return window.is_logged_in;
-
-function renderAuthButtons() {
-    const authArea = document.getElementById('authArea');
-    if (!authArea) return;
-
-    if (isLoggedIn()) {
-        // 로그인 상태: 로그아웃만
-        authArea.innerHTML = `
-      <a href="./home.html" class="logout-button" id="btnLogout">로그아웃</a>
-    `;
-
-        // 로그아웃 처리 (프론트 임시)
-        authArea.querySelector('#btnLogout').addEventListener('click', (e) => {
-            e.preventDefault();
-
-            // 로컬스토리지/세션스토리지 정리(쓰는 것만)
-            localStorage.removeItem('user_id');
-            localStorage.removeItem('access_token');
-            sessionStorage.removeItem('user_id');
-            sessionStorage.removeItem('access_token');
-
-            // 쿠키(loginId) 정리 (HttpOnly면 JS로 삭제 불가 → 서버에서 처리해야 함)
-            document.cookie = 'loginId=; Max-Age=0; path=/';
-
-            location.href = './home.html';
-        });
-
-    } else {
-        // 비로그인 상태: 로그인 + 회원가입
-        authArea.innerHTML = `
-      <a href="./login.html" class="logout-button">로그인</a>
-      <a href="./signup.html" class="logout-button btn-secondary">회원가입</a>
-    `;
-    }
-}
-
-// 최초 1회 렌더
-renderAuthButtons();
-
-
 // ===== 샘플 데이터 =====
 const KEYWORDS = [
     { rank: 1, keyword: "주식", count: 223, rate: +94, move: "NEW" },
@@ -160,83 +108,70 @@ function selectKeyword(keyword) {
 }
 window.selectKeyword = selectKeyword;
 
-// ===== 기간 탭 =====
-segmentedBtns.forEach((btn) => {
-    btn.addEventListener("click", () => {
-        segmentedBtns.forEach((b) => {
-            b.classList.remove("is-active");
-            b.setAttribute("aria-selected", "false");
-        });
-        btn.classList.add("is-active");
-        btn.setAttribute("aria-selected", "true");
-    });
-});
-
 // ===== 커스텀 드롭다운 =====
 (function () {
-    const root = document.getElementById('keywordDropdown');
-    if (!root) return;
+  const root = document.getElementById('keywordDropdown');
+  if (!root) return;
 
-    const btn = root.querySelector('.cselect__btn');
-    const list = root.querySelector('.cselect__list');
-    const valueEl = root.querySelector('.cselect__value');
-    const hidden = root.querySelector('input[type="hidden"]');
-    const options = Array.from(root.querySelectorAll('.cselect__opt'));
+  const btn = root.querySelector('.cselect__btn');
+  const list = root.querySelector('.cselect__list'); // ✅ 추가
+  const valueEl = root.querySelector('.cselect__value');
+  const hidden = root.querySelector('input[type="hidden"]');
+  const options = Array.from(root.querySelectorAll('.cselect__opt'));
 
-    if (!btn || !list || !valueEl || options.length === 0) return;
+  let activeIndex = 0; // ✅ 추가(아래에서 사용하니까)
 
-    let activeIndex = Math.max(0, options.findIndex(o => o.classList.contains('is-selected')));
+  if (!btn || !list || !valueEl || options.length === 0) return;
 
-    function close() {
-        root.classList.remove('is-open');
-        btn.setAttribute('aria-expanded', 'false');
-    }
-    function toggle() {
-        root.classList.toggle('is-open');
-        btn.setAttribute('aria-expanded', root.classList.contains('is-open') ? 'true' : 'false');
-    }
+  function close() {
+    root.classList.remove('is-open');
+    btn.setAttribute('aria-expanded', 'false');
+  }
 
-    function applyValue(v) {
-        options.forEach(o => {
-            const isMatch = (o.dataset.value ?? o.textContent.trim()) === v;
-            o.classList.toggle('is-selected', isMatch);
-            if (isMatch) o.setAttribute('aria-selected', 'true');
-            else o.removeAttribute('aria-selected');
-        });
+  function toggle() {
+    root.classList.toggle('is-open');
+    btn.setAttribute('aria-expanded', root.classList.contains('is-open') ? 'true' : 'false');
+  }
 
-        valueEl.textContent = v;
-        if (hidden) hidden.value = v;
-
-        const idx = options.findIndex(o => (o.dataset.value ?? o.textContent.trim()) === v);
-        if (idx >= 0) activeIndex = idx;
-    }
-
-    options.forEach(opt => {
-        opt.addEventListener('click', () => {
-            const v = opt.dataset.value ?? opt.textContent.trim();
-            applyValue(v);
-            close();
-            selectKeyword(v); // 드롭다운 선택 -> 랭킹/요약 변경
-        });
+  function applyValue(v) {
+    options.forEach(o => {
+      const isMatch = (o.dataset.value ?? o.textContent.trim()) === v;
+      o.classList.toggle('is-selected', isMatch);
+      if (isMatch) o.setAttribute('aria-selected', 'true');
+      else o.removeAttribute('aria-selected');
     });
 
-    btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggle();
+    valueEl.textContent = v;
+    if (hidden) hidden.value = v;
+
+    const idx = options.findIndex(o => (o.dataset.value ?? o.textContent.trim()) === v);
+    if (idx >= 0) activeIndex = idx; // ✅ 이제 안전
+  }
+
+  options.forEach(opt => {
+    opt.addEventListener('click', () => {
+      const v = opt.dataset.value ?? opt.textContent.trim();
+      applyValue(v);
+      close();
+      selectKeyword(v);
     });
+  });
 
-    document.addEventListener('click', (e) => {
-        if (!root.contains(e.target)) close();
-    });
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    toggle();
+  });
 
-    dropdownApi = {
-        setValue(v) { applyValue(v); }
-    };
+  document.addEventListener('click', (e) => {
+    if (!root.contains(e.target)) close();
+  });
 
-    // 드롭다운 초기값 반영만 해둠 (렌더는 아래 boot에서 무조건 1회)
-    const initial = (hidden?.value || valueEl.textContent || "주식").trim();
-    applyValue(initial);
+  dropdownApi = { setValue(v) { applyValue(v); } };
+
+  const initial = (hidden?.value || valueEl.textContent || "주식").trim();
+  applyValue(initial);
 })();
+
 
 // 초기 렌더는 무조건 1번 실행 (TOP10 첫 로드부터 보이게)
 const bootKeyword =
@@ -283,40 +218,21 @@ selectKeyword(bootKeyword);
     });
 })();
 
-// 스크롤
-(function () {
-    const scroller = document.querySelector('.main-scroll'); // 변경
-    const toolbar = document.querySelector('.main-toolbar'); // 추가
-    const links = document.querySelectorAll('.menu a.js-scroll[href^="#"]');
-    if (!scroller || !links.length) return;
+(function TS2() {
+    function toDateNum(iso) { return Number(String(iso || "").replaceAll("-", "")) || 0; }
 
-    function scrollToInContainer(target) {
-        const top =
-            target.getBoundingClientRect().top -
-            scroller.getBoundingClientRect().top +
-            scroller.scrollTop;
+    function isInRange(iso, startISO, endISO) {
+        const n = toDateNum(iso);
+        let s = toDateNum(startISO);
+        let e = toDateNum(endISO);
+        if (!n || !s || !e) return true;
 
-        const offset = (toolbar?.offsetHeight || 0) + 12; // 툴바 높이만큼 빼기
-        scroller.scrollTo({ top: Math.max(0, top - offset), behavior: 'smooth' });
+        // ✅ start > end면 스왑
+        if (s > e) [s, e] = [e, s];
+
+        return s <= n && n <= e;
     }
 
-    links.forEach(a => {
-        a.addEventListener('click', (e) => {
-            const id = a.getAttribute('href').slice(1);
-            const target = document.getElementById(id);
-            if (!target) return;
-
-            e.preventDefault();
-            scrollToInContainer(target);
-
-            history.replaceState(null, '', `#${id}`);
-        });
-    });
-})();
-
-
-
-(function TS2() {
     const allData = [
         /* ===================== 주식 ===================== */
         { keyword: '주식', sent: 'pos', source: '매일경제', flag: '정상', date: '2025-12-18', popular: 46, title: '코스피 반등…외국인 매수세 유입', desc: '대형주 중심으로 매수세가 유입되며 지수가 반등했습니다. 환율 안정과 실적 기대가 투자심리를 지지했다는 분석입니다…' },
@@ -417,9 +333,25 @@ selectKeyword(bootKeyword);
 
     function sortItems(items, mode) {
         const arr = [...items];
+
         if (mode === 'recent') arr.sort((a, b) => parseDate(b.date) - parseDate(a.date));
         if (mode === 'old') arr.sort((a, b) => parseDate(a.date) - parseDate(b.date));
         if (mode === 'popular') arr.sort((a, b) => (b.popular || 0) - (a.popular || 0));
+
+        if (mode === 'trust_high') {
+            arr.sort((a, b) =>
+                (trustScore(b.flag) - trustScore(a.flag)) ||
+                (parseDate(b.date) - parseDate(a.date))
+            );
+        }
+
+        if (mode === 'trust_low') {
+            arr.sort((a, b) =>
+                (trustScore(a.flag) - trustScore(b.flag)) ||
+                (parseDate(b.date) - parseDate(a.date))
+            );
+        }
+
         return arr;
     }
 
@@ -441,7 +373,12 @@ selectKeyword(bootKeyword);
     }
 
     function getDataBySent(sent) {
-        return allData.filter(d => d.keyword === currentKeyword && d.sent === sent);
+        const { start, end } = window.getAppRange?.() || {};
+        return allData.filter(d =>
+            d.keyword === currentKeyword &&
+            d.sent === sent &&
+            isInRange(d.date, start, end)
+        );
     }
 
     function px(v) {
@@ -537,31 +474,6 @@ selectKeyword(bootKeyword);
         return 0;
     }
 
-    // 기존 sortItems에 trust 정렬 추가 (함수 내용 교체 or 조건 추가)
-    function sortItems(items, mode) {
-        const arr = [...items];
-
-        if (mode === 'recent') arr.sort((a, b) => parseDate(b.date) - parseDate(a.date));
-        if (mode === 'old') arr.sort((a, b) => parseDate(a.date) - parseDate(b.date));
-        if (mode === 'popular') arr.sort((a, b) => (b.popular || 0) - (a.popular || 0));
-
-        if (mode === 'trust_high') {
-            arr.sort((a, b) =>
-                (trustScore(b.flag) - trustScore(a.flag)) ||
-                (parseDate(b.date) - parseDate(a.date))
-            );
-        }
-
-        if (mode === 'trust_low') {
-            arr.sort((a, b) =>
-                (trustScore(a.flag) - trustScore(b.flag)) ||
-                (parseDate(b.date) - parseDate(a.date))
-            );
-        }
-
-        return arr;
-    }
-
     // cselect 초기화 함수
     function initCSelect(root, onPick) {
         const btn = root.querySelector('.cselect__btn');
@@ -634,10 +546,84 @@ selectKeyword(bootKeyword);
 
     // 초기 렌더
     renderAll();
+
+    document.addEventListener("app:rangechange", () => {
+        renderAll();
+    });
 })();
 
 // main3
 (function TS3() {
+
+    function daysInMonth(y, m) {
+        return new Date(y, m + 1, 0).getDate(); // m: 0~11
+    }
+
+    function addMonthsClamp(date, deltaMonths) {
+        const d = normalize(date);
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        const day = d.getDate();
+
+        const target = new Date(y, m + deltaMonths, 1);
+        const ty = target.getFullYear();
+        const tm = target.getMonth();
+        const last = daysInMonth(ty, tm);
+
+        return new Date(ty, tm, Math.min(day, last));
+    }
+
+    function addYearsClamp(date, deltaYears) {
+        const d = normalize(date);
+        const y = d.getFullYear() + deltaYears;
+        const m = d.getMonth();
+        const day = d.getDate();
+
+        const last = daysInMonth(y, m);
+        return new Date(y, m, Math.min(day, last));
+    }
+
+
+    function makeLabels(startISO, endISO, grain) {
+        const labels = [];
+        if (!startISO || !endISO) return labels;
+
+        let s = new Date(startISO + "T00:00:00");
+        let e = new Date(endISO + "T00:00:00");
+
+        // start > end면 스왑 (사용자가 날짜를 거꾸로 잡아도 동작)
+        if (s > e) [s, e] = [e, s];
+
+        const pad2 = (n) => String(n).padStart(2, "0");
+        const iso = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+        if (grain === "day") {
+            for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) labels.push(iso(d));
+            return labels;
+        }
+
+        if (grain === "week") {
+            // 주 단위: 시작일부터 7일씩
+            for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 7)) labels.push(iso(d));
+            return labels;
+        }
+
+        if (grain === "month") {
+            // 월 단위: 매월 1일
+            for (let d = new Date(s.getFullYear(), s.getMonth(), 1); d <= e; d.setMonth(d.getMonth() + 1)) {
+                labels.push(`${d.getFullYear()}-${pad2(d.getMonth() + 1)}`);
+            }
+            return labels;
+        }
+
+        if (grain === "year") {
+            for (let y = s.getFullYear(); y <= e.getFullYear(); y++) labels.push(String(y));
+            return labels;
+        }
+
+        return labels;
+    }
+
     const root = document.getElementById('main3');
     if (!root) return;
 
@@ -712,62 +698,172 @@ selectKeyword(bootKeyword);
         donutEl.setAttribute('aria-label', `감성 비율 도넛 차트 (긍정 ${p1}%, 중립 ${p2}%, 부정 ${p3}%)`);
     }
 
-    // ===== 기간 라벨 만들기 (x축) =====
-    const startEl = document.getElementById('startDate');
-    const endEl = document.getElementById('endDate');
+    // ===== 기간 탭 + 날짜 범위(시작일 수동, 종료일은 어제까지만) =====
+    const startDateEl = document.getElementById("startDate");
+    const endDateEl = document.getElementById("endDate");
+
+    // 날짜 유틸
+    function pad2(n) { return String(n).padStart(2, "0"); }
+    function toISO(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+    function parseISO(iso) {
+        if (!iso) return null;
+        const d = new Date(iso + "T00:00:00");
+        return Number.isNaN(d.getTime()) ? null : d;
+    }
+    function normalize(d) {
+        const x = new Date(d);
+        x.setHours(0, 0, 0, 0);
+        return x;
+    }
+    function addDays(d, days) {
+        const x = normalize(d);
+        x.setDate(x.getDate() + days);
+        return x;
+    }
+
+    let __appRange = null;
 
     function getActiveGrain() {
-        return document.querySelector('.seg-btn.is-active')?.dataset.grain || 'day';
+        return document.querySelector(".seg-btn.is-active")?.dataset.grain || "day";
     }
 
-    function pad2(n) { return String(n).padStart(2, '0'); }
+    // 종료일: "미래만" 금지 (어제까지만), 사용자가 과거로 바꾸는 건 허용
+    function clampEndToYesterdayISO(inputISO) {
+        const yesterdayISO = toISO(addDays(new Date(), -1));
+        return (!inputISO || inputISO > yesterdayISO) ? yesterdayISO : inputISO;
+    }
 
-    function makeLabels(startStr, endStr, grain) {
-        const start = new Date(startStr + 'T00:00:00');
-        const end = new Date(endStr + 'T00:00:00');
-        if (isNaN(start) || isNaN(end)) return [];
 
-        const labels = [];
-        const d = new Date(start);
+    // (선택) 이전기간 계산: 현재 기간 길이만큼 바로 이전 구간
+    function calcPrevSameLength(start, end) {
+        const msDay = 24 * 60 * 60 * 1000;
+        const diffDays = Math.round((end - start) / msDay); // start==end면 0
+        const prevEnd = addDays(start, -1);
+        const prevStart = addDays(prevEnd, -diffDays);
+        return { prevStart: toISO(prevStart), prevEnd: toISO(prevEnd) };
+    }
 
-        if (grain === 'day') {
-            while (d <= end) {
-                labels.push(`${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`);
-                d.setDate(d.getDate() + 1);
-            }
-        } else if (grain === 'week') {
-            // 단순: 7일 단위로 끊기 (원하면 ISO week로도 바꿀 수 있음)
-            let i = 1;
-            while (d <= end) {
-                labels.push(`W${i} (${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())})`);
-                d.setDate(d.getDate() + 7);
-                i++;
-            }
-        } else if (grain === 'month') {
-            while (d <= end) {
-                labels.push(`${d.getFullYear()}-${pad2(d.getMonth() + 1)}`);
-                d.setMonth(d.getMonth() + 1);
-            }
-        } else if (grain === 'year') {
-            while (d <= end) {
-                labels.push(String(d.getFullYear()));
-                d.setFullYear(d.getFullYear() + 1);
-            }
+    function calcStartByGrain(grain, end) {
+        // ✅ end 포함해서 "최근 N일" 느낌으로 만들려면 week는 -6 (총 7일)
+        //    만약 너가 'start = end-7'을 원하면 -7로 바꿔도 됨.
+        if (grain === "day") return new Date(end);
+        if (grain === "week") return addDays(end, -6);
+
+        // month/year는 "같은 날짜 기준 1개월/1년 전" (원래 네 코드 스타일)
+        if (grain === "month") return addMonthsClamp(end, -1);
+        if (grain === "year") return addYearsClamp(end, -1);
+
+        return new Date(end);
+    }
+
+    // ✅ preset=true면 탭(day/week/month/year) 기준으로 start 자동 세팅
+    function emitRangeChange({ preset = false } = {}) {
+        const grain = getActiveGrain();
+
+        // 1) endISO 결정: 사용자 입력 존중 + 미래만 어제까지 제한
+        const yesterdayISO = toISO(addDays(new Date(), -1));
+        if (endDateEl) endDateEl.max = yesterdayISO;
+
+        const endISO = clampEndToYesterdayISO(endDateEl?.value);
+        if (endDateEl) endDateEl.value = endISO;
+
+        let end = normalize(parseISO(endISO) || addDays(new Date(), -1));
+
+        // 2) start 결정
+        let start;
+        if (preset) {
+            start = normalize(calcStartByGrain(grain, end));
+            if (startDateEl) startDateEl.value = toISO(start);
+        } else {
+            start = normalize(parseISO(startDateEl?.value) || end);
         }
-        return labels;
+
+        // 3) start > end면 start를 end로 내림 (스왑보다 UX 깔끔)
+        if (start > end) {
+            start = new Date(end);
+            if (startDateEl) startDateEl.value = toISO(start);
+        }
+
+        // 4) 서로 제약 걸기 (핵심!!)
+        if (startDateEl) startDateEl.max = toISO(end);       // start는 end 이후 선택 불가
+        if (endDateEl) endDateEl.min = toISO(start);         // end는 start 이전 선택 불가
+
+        const prev = calcPrevSameLength(start, end);
+
+        __appRange = {
+            grain,
+            start: toISO(start),
+            end: toISO(end),
+            prevStart: prev.prevStart,
+            prevEnd: prev.prevEnd,
+        };
+
+        document.dispatchEvent(new CustomEvent("app:rangechange", { detail: __appRange }));
     }
 
-    // ===== (샘플) 키워드별 언급량 시계열 생성 ⚠️나중에 makeSeries()만 실제 데이터로 바꾸기=====
-    function makeSeries(keyword, labels) {
-        // "키워드마다 조금씩 다른" 패턴을 만들기 위한 seed
-        const seed = Array.from(keyword).reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-        const base = 80 + (seed % 60);
 
-        return labels.map((_, i) => {
-            const wave = Math.sin((i + 1) * 0.7) * 12;
-            const step = (i % 3) * 6;
-            const noise = ((seed + i * 13) % 7) - 3;
-            return Math.max(0, Math.round(base + wave + step + noise));
+    // 외부(TS2/TS3 등)에서 범위 읽기
+    window.getAppRange = () => __appRange || {
+        grain: getActiveGrain(),
+        start: startDateEl?.value,
+        end: endDateEl?.value,
+        prevStart: null,
+        prevEnd: null
+    };
+
+    // 이벤트
+    startDateEl?.addEventListener("input", () => emitRangeChange({ preset: false }));
+    startDateEl?.addEventListener("change", () => emitRangeChange({ preset: false }));
+
+    endDateEl?.addEventListener("input", () => emitRangeChange({ preset: false }));
+    endDateEl?.addEventListener("change", () => emitRangeChange({ preset: false }));
+
+
+    // 탭 클릭: 프리셋 기간으로 시작일 자동 세팅
+    segmentedBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            segmentedBtns.forEach((b) => {
+                b.classList.remove("is-active");
+                b.setAttribute("aria-selected", "false");
+            });
+            btn.classList.add("is-active");
+            btn.setAttribute("aria-selected", "true");
+
+            emitRangeChange({ preset: true }); // 핵심!!
+        });
+    });
+
+    // 첫 로드도 프리셋으로 시작일 자동 세팅 + 종료일 어제 고정
+    emitRangeChange({ preset: true });
+
+
+    // ===== (임시) 라인차트 시계열 생성기 =====
+    // TODO: 나중에 실제 API/DB에서 날짜별 언급량 배열로 교체하면 됨
+    function hash32(str) {
+        let h = 2166136261;
+        for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+        }
+        return h >>> 0;
+    }
+
+    // labels(YYYY-MM-DD / YYYY-MM / YYYY) 각각에 대해 "안정적으로" 같은 값이 나오도록 생성
+    function makeSeries(keyword, labels) {
+        const seed = hash32(keyword);
+        const base = (seed % 25) + 15; // 키워드별 기본 레벨
+        const len = Math.max(1, labels.length);
+
+        return labels.map((lab, i) => {
+            const t = i / len;
+
+            // 완만한 추세 + 파동 + 라벨 기반 노이즈(결정적)
+            const drift = t * 8;
+            const wave = Math.sin(t * Math.PI * 2) * 6;
+            const noise = (hash32(keyword + "|" + lab) % 11) - 5;
+
+            const v = Math.round(base + drift + wave + noise);
+            return Math.max(0, v);
         });
     }
 
@@ -791,7 +887,8 @@ selectKeyword(bootKeyword);
     function renderLineChart() {
         if (!canvas || typeof Chart === 'undefined') return;
 
-        const labels = makeLabels(startEl?.value, endEl?.value, getActiveGrain());
+        const { start, end, grain } = window.getAppRange?.() || {};
+        const labels = makeLabels(start, end, grain || "day");
         const datasets = buildDatasets(labels);
 
         if (placeholder) placeholder.style.display = 'none';
@@ -873,15 +970,6 @@ selectKeyword(bootKeyword);
         });
     });
 
-    // 기간/단위 바뀌면 차트 리렌더
-    startEl?.addEventListener('change', renderLineChart);
-    endEl?.addEventListener('change', renderLineChart);
-    document.querySelectorAll('.seg-btn').forEach(btn => btn.addEventListener('click', () => {
-        // segmented 로직이 is-active 바꾸는 건 이미 위에서 하고 있으니
-        // 여기서는 차트만 갱신
-        renderLineChart();
-    }));
-
     // 외부에서(=selectKeyword) 기준 키워드 바꾸게 노출
     window.ts3Api = {
         setKeyword: setBaseKeyword,
@@ -896,116 +984,8 @@ selectKeyword(bootKeyword);
             '주식').trim();
 
     setBaseKeyword(init);
-})();
 
-// ===============================
-// Sidebar active + in-container anchor scroll (FIX)
-// ===============================
-(function initSidebarAndAnchors() {
-    const scrollContainer = document.querySelector('.main-scroll');
-    const toolbar = document.querySelector('.main-toolbar');
-    const menuLinks = Array.from(document.querySelectorAll('.menu a'));
-
-    // main1도 감시하려면 HTML에 id="main1" 추가해야 함
-    const sections = ['main1', 'main2', 'main3']
-        .map(id => document.getElementById(id))
-        .filter(Boolean);
-
-    function clearActive() {
-        document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
-    }
-
-    function setActiveBySectionId(id) {
-        clearActive();
-
-        // 링크가 "#main2" 일 수도 있고 "./main.html#main2" 일 수도 있으니 endsWith로 처리
-        const target = menuLinks.find(a => {
-            const href = (a.getAttribute('href') || '').trim();
-            if (!href) return false;
-
-            if (id === 'main1') {
-                // main1은 "main.html" (해시 없는 링크) 쪽을 활성화
-                return href.endsWith('main.html') && !href.includes('#');
-            }
-            return href.endsWith(`#${id}`);
-        });
-        console.log("[target for]", id, "=", target);
-
-        target?.closest('li')?.classList.add('active');
-    }
-
-    function setActiveByLocation() {
-        const file = (location.pathname.split('/').pop() || '').split('?')[0].split('#')[0];
-        console.log('file : '+file)
-        const hash = location.hash || '';
-        console.log('hash : '+hash)
-        // main.html에서만 해시 기반 활성화
-        if (file === 'main.html') {
-            if (hash === '#main2') return setActiveBySectionId('main2');
-            if (hash === '#main3') return setActiveBySectionId('main3');
-            return setActiveBySectionId('main1');
-        }
-
-        // 다른 페이지에서는 파일명 기준 활성화
-        clearActive();
-        const target = menuLinks.find(a => {
-            const href = (a.getAttribute('href') || '').split('#')[0];
-            const hrefFile = (href.split('/').pop() || '');
-            return hrefFile === file;
-        });
-        target?.closest('li')?.classList.add('active');
-    }
-
-    // 최초 1회
-    setActiveByLocation();
-
-    // ===== 컨테이너 내부 스무스 스크롤 (./main.html#main2 도 처리) =====
-    const scrollLinks = document.querySelectorAll('.menu a.js-scroll[href*="#"]');
-    scrollLinks.forEach(a => {
-        a.addEventListener('click', (e) => {
-            const href = a.getAttribute('href') || '';
-            const url = new URL(href, location.href);
-
-            const samePage = url.pathname === location.pathname; // main.html에서만 가로채서 스크롤
-            const id = (url.hash || '').slice(1);
-            const target = id ? document.getElementById(id) : null;
-
-            if (!samePage || !scrollContainer || !target) return;
-
-            e.preventDefault();
-
-            const top =
-                target.getBoundingClientRect().top -
-                scrollContainer.getBoundingClientRect().top +
-                scrollContainer.scrollTop;
-
-            const offset = (toolbar?.offsetHeight || 0) + 12;
-            scrollContainer.scrollTo({ top: Math.max(0, top - offset), behavior: 'smooth' });
-
-            history.replaceState(null, '', url.hash);
-            setActiveByLocation();
-        });
+    document.addEventListener("app:rangechange", () => {
+        renderLineChart();
     });
-
-    // ===== 스크롤에 맞춰 active 변경(IntersectionObserver) =====
-    if (scrollContainer && sections.length) {
-        const io = new IntersectionObserver((entries) => {
-            // 가장 많이 보이는 섹션을 선택
-            const visible = entries
-                .filter(en => en.isIntersecting)
-                .sort((a, b) => (b.intersectionRatio - a.intersectionRatio))[0];
-
-            if (!visible) return;
-            const id = visible.target.id || 'main1';
-            setActiveBySectionId(id);
-        }, {
-            root: scrollContainer,
-            threshold: [0, 0.2, 0.4, 0.6, 0.8],
-            rootMargin: '-15% 0px -70% 0px'
-        });
-
-        sections.forEach(s => io.observe(s));
-    }
-
-    window.addEventListener('hashchange', setActiveByLocation);
 })();

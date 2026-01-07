@@ -6,33 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>경제 키워드 트렌드</title>
 
-    <link rel="icon" href="/view/img/favicon.png">
-    <link rel="stylesheet" href="/view/css/my_page_style.css" />
-    <link rel="stylesheet" href="/view/css/main_style.css" />
+    <link rel="icon" href="./img/favicon.png">
+    <link rel="stylesheet" href="./css/main_style.css" />
+    <link rel="stylesheet" href="./css/my_page_style.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
-    <header class="header">
-        <div class="header-inner">
-            <a class="brand" href="/">
-                <span class="sidebar_logo"><img src="./img/logo_white.png" alt=""></span>
-            </a>
-            <div class="auth-area" id="authArea"></div>
-        </div>
-    </header>
+    <div id="headerMount" aria-label="공통 헤더"></div>
 
     <div class="app">
-        <aside class="sidebar">
-            <ul class="menu">
-                <li><a href="/main">경제 키워드 트렌드</a></li>
-                <li><a href="/main2" class="js-scroll">기사</a></li>
-                <li><a href="/main3" class="js-scroll">키워드 언급량 및 감성분석</a></li>
-                <li><a href="/word">단어 사전</a></li>
-                <li><a href="/my_page">마이페이지</a></li>
-            </ul>
-        </aside>
-
+        <aside id="sidebarMount" class="sidebar" aria-label="사이드바"></aside>
         <main class="mains">
 
             <!-- 상단 필터 바 -->
@@ -41,13 +25,13 @@
                     <label class="date-pill">
                         <span class="date-icon" aria-hidden="true">📅</span>
                         <span class="date-label">시작일</span>
-                        <input id="startDate" type="date" value="2025-12-17" />
+                        <input id="startDate" type="date" />
                     </label>
 
                     <label class="date-pill">
                         <span class="date-icon" aria-hidden="true">📅</span>
                         <span class="date-label">종료일</span>
-                        <input id="endDate" type="date" value="2025-12-18" />
+                        <input id="endDate" type="date" />
                     </label>
 
 
@@ -362,8 +346,13 @@
             </div>
         </main>
     </div>
+    <script src="/static/header_init.js" defer></script>
 
-    <script src="/static/main.js"> </script>
+    <script src="/static/base.js" defer></script>
+    <script src="/static/sidebar_init.js" defer></script>
+    <script src="/static/sidebar.js" defer></script>
+    <script src="/static/main.js" defer></script>
+
 </body>
 
 </html>

@@ -24,7 +24,7 @@ body {
   min-height: calc(100vh - 60px);
 }
 
-main {
+main.word-main {
   flex: 1;
   height: 100%;
   overflow: hidden;
@@ -32,7 +32,7 @@ main {
   border-radius: 14px;
   box-shadow: 0 18px 45px rgba(15, 40, 90, 0.08);
   padding: 16px 18px;
-  /* 단어사전은 여백 조금 줄여서 스샷 느낌 */
+
   min-height: calc(100vh - 60px - 44px);
   display: flex;
   align-items: stretch;
@@ -68,6 +68,8 @@ main {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border: none;
+  box-shadow: none;
 }
 
 /* 상단 툴바 느낌 */
@@ -86,6 +88,46 @@ main {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.console-card {
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #e8eef8;
+  box-shadow: 0 18px 45px rgba(15, 40, 90, 0.08);
+  padding: 12px 14px;
+}
+
+.console-label {
+  display: block;
+  font-weight: 900;
+  color: #1d2b42;
+}
+
+.console-input {
+  width: min(560px, 100%);
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid #dfe8f7;
+  background: #fff;
+  padding: 0 12px;
+  font-weight: 800;
+  outline: none;
+}
+
+.console-input:focus {
+  box-shadow: 0 0 0 3px rgba(4, 98, 210, 0.15);
+  border-color: #a6c8ef;
+}
+
+.word-danger-btn {
+  border-color: #ffd1d1;
+  color: #e53935;
+}
+
+.word-danger-btn:hover {
+  background: #ffecec;
+  border-color: #ffb9b9;
 }
 
 /* 탭(한글/영문/숫자) */
@@ -287,36 +329,6 @@ main {
   gap: 8px;
 }
 
-.star-mini {
-  padding: 0;
-  line-height: 1;
-  font-size: 16px;
-  width: 26px;
-  height: 26px;
-  border-radius: 10px;
-  border: 1px solid #dfe8f7;
-  background: #fff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-weight: 900;
-  color: #8a97ad;
-  transition: .15s;
-}
-
-.star-mini:hover {
-  background: #e8f1ff;
-  border-color: #a6c8ef;
-  color: #0462D2;
-}
-
-.star-mini.is-on {
-  color: #f4b400;
-  border-color: #ffe08a;
-  background: #fffaf0;
-}
-
 .play-mini {
   width: 26px;
   height: 26px;
@@ -429,49 +441,6 @@ main {
   background: #a9c2f2;
 }
 
-/* 상세 별 버튼 */
-.icon-star-btn {
-  appearance: none;
-  -webkit-appearance: none;
-
-  width: 34px;
-  height: 34px;
-  padding: 0;
-
-  display: grid;
-  place-items: center;
-
-  line-height: 0;
-  /* ⭐ 핵심: 버튼 내부 베이스라인 여백 제거 */
-
-  border-radius: 12px;
-  border: 1px solid #dfe8f7;
-  background: #fff;
-  cursor: pointer;
-  transition: .15s;
-}
-
-.icon-star-btn:hover {
-  background: #e8f1ff;
-  border-color: #a6c8ef;
-}
-
-.icon-star {
-  display: block;
-  line-height: 1;
-  font-size: 18px;
-  font-weight: 900;
-  color: #8a97ad;
-
-  margin-top: -5px;
-
-  transform: translateY(-1px);
-}
-
-.icon-star.is-on {
-  color: #f4b400;
-}
-
 /* 빈 상태 */
 .word-empty {
   height: 100%;
@@ -506,7 +475,7 @@ main {
 }
 
 .modal-backdrop.is-open {
-  display: flex;
+  backdrop-filter: blur(3px);
 }
 
 .modal {
@@ -570,11 +539,64 @@ main {
   background: #fff;
 }
 
+/* 삭제 확인 전용 모달 스타일 */
+.modal.is-confirm {
+  width: min(520px, 92vw);
+  max-height: none;
+  border-radius: 18px;
+}
+
+.modal.is-confirm .modal-head {
+  display: none; /* 이미지처럼 헤더 제거 */
+}
+
+.modal.is-confirm .modal-body {
+  padding: 34px 28px 18px;
+  text-align: center;
+}
+
+.modal.is-confirm .modal-foot {
+  padding: 0 28px 26px;
+  justify-content: center;
+  gap: 14px;
+  border-top: none;
+}
+
+/* 내용 */
+.confirm-title {
+  font-weight: 900;
+  font-size: 14px;
+  color: #1d2b42;
+  margin-bottom: 10px;
+}
+
+.confirm-desc {
+  font-weight: 800;
+  font-size: 13px;
+  color: #6a7a93;
+  line-height: 1.7;
+}
+
+.confirm-desc strong {
+  color: #1d2b42;
+}
+
+/* 버튼 사이즈 통일 */
+.confirm-btn {
+  min-width: 140px;
+  height: 44px;
+  border-radius: 12px;
+  font-weight: 900;
+  font-size: 13px;
+}
+
 .bookmark-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
+
+
 
 .bookmark-item {
   border: 1px solid #e8eef8;

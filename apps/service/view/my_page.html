@@ -13,28 +13,10 @@
 </head>
 
 <body>
-  <header class="header">
-    <div class="header-inner">
-      <a class="brand" href="/">
-        <span class="sidebar_logo"><img src="/view/img/logo_white.png" alt=""></span>
-      </a>
-      
-      <a href="/logout" class="logout-button">로그아웃</a>
-    </div>
-  </header>
+  <div id="headerMount" aria-label="공통 헤더"></div>
 
   <div class="app">
-    <aside class="sidebar">
-      <ul class="menu">
-        <li><a href="/view/main.html">경제 키워드 트렌드</a></li>
-        <li><a href="/view/main.html#main2">기사</a></li>
-        <li><a href="/view/main.html#main3">키워드 언급량 및 감성분석</a></li>
-        <!-- <li><a href="/main3">키워드 언급량 및 감성분석</a></li> -->
-        <li><a href="/view/word.html">단어 사전</a></li>
-        <li><a href="/view/my_page.html">마이페이지</a></li> 
-        <!-- <li><a href="/my_page">마이페이지</a></li>  -->
-      </ul>
-    </aside>
+    <aside id="sidebarMount" class="sidebar" aria-label="사이드바"></aside>
     <main class="content">
       <div class="card">
         <div class="card-top">
@@ -61,12 +43,12 @@
       const res = await fetch(ENDPOINT_VERIFY_PW, {
         method: "POST",
         credentials: "include",
-        redirect: "manual",               // ✅ 중요: 307 redirect 따라가지 않기
+        redirect: "manual",               // 중요: 307 redirect 따라가지 않기
         headers: { "Accept": "application/json" },
         body: new URLSearchParams({ pw })
       });
 
-      // ✅ redirect 응답이면(성공 케이스) 여기서 OK 처리
+      // redirect 응답이면(성공 케이스) 여기서 OK 처리
       // 브라우저마다 manual redirect가 'opaqueredirect'(status 0)로 오기도 함
       if (res.type === "opaqueredirect") return { ok: true };
       if (res.status >= 300 && res.status < 400) return { ok: true };
@@ -102,108 +84,21 @@
           return;
         }
 
-        // ✅ 백엔드가 info_update에서 pw 필수라서(수정 불가 조건) 저장
+        // 백엔드가 info_update에서 pw 필수라서(수정 불가 조건) 저장
         sessionStorage.setItem("verifiedPw", pw);
 
-        // ✅ 성공 이동은 우리가 직접 GET 라우트로 이동
+        // 성공 이동은 우리가 직접 GET 라우트로 이동
         location.href = "/info_edit";
       } catch {
         err.textContent = "비밀번호 확인 중 오류가 발생했습니다.";
       }
     });
 
-     function setSidebarActive() {
-    // 1) pathname 정규화: /my_page.html -> /my_page 처럼 맞춤
-    const normalizePath = (path) => {
-      path = (path || '').split('?')[0].split('#')[0];
-      path = path.replace(/\/+$/, '');      // 끝 / 제거
-      path = path.replace(/\.html$/, '');   // .html 제거
-      return path || '/';
-    };
-
-    // 2) href를 현재 페이지 기준으로 URL로 변환 (#main2 같은 것도 정상 처리)
-    const toUrl = (href) => new URL(href, location.href);
-
-    // 3) 현재 페이지 경로 + alias 처리 (info_edit는 마이페이지로 묶기)
-    const alias = {
-      '/info_edit': '/my_page',
-      '/info_edit.html': '/my_page',
-    };
-
-    const curPath = alias[normalizePath(location.pathname)] || normalizePath(location.pathname);
-    const curHash = location.hash || '';
-
-    // active 초기화
-    document.querySelectorAll('.menu li').forEach(li => li.classList.remove('active'));
-
-    const links = [...document.querySelectorAll('.menu a')];
-
-    // ✅ main에서 #main2/#main3면 hash까지 매칭 우선
-    if (curPath === '/main' && (curHash === '#main2' || curHash === '#main3')) {
-      const hashTarget = links.find(a => {
-        const u = toUrl(a.getAttribute('href') || '');
-        return normalizePath(u.pathname) === '/main' && u.hash === curHash;
-      });
-
-      if (hashTarget) {
-        hashTarget.closest('li')?.classList.add('active');
-        return;
-      }
-    }
-
-    // ✅ 기본은 경로(path)만 매칭 (hash는 무시)
-    const fileTarget = links.find(a => {
-      const u = toUrl(a.getAttribute('href') || '');
-      const aPath = normalizePath(u.pathname);
-      return aPath === curPath;
-    });
-
-    fileTarget?.closest('li')?.classList.add('active');
-  }
-
-  // 최초 1회
-  document.addEventListener('DOMContentLoaded', setSidebarActive);
-
-  // main에서 #main2/#main3 바뀔 때도 반영
-  window.addEventListener('hashchange', setSidebarActive);
-
-  // 로그아웃
-  (function bindLogout() {
-  const btn = document.getElementById("btnLogout");
-  if (!btn) return;
-
-  function clearCookie(name) {
-    // 기본 path
-    document.cookie = `${name}=; Max-Age=0; path=/`;
-    // 혹시 path가 다르면 추가로 한 번 더(필요시)
-    document.cookie = `${name}=; Max-Age=0; path=/;`;
-  }
-
-  btn.addEventListener("click", (e) => {
-    e.preventDefault();
-
-    // ✅ 프로젝트에서 로그인 판단에 쓰는 값들 싹 제거
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user_id");
-    localStorage.removeItem("refresh_token");
-
-    sessionStorage.removeItem("access_token");
-    sessionStorage.removeItem("user_id");
-    sessionStorage.removeItem("refresh_token");
-
-    // ✅ 너 코드에서 체크하던 쿠키들
-    clearCookie("loginId");
-    clearCookie("access_token");
-    clearCookie("user_id");
-
-    // UI 즉시 반영(가장 확실)
-    location.href = "/"; // 또는 "./login.html"
-  });
-})();
-
   </script>
-
-
+  <script src="/static/header_init.js" defer></script>
+  <script src="/static/base.js" defer></script>
+  <script src="/static/sidebar_init.js" defer></script>
+  <script src="/static/sidebar.js" defer></script>
 </body>
 
 </html>
