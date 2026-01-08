@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,7 +15,9 @@
 
   <!-- ✅ 권한 확인 전 화면 깜빡임 방지 -->
   <style>
-    body.preauth { visibility: hidden; }
+    body.preauth {
+      visibility: hidden;
+    }
   </style>
 </head>
 
@@ -24,22 +27,7 @@
 
 
   <div class="app">
-    <aside class="sidebar">
-      <div class="admin-side-title">관리 메뉴</div>
-      <ul class="menu">
-        <li><a href="./main.html">경제 키워드 트렌드</a></li>
-        <li><a href="./main.html#main2" class="js-scroll">기사</a></li>
-        <li><a href="./main.html#main3" class="js-scroll">키워드 언급량 및 감성분석</a></li>
-        <li><a href="./word.html">단어 사전</a></li>
-        <li><a href="./my_page.html">마이페이지</a></li>
-
-        <li class="menu-divider" aria-hidden="true" role="separator"></li>
-
-        <li class="active"><a href="./admin.html">수집 모니터링</a></li>
-        <li><a href="./admin_rerun.html">수동 재실행</a></li>
-        <li><a href="./admin_terms.html">용어 관리</a></li>
-      </ul>
-    </aside>
+    <aside id="sidebarMount" class="sidebar" aria-label="사이드바"></aside>
 
     <main class="mains">
       <!-- 상단 툴바 (요청대로: 진행률 pill 왼쪽, 날짜/조회 오른쪽) -->
@@ -48,13 +36,7 @@
           <span class="admin-pill__label" id="runRateLabel">분석 작업 실행 중</span>
 
           <!-- ✅ 안내 i 버튼 -->
-          <button
-            type="button"
-            class="admin-pill__info"
-            id="runRateInfo"
-            aria-label="진행 안내"
-            title="안내"
-          >i</button>
+          <button type="button" class="admin-pill__info" id="runRateInfo" aria-label="진행 안내" title="안내">i</button>
 
           <strong id="runRate">(0%)</strong>
         </div>
@@ -172,6 +154,8 @@
   </div>
 
   <script src="/static/header_init.js" defer></script>
+  <script src="/static/sidebar_init.js" defer></script>
+  <script src="/static/sidebar.js" defer></script>
 
   <!-- ✅ /api/session 기반 진입 가드 + admin.js를 권한 통과 후 로드 -->
   <script>
@@ -184,7 +168,7 @@
         const body = await r.json();
 
         const loggedIn = !!body.logged_in;
-        const isAdmin  = loggedIn && !!body.admin_in;
+        const isAdmin = loggedIn && !!body.admin_in;
 
         if (!loggedIn) {
           location.replace("/login");
@@ -230,4 +214,5 @@
     })();
   </script>
 </body>
+
 </html>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,7 +14,9 @@
   <link rel="stylesheet" href="/view/css/admin_rerun.css" />
 
   <style>
-    body.preauth { visibility: hidden; }
+    body.preauth {
+      visibility: hidden;
+    }
   </style>
 </head>
 
@@ -21,36 +24,15 @@
   <div id="headerMount" aria-label="공통 헤더"></div>
 
   <div class="app">
-    <aside class="sidebar">
-      <div class="admin-side-title">관리 메뉴</div>
-      <ul class="menu">
-        <li><a href="./main.html">경제 키워드 트렌드</a></li>
-        <li><a href="./main.html#main2" class="js-scroll">기사</a></li>
-        <li><a href="./main.html#main3" class="js-scroll">키워드 언급량 및 감성분석</a></li>
-        <li><a href="./word.html">단어 사전</a></li>
-        <li><a href="./my_page.html">마이페이지</a></li>
-
-        <li class="menu-divider" aria-hidden="true" role="separator"></li>
-
-        <li><a href="./admin.html">수집 모니터링</a></li>
-        <li class="active"><a href="./admin_rerun.html">수동 재실행</a></li>
-        <li><a href="./admin_terms.html">용어 관리</a></li>
-      </ul>
-    </aside>
-      <main class="mains">
+    <aside id="sidebarMount" class="sidebar" aria-label="사이드바"></aside>
+    <main class="mains">
       <!-- ✅ 추가: word.html의 "단어 사전" 느낌 -->
       <div class="admin-page-title">관리자 콘솔</div>
 
       <div class="main-toolbar admin-toolbar">
         <div class="admin-pill" id="runRatePill" title="재분석 진행률" hidden>
           <span class="admin-pill__label" id="runRateLabel">재분석 실행 중</span>
-          <button
-            type="button"
-            class="admin-pill__info"
-            id="runRateInfo"
-            aria-label="진행 안내"
-            title="안내"
-          >i</button>
+          <button type="button" class="admin-pill__info" id="runRateInfo" aria-label="진행 안내" title="안내">i</button>
           <strong id="runRate">(0%)</strong>
         </div>
 
@@ -77,48 +59,42 @@
       <div class="main-scroll">
         <section class="admin-panel rerun-panel">
           <!-- 모델/리스트 상단 바 -->
-            <div class="rerun-bar">
-              <!-- 왼쪽: 결측치 LIST -->
-              <div class="rerun-bar__left">
-                <div class="rerun-list-title">결측치 LIST</div>
-              </div>
-
-              <!-- 오른쪽: 칩(Keyword~Summary + 전체선택 + 전체해제) -->
-              <div class="rerun-bar__right">
-                <div class="rerun-chips" id="modelChips" aria-label="분석 모델 선택">
-                  <!-- ✅ 설계서 순서: keyword → sentiment → trust → summary → 전체선택 → 전체해제 -->
-                  <button type="button" class="rerun-chip is-active" data-model="keyword">
-                    <span class="rerun-dot" aria-hidden="true"></span> Keyword
-                  </button>
-
-                  <button type="button" class="rerun-chip is-active" data-model="sentiment">
-                    <span class="rerun-dot" aria-hidden="true"></span> Sentiment
-                  </button>
-
-                  <button type="button" class="rerun-chip is-active" data-model="trust">
-                    <span class="rerun-dot" aria-hidden="true"></span> Trust
-                  </button>
-
-                  <button type="button" class="rerun-chip is-active" data-model="summary">
-                    <span class="rerun-dot" aria-hidden="true"></span> Summary
-                  </button>
-
-                  <button type="button" class="rerun-chip rerun-chip--mini" id="chipAll">전체 선택</button>
-                  <button type="button" class="rerun-chip rerun-chip--mini" id="chipClear">전체 해제</button>
-                </div>
-
-                <!-- ✅ '초기값으로'는 UI에서 제거(숨김)
-                     (JS가 btnReset을 참조할 수 있어서 hidden으로만 유지) -->
-                <button
-                  type="button"
-                  class="admin-btn admin-btn--ghost"
-                  id="btnReset"
-                  hidden
-                  aria-hidden="true"
-                  tabindex="-1"
-                >초기값으로</button>
-              </div>
+          <div class="rerun-bar">
+            <!-- 왼쪽: 결측치 LIST -->
+            <div class="rerun-bar__left">
+              <div class="rerun-list-title">결측치 LIST</div>
             </div>
+
+            <!-- 오른쪽: 칩(Keyword~Summary + 전체선택 + 전체해제) -->
+            <div class="rerun-bar__right">
+              <div class="rerun-chips" id="modelChips" aria-label="분석 모델 선택">
+                <!-- ✅ 설계서 순서: keyword → sentiment → trust → summary → 전체선택 → 전체해제 -->
+                <button type="button" class="rerun-chip is-active" data-model="keyword">
+                  <span class="rerun-dot" aria-hidden="true"></span> Keyword
+                </button>
+
+                <button type="button" class="rerun-chip is-active" data-model="sentiment">
+                  <span class="rerun-dot" aria-hidden="true"></span> Sentiment
+                </button>
+
+                <button type="button" class="rerun-chip is-active" data-model="trust">
+                  <span class="rerun-dot" aria-hidden="true"></span> Trust
+                </button>
+
+                <button type="button" class="rerun-chip is-active" data-model="summary">
+                  <span class="rerun-dot" aria-hidden="true"></span> Summary
+                </button>
+
+                <button type="button" class="rerun-chip rerun-chip--mini" id="chipAll">전체 선택</button>
+                <button type="button" class="rerun-chip rerun-chip--mini" id="chipClear">전체 해제</button>
+              </div>
+
+              <!-- ✅ '초기값으로'는 UI에서 제거(숨김)
+                     (JS가 btnReset을 참조할 수 있어서 hidden으로만 유지) -->
+              <button type="button" class="admin-btn admin-btn--ghost" id="btnReset" hidden aria-hidden="true"
+                tabindex="-1">초기값으로</button>
+            </div>
+          </div>
 
 
           <div class="admin-table-wrap rerun-table-wrap">
@@ -172,6 +148,8 @@
   </div>
 
   <script src="/static/header_init.js" defer></script>
+  <script src="/static/sidebar_init.js" defer></script>
+  <script src="/static/sidebar.js" defer></script>
 
   <script>
     async function requireAdminOrRedirect() {
@@ -181,7 +159,7 @@
         const body = await r.json();
 
         const loggedIn = !!body.logged_in;
-        const isAdmin  = loggedIn && !!body.admin_in;
+        const isAdmin = loggedIn && !!body.admin_in;
 
         if (!loggedIn) {
           location.replace("/login");
@@ -225,4 +203,5 @@
     })();
   </script>
 </body>
+
 </html>
