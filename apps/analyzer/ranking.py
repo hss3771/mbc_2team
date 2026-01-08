@@ -1,7 +1,7 @@
 import hashlib
 from typing import Dict, List, Any, Tuple
 from elasticsearch import helpers
-
+from apps.common.repositories.issue_keyword_repo import make_issue_ranking_id
 NEWS_INDEX = "news_info"
 OUT_INDEX = "issue_keyword_count"
 
@@ -14,8 +14,7 @@ def _make_doc_id(start_date_strict: str, keyword: str) -> str:
     _id = sha1("{date}|{keyword}") hex
     date: 'YYYY-MM-DD'
     """
-    raw = f"{start_date_strict}|{keyword}".encode("utf-8")
-    return hashlib.sha1(raw).hexdigest()
+    return make_issue_ranking_id(start_date_strict, keyword)
 
 
 def aggregate_keywords_in_range(
@@ -117,7 +116,6 @@ def run_issue_keyword_count_for_range(
     """
     # start_dt에서 strict_date 뽑기 (YYYY-MM-DD)
     start_date_strict = start_dt[:10]
-
     pairs = aggregate_keywords_in_range(es, start_dt, end_dt)
     result = write_issue_keyword_count(es, start_date_strict, pairs)
 

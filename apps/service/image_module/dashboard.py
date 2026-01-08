@@ -5,7 +5,7 @@ from collections import defaultdict
 from apps.common.elastic import get_es
 from apps.common.repositories.issue_keyword_repo import get_sub_key
 
-router = APIRouter(prefix="/api")
+router = APIRouter(prefix="/api", tags=["image"])
 es = get_es()
 
 ISSUE_INDEX = "issue_keyword_count"

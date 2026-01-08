@@ -1,0 +1,108 @@
+규제완화 2024.11 deregulation
+국채금리 2023.10  governmentRate
+금리인상 2023.09 rate increase
+금융지원 2023.04 finacial support
+기후변화 2024.09 climate change
+대환대출 2023.05 Refinance loan
+디자인어워드 2024.03 Design Award
+메타버스 2023.01 metaverse
+모건스탠리 2023.07 Morgan Stanley
+미국라스베이거스 2023. 01 LAS VEGAS,USA
+산불피해 2023.04 Forest Fire
+상생금융 2023.11 winwin finance
+새마을금고 2023.07 bank of newtown
+사전청약 2023. 06 Advance subscription
+시장점유율 2023. 05  market share
+아파트부실공사 2023.08 poor construction
+애플페이 2023. 03 apple pay
+에코프로 2023. 04 echo pro
+예금금리 2023.01 deposit rate
+전기요금 2023. 05 electricity bill
+정경유착 2023. 08 politics and business
+정비사업 2024. 12 maintenance business
+지속가능 2024.12 sustainable
+청년도약계좌 2023.06 Youth Leap Account
+취약계층 2023. 02 vulnerable class
+탄소배출 2023.06 carbon emissions
+탄소중립 2023.04 carbon neutral
+태영건설워크아웃  2024.01 TY workout
+특례보금자리론 2023.2 Special deposit theory
+퇴직연금 2024.10 retirement pension
+판매비율 2023.12_Sales ratio
+금리인하 2025.11.30  interest rate cut
+
+label ok
+
+가격상승 
+가스요금 
+경쟁력강화 
+고려아연(공개매수) 
+공공주택 
+공동주택공시가격
+
+
+슈링크플레이션  x 기사거의없음2023.11 Shrinkflation
+실리콘밸리은행파산 x 기사 많이없음
+지하주차장붕괴사고 x 경제 x기사 많이없음
+철도노조 x 기사 경제 x많이없음
+층간소음 경제 x
+
+도널드트럼프
+(고려아연)유상증자
+(1기신도시)선도지구
+대출규제
+세액공제
+주택공급
+상생협의
+자사주매입
+물가상승
+원달러환율
+시장안정(조치)
+신용등급
+소비심리
+산업경쟁력
+CES2025
+경기침체
+정책방향
+관세부과
+토지거래허가구역
+개인정보
+가계부채
+국민연금
+부당대출
+(홈플러스)기업회생
+가격인상
+유상증자
+상법개정안
+유산취득세
+상호관세(관세부과)
+유심해킹사고
+안전자산
+전세사기
+미국관세(관세부과)
+스테이블코인
+코스피지수
+데이터센터
+국제유가
+아파트가격
+(민생회복)소비쿠폰
+관세협상(관세부과)
+자본시장
+집중호우피해지원
+중대재해
+세제개편
+인구감소지역
+개인정보유출
+주택공급(9.7대책)
+(정부)조직개편
+공장건설(美한인구금)
+경주APEC회의
+관세협상
+(10.15)부동산대책
+(희토류)수출통제
+자율주행(피지컬AI)
+새벽배송
+온실가스
+정년연장
+
+naver_crawl_month_upgrade.py

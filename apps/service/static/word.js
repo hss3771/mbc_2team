@@ -55,7 +55,8 @@ IIFE 즉시 실행 함수 시작 (단어 사전 기능 전체)
 let WORDS = [];
 
 // 서버 북마크 API
-const BOOKMARK_API_BASE = "/api/bookmark";
+// const BOOKMARK_API_BASE = "/api/bookmark";
+const BOOKMARK_API_BASE = "";
 
 /* ==================
 CSV의 tab 값(KOR, ENG, NUM)을 UI에서 쓰는 세그(ko/en/num)로 바꾸는 함수

@@ -32,7 +32,7 @@ from db import create_batch_run, finish_batch_run
 app = FastAPI()
 logger = Logger().get_logger(__name__)
 
-ES_HOST = "http://http://192.168.0.34:9200"
+ES_HOST = "http://localhost:9200"
 ES_INDEX = "news_info"
 
 KST = ZoneInfo("Asia/Seoul")
@@ -242,18 +242,18 @@ def crawl_one_date(date: str) -> dict:
     if not es.ping():
         return {"error": "Elasticsearch is not available"}
 
-    # ✅ 크롤링 기준 시작 시각
-    work_date = date # YYYYMMDD
-    start_at = datetime.strptime(work_date, "%Y%m%d").replace(tzinfo=KST)
-    end_at = start_at + timedelta(days=1)
-
-    work_at = datetime.now(KST)
-
-    run_id = create_batch_run(
-        job_name="naver_news_daily",
-        work_at=work_at,
-        start_at=start_at
-    )
+    # ✅ batch_runs: 시작 기록(INSERT)
+    # db.py 로부터 run_id 받아야 함!!!!!!! -> 종료 시 update 할 때 필요
+    start_at = datetime.now(KST)
+    try:
+        run_id = create_batch_run(
+            job_name="naver_news_daily",
+            work_at=date,
+            start_at=start_at,
+        )
+    except Exception as e:
+        logger.error(f"[batch_runs] create_batch_run failed: {e}")
+        run_id = None
 
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
@@ -302,7 +302,10 @@ def crawl_one_date(date: str) -> dict:
 
         logger.info("=== NAVER NEWS CRAWL DONE ===")
 
-        # ✅ 크롤링 기준 종료 시각
+        # ✅ batch_runs: 종료 기록(UPDATE)
+        # finish_batch_run() — 배치 종료 기록
+        end_at = datetime.now(KST)
+
         if failed == 0:
             state_code = 200
             message = f"SUCCESS | total_links={total_links}, crawled={crawled_ok}, skipped={skipped}"
@@ -318,8 +321,8 @@ def crawl_one_date(date: str) -> dict:
                     state_code=state_code,
                     message=message,
                 )
-            except Exception as ee:
-                logger.error(f"[batch_runs] finish_batch_run failed: {ee}")
+            except Exception as e:
+                logger.error(f"[batch_runs] finish_batch_run failed: {e}")
 
         return {
             "date": date,
@@ -331,6 +334,7 @@ def crawl_one_date(date: str) -> dict:
         }
 
     except Exception as e:
+        end_at = datetime.now(KST)
         state_code = 400
         message = f"FAILED | error={str(e)[:200]}"
 
@@ -370,7 +374,7 @@ scheduler = AsyncIOScheduler(timezone=KST)
 def start_scheduler():
     scheduler.add_job(
         scheduled_crawl_job,
-        CronTrigger(hour=16, minute=0),
+        CronTrigger(hour=0, minute=0),
         id="naver_news_daily_midnight",
         replace_existing=True,
         max_instances=1,

@@ -21,20 +21,6 @@ def login_count(db, user_id):
         """)
     return db.execute(sql, {'user_id': user_id}).mappings().fetchone()
 
-# 로그인
-# {'is_valid' : 0(실패), 1(성공)}
-def login_check(db, info):
-    #input = {"user_id": info['id'], "password_hash": info['pw']}
-    input = {"user_id": info['user_id'], "password_hash": info['password_hash']}
-    sql = text("""SELECT EXISTS (
-            SELECT 1
-            FROM users
-            WHERE user_id = :user_id
-            AND password_hash = :password_hash
-            ) AS is_valid"""
-        )
-    return db.execute(sql,input).mappings().fetchone()
-
 # 로그인 로그 삽입
 def insert_login_log(db, user_id, result):
     sql = text("INSERT INTO login_log (user_id, result) VALUES (:user_id, :result)")
@@ -51,6 +37,29 @@ def get_user_role(db, user_id):
     result = db.execute(sql, {'user_id': user_id}).mappings().fetchone()
     return result["role_name"]
 
+# 유저 등록
+def register_user(db, info):
+    sql = text("""INSERT INTO users (user_id, password_hash, email, name, birthday, phone, eco_state, gender)
+                VALUES (:user_id, :password_hash, :email, :name, :birthday, :phone, :eco_state, :gender)""")
+    r = db.execute(sql, info)
+    if r.rowcount: # type: ignore
+            sql = text("INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, '1')")
+            db.execute(sql, {'user_id': info['user_id']})
+
+# 로그인
+# {'is_valid' : 0(실패), 1(성공)}
+def login_check(db, info):
+    #input = {"user_id": info['id'], "password_hash": info['pw']}
+    input = {"user_id": info['user_id'], "password_hash": info['password_hash']}
+    sql = text("""SELECT EXISTS (
+            SELECT 1
+            FROM users
+            WHERE user_id = :user_id
+            AND password_hash = :password_hash
+            ) AS is_valid"""
+        )
+    return db.execute(sql,input).mappings().fetchone()
+
 # 사용자 id중복확인
 #0(없음), 1(중복아이디 있음)
 def user_exists(db, user_id):
@@ -61,15 +70,6 @@ def user_exists(db, user_id):
                    ) AS is_exist""")
     result = db.execute(sql, {'user_id': user_id}).mappings().fetchone()
     return result['is_exist']
-
-# 유저 등록
-def register_user(db, info):
-    sql = text("""INSERT INTO users (user_id, password_hash, email, name, birthday, phone, eco_state, gender)
-                VALUES (:user_id, :password_hash, :email, :name, :birthday, :phone, :eco_state, :gender)""")
-    r = db.execute(sql, info)
-    if r.rowcount: # type: ignore
-            sql = text("INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, '1')")
-            db.execute(sql, {'user_id': info['user_id']})
 
 # 유저 아이디 찾기
 # {'user_id':'아이디'} or None

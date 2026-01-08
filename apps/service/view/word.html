@@ -7,29 +7,16 @@
   <title>단어 사전</title>
 
   <link rel="icon" href="/view/img/favicon.png">
-  <link rel="stylesheet" href="/view/css/word.css" />
+  <link rel="stylesheet" href="/view/css/my_page_style.css" />
+  <link rel="stylesheet" href="/view/css/main_style.css" />
+  <link rel="stylesheet" href="./css/word.css" />
 </head>
 
 <body>
-  <header class="header">
-    <div class="header-inner">
-      <a class="brand" href="/">
-        <span class="sidebar_logo"><img src="/view/img/logo_white.png" alt=""></span>
-      </a>
-      <a href="/" class="logout-button">로그아웃</a>
-    </div>
-  </header>
+  <div id="headerMount" aria-label="공통 헤더"></div>
 
   <div class="app">
-    <aside class="sidebar">
-      <ul class="menu">
-        <li><a href="/main">경제 키워드 트렌드</a></li>
-        <li><a href="/main2">기사</a></li>
-        <li><a href="/main3">키워드 언급량 및 감성분석</a></li>
-        <li><a href="/word">단어 사전</a></li>
-        <li><a href="/my_page">마이페이지</a></li>
-      </ul>
-    </aside>
+   <aside id="sidebarMount" class="sidebar" aria-label="사이드바"></aside>
     <main>
       <div class="word-wrap">
         <div class="word-page-title">단어 사전</div>
@@ -108,6 +95,10 @@
 
 <script src="/static/word.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="/static/header_init.js" defer></script>
+  <script src="/static/base.js" defer></script>
+  <script src="/static/sidebar_init.js" defer></script>
+  <script src="/static/sidebar.js" defer></script>
 </body>
 
 </html>

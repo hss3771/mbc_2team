@@ -592,41 +592,49 @@
       });
     }
 
-    function openDeleteModal() {
-      if (!state.selectedId) { alert("삭제할 단어를 먼저 선택해주세요."); return; }
-      const w0 = state.byId.get(state.selectedId);
-      if (!w0) return;
+    function openModal({ title = "", bodyHtml = "", footHtml = "", onBind, variant = "default" } = {}) {
+      // 혹시 캐시가 안 되어있을 수 있으니 한번 더 보장
+      if (!modalBackdrop || !modalBody || !modalFoot) cacheDom();
 
-      openModal({
-        variant: "confirm",
-        title: "", // ✅ 헤더 숨기니까 사실상 의미 없음
-        bodyHtml: `
-      <div class="confirm-title">※ 삭제 할 경우 ※</div>
-      <div class="confirm-desc">
-        삭제된 경우 데이터 복구가 불가능합니다.<br/>
-        정말 삭제하시겠습니까?
-      </div>
-    `,
-        footHtml: `
-      <button class="word-outline-btn confirm-btn" type="button" data-wm-close>취소</button>
-      <button class="word-primary-btn confirm-btn" type="button" id="wmDelOk">확인</button>
-    `,
-        onBind: () => {
-          document.getElementById("wmDelOk").addEventListener("click", () => {
-            const id = state.selectedId;
-            deleteWordLocal(id);
+      if (!modalBackdrop || !modalBody || !modalFoot) return;
 
-            state.byId.delete(id);
-            state.words = Array.from(state.byId.values());
-            state.selectedId = null;
+      // modalEl은 열 때마다 최신 DOM으로 다시 잡는 게 안전
+      modalEl = modalBackdrop.querySelector(".modal");
 
-            closeModal();
-            refreshUI(true);
-          });
-        },
-      });
+      // confirm 모드 토글
+      if (modalEl) {
+        modalEl.classList.toggle("is-confirm", variant === "confirm");
+      }
+
+      if (modalTitle) modalTitle.textContent = title;
+      modalBody.innerHTML = bodyHtml;
+      modalFoot.innerHTML = footHtml;
+
+      modalBackdrop.classList.add("is-open");
+
+      const onBackdrop = (e) => { if (e.target === modalBackdrop) closeModal(); };
+      modalBackdrop.addEventListener("click", onBackdrop, { once: true });
+
+      const onEsc = (e) => { if (e.key === "Escape") closeModal(); };
+      document.addEventListener("keydown", onEsc, { once: true });
+
+      modalBackdrop.querySelectorAll("[data-wm-close]").forEach(btn =>
+        btn.addEventListener("click", closeModal)
+      );
+
+      onBind?.();
+      modalBody.querySelector("input, textarea, select, button")?.focus?.();
     }
-    
+
+    function closeModal() {
+      if (!modalBackdrop) return;
+      modalBackdrop.classList.remove("is-open");
+
+      // 닫을 때 confirm 모드 원복
+      const m = modalBackdrop.querySelector(".modal");
+      if (m) m.classList.remove("is-confirm");
+    }
+
     // ===== Events =====
     function bindEvents() {
       $$(".word-seg-btn").forEach(btn => {
