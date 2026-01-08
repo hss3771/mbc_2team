@@ -7,6 +7,7 @@ from starlette.responses import RedirectResponse
 from starlette.requests import Request
 from apps.common.logger import Logger
 from pathlib import Path
+from apps.bookmark.main import bookmark_app
 logger = Logger().get_logger(__name__)
 BASE_DIR = Path(__file__).resolve().parent  # apps/service
 
@@ -14,6 +15,7 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 app.mount("/view", StaticFiles(directory=BASE_DIR / "view"), name="view")
 app.add_middleware(SessionMiddleware,secret_key='session_secret_key',max_age=1800)
+app.mount("/api/bookmark", bookmark_app)
 
 # Page Loading Routes
 @app.get("/")
