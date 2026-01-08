@@ -361,72 +361,140 @@ window.__initRequireLoginModal = function () {
 };
 
 // ==============================
-// Role 기반 메뉴 토글 브릿지
-// - base.js에서 setAuth({loggedIn, roleId}) 호출하면 admin-only 메뉴 표시
-// - sidebar가 mount 전이어도 상태를 저장했다가 mount 후 적용 가능
+// Role 기반 메뉴 토글 (base.js 수정 없이)
+// - /api/session 직접 조회
+// - fetch 겹침 방지(inFlight) + 레이스 방지(seq)
+// - 네트워크/일시 오류 시 "로그아웃 처리로 덮어쓰기" 하지 않고 기존 상태 유지
+// - sidebar async mount 대응(MutationObserver)
 // ==============================
 (function () {
   const SIDEBAR_ROOT = "#sidebarMount";
   const ADMIN_SELECTOR = ".admin-only, [data-require-admin='true']";
 
-  // 여기만 네 규칙에 맞게 수정하면 됨 (예: role_id 1이 관리자)
-  let ADMIN_ROLE_IDS = new Set([1]);
+  let authState = { loggedIn: false, isAdmin: false, roleId: null, loaded: false };
 
-  // base.js가 주입할 상태(기본값: 비로그인/일반)
-  let authState = { loggedIn: false, roleId: null };
-
-  function isAdmin() {
-    if (!authState.loggedIn) return false;
-    const rid = Number(authState.roleId);
-    if (Number.isNaN(rid)) return false;
-    return ADMIN_ROLE_IDS.has(rid);
-  }
+  let inflight = null;
+  let seq = 0;
 
   function applyRoleMenu() {
     const root = document.querySelector(SIDEBAR_ROOT);
-    if (!root) return; // sidebar mount 전이면 그냥 대기
+    if (!root) return;
 
     const adminNodes = root.querySelectorAll(ADMIN_SELECTOR);
+    if (!adminNodes.length) return;
 
-    // 기본은 숨김
-    adminNodes.forEach(el => el.classList.add("is-hidden"));
+    // 기본 숨김
+    adminNodes.forEach(el => el.classList.add("ts-is-hidden"));
 
     // 관리자면 노출
-    if (isAdmin()) {
-      adminNodes.forEach(el => el.classList.remove("is-hidden"));
+    if (authState.loggedIn && authState.isAdmin === true) {
+      adminNodes.forEach(el => el.classList.remove("ts-is-hidden"));
     }
   }
 
-  // base.js에서 호출할 함수(권한 상태 주입)
   function setAuth(next) {
     authState.loggedIn = !!next?.loggedIn;
-    authState.roleId = (next?.roleId ?? null);
+    authState.isAdmin  = !!next?.isAdmin;
+    authState.roleId   = (next?.roleId ?? null);
+    authState.loaded   = true;
     applyRoleMenu();
   }
 
-  // 관리자 role_id 목록을 바꾸고 싶을 때(옵션)
-  function setAdminRoleIds(ids) {
-    ADMIN_ROLE_IDS = new Set((ids || []).map(Number).filter(v => !Number.isNaN(v)));
-    applyRoleMenu();
+  async function refreshAuth({ force = false } = {}) {
+    if (inflight && !force) return inflight;
+
+    const mySeq = ++seq;
+
+    inflight = (async () => {
+      try {
+        const res = await fetch("/api/session", {
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Accept": "application/json" },
+        });
+
+        // 명확히 비로그인/권한없음이면 그때만 로그아웃 처리
+        if (res.status === 401 || res.status === 403) {
+          if (mySeq === seq) setAuth({ loggedIn: false, isAdmin: false, roleId: null });
+          return;
+        }
+
+        if (!res.ok) throw new Error("session fetch failed: " + res.status);
+
+        const ct = (res.headers.get("content-type") || "").toLowerCase();
+        if (!ct.includes("application/json")) throw new Error("session not json");
+
+        const body = await res.json().catch(() => ({}));
+
+        if (mySeq !== seq) return; // 레이스 방지(늦게 온 응답 무시)
+
+        const loggedIn = !!body.logged_in;
+        const isAdmin  = loggedIn && !!body.admin_in; // base.js와 동일
+        const roleId   = body.role_id ?? null;
+
+        setAuth({ loggedIn, isAdmin, roleId });
+      } catch (e) {
+        // ✅ 여기 핵심: 일시 오류면 기존 authState 유지(숨기지 않음)
+        authState.loaded = true;
+        applyRoleMenu();
+
+        // 필요하면 가벼운 재시도 1회 (과도한 요청 방지)
+        setTimeout(() => {
+          if (mySeq === seq) refreshAuth({ force: true });
+        }, 800);
+      }
+    })().finally(() => {
+      // 현재 요청이 최신 seq일 때만 inflight 해제
+      if (mySeq === seq) inflight = null;
+    });
+
+    return inflight;
   }
 
-  // sidebar.js가 mount 후 호출할 훅
-  window.__initRoleBasedMenu = function () {
-    applyRoleMenu();
-  };
+  function observeSidebarMount() {
+    const attach = (mount) => {
+      if (!mount || mount.dataset.roleObsBound === "1") return;
+      mount.dataset.roleObsBound = "1";
 
-  // 전역 노출: base.js에서 window.SidebarRoleBridge.setAuth(...)로 사용
+      const mo = new MutationObserver(() => applyRoleMenu());
+      mo.observe(mount, { childList: true, subtree: true });
+    };
+
+    const mount = document.querySelector(SIDEBAR_ROOT);
+    if (mount) {
+      attach(mount);
+      return;
+    }
+
+    const bodyObs = new MutationObserver(() => {
+      const m = document.querySelector(SIDEBAR_ROOT);
+      if (m) {
+        attach(m);
+        bodyObs.disconnect();
+      }
+    });
+    bodyObs.observe(document.documentElement, { childList: true, subtree: true });
+  }
+
+  // 외부에서 필요 시 호출 가능
   window.SidebarRoleBridge = {
-    setAuth,
-    setAdminRoleIds,
+    refresh: (opts) => refreshAuth({ force: true, ...(opts || {}) }),
     apply: applyRoleMenu,
   };
 
-  // 이벤트 방식도 지원: base.js에서 dispatchEvent로 느슨하게 연결 가능
-  window.addEventListener("app:auth", (e) => {
-    setAuth(e.detail || {});
+  observeSidebarMount();
+
+  // 최초 1회 + (세션 반영 지연 대비) 짧은 후속 1회
+  refreshAuth();
+  setTimeout(() => refreshAuth({ force: true }), 300);
+
+  // 탭 복귀 시 갱신(중복 방지됨: inflight/seq)
+  window.addEventListener("focus", () => refreshAuth());
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshAuth();
   });
 })();
+
 
 // ==============================
 // Mobile sidebar toggle (hamburger + backdrop + X close)

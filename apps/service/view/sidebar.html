@@ -35,10 +35,9 @@
     background: rgba(4, 98, 210, 0.10);
   }
 
-  .is-hidden {
+  #sidebarMount .ts-is-hidden {
     display: none !important;
   }
-
 
   /* 로그인 필요 모달: 기본은 숨김, 열릴 때만 표시 */
   .tsNeedLoginLayer {
@@ -264,18 +263,18 @@
   <li><a href="/view/my_page.html" data-require-login="true"><span class="menu-ico"></span>마이페이지</a></li>
 
   <!-- 관리자 전용(기본 숨김) -->
-  <li class="admin-only is-hidden">
-    <a href="/view/collect_monitor.html" data-require-login="true" data-require-admin="true">
+  <li class="admin-only ts-is-hidden">
+    <a href="/view/admin.html" data-require-login="true" data-require-admin="true">
       <span class="menu-ico"></span>수집 모니터링
     </a>
   </li>
-  <li class="admin-only is-hidden">
-    <a href="/view/manual_rerun.html" data-require-login="true" data-require-admin="true">
+  <li class="admin-only ts-is-hidden">
+    <a href="/view/admin_rerun.html" data-require-login="true" data-require-admin="true">
       <span class="menu-ico"></span>수동 재실행
     </a>
   </li>
-  <li class="admin-only is-hidden">
-    <a href="/view/term_admin.html" data-require-login="true" data-require-admin="true">
+  <li class="admin-only ts-is-hidden">
+    <a href="/view/admin_terms.html" data-require-login="true" data-require-admin="true">
       <span class="menu-ico"></span>용어 관리
     </a>
   </li>
