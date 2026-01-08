@@ -16,7 +16,7 @@
   <div id="headerMount" aria-label="공통 헤더"></div>
 
   <div class="app">
-   <aside id="sidebarMount" class="sidebar" aria-label="사이드바"></aside>
+    <aside id="sidebarMount" class="sidebar" aria-label="사이드바"></aside>
     <main>
       <div class="word-wrap">
         <div class="word-page-title">단어 사전</div>
@@ -70,21 +70,21 @@
       </div>
 
       <!-- 북마크 모달 -->
-      <div class="modal-backdrop" id="bookmarkModal" aria-hidden="true">
-        <div class="modal" role="dialog" aria-modal="true" aria-label="Bookmark list">
-          <div class="modal-head">
-            <div class="modal-title">Bookmark list</div>
-            <button class="modal-close" id="closeBookmark" type="button" aria-label="닫기">✕</button>
+      <div class="word-modal-backdrop" id="bookmarkModal" aria-hidden="true">
+        <div class="word-modal" role="dialog" aria-modal="true" aria-label="Bookmark list">
+          <div class="word-modal-head">
+            <div class="word-modal-title">Bookmark list</div>
+            <button class="word-modal-close" id="closeBookmark" type="button" aria-label="닫기">✕</button>
           </div>
 
-          <div class="modal-body">
+          <div class="word-modal-body">
             <div class="bookmark-list" id="bookmarkList"></div>
             <div class="bookmark-empty" id="bookmarkEmpty" hidden>
               아직 즐겨찾기한 단어가 없어요 🙂
             </div>
           </div>
 
-          <div class="modal-foot">
+          <div class="word-modal-foot">
             <button class="word-outline-btn" id="clearBookmarks" type="button">전체 삭제</button>
             <button class="word-primary-btn" id="closeBookmark2" type="button">닫기</button>
           </div>
@@ -93,8 +93,8 @@
     </main>
   </div>
 
-<script src="/static/word.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="/static/word.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="/static/header_init.js" defer></script>
   <script src="/static/base.js" defer></script>
   <script src="/static/sidebar_init.js" defer></script>

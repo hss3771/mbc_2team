@@ -222,6 +222,16 @@ main {
   box-shadow: inset 0 0 0 1px #a6c8ef;
 }
 
+.index-btn.is-disabled,
+.index-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+  color: #9aa6bf;
+  background: #eef2fb;
+  box-shadow: none;
+}
+
 /* 본문 레이아웃 */
 .word-body {
   flex: 1;
@@ -494,7 +504,7 @@ main {
 }
 
 /* 모달 */
-.modal-backdrop {
+.word-modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(15, 40, 90, 0.35);
@@ -505,11 +515,11 @@ main {
   padding: 20px;
 }
 
-.modal-backdrop.is-open {
+.word-modal-backdrop.is-open {
   display: flex;
 }
 
-.modal {
+.word-modal {
   width: min(680px, 96vw);
   max-height: min(640px, 86vh);
   background: #fff;
@@ -521,8 +531,8 @@ main {
   overflow: hidden;
 }
 
-.modal-head {
-  padding: 14px 14px;
+.word-modal-head {
+  padding: 14px;
   border-bottom: 1px solid #eef2fb;
   display: flex;
   align-items: center;
@@ -531,16 +541,15 @@ main {
   background: #f5f8ff;
 }
 
-.modal-title {
+.word-modal-title {
   font-size: 14px;
   font-weight: 900;
   color: #1d2b42;
 }
 
-.modal-close {
-  border: none;
-  background: #fff;
+.word-modal-close {
   border: 1px solid #dfe8f7;
+  background: #fff;
   width: 34px;
   height: 34px;
   border-radius: 12px;
@@ -549,19 +558,19 @@ main {
   color: #6a7a93;
 }
 
-.modal-close:hover {
+.word-modal-close:hover {
   background: #e8f1ff;
   border-color: #a6c8ef;
   color: #0462D2;
 }
 
-.modal-body {
+.word-modal-body {
   padding: 12px 14px;
   min-height: 0;
   overflow: auto;
 }
 
-.modal-foot {
+.word-modal-foot {
   padding: 12px 14px 14px;
   border-top: 1px solid #eef2fb;
   display: flex;
@@ -646,3 +655,4 @@ main {
 .word-panel.is-loading {
   visibility: hidden;   /* 레이아웃은 유지, 화면만 숨김 */
 }
+
