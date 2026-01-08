@@ -42,10 +42,11 @@
     const $ = (sel, root = document) => root.querySelector(sel);
     const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-    // DOM 레퍼런스: 처음엔 비워두고, init에서 채운다
+    // DOM 레퍼런스: p;l/;9l처음엔 비워두고, init에서 채운다
     let indexBar, listEl, detailTitle, detailMeta, detailContent;
     let btnAdd, btnEdit, btnDelete;
     let modalBackdrop, modalTitle, modalBody, modalFoot;
+    let modalEl;
 
     function cacheDom() {
       indexBar = $("#indexBar");
@@ -62,6 +63,8 @@
       modalTitle = $("#wmTitle");
       modalBody = $("#wmBody");
       modalFoot = $("#wmFoot");
+
+      modalEl = modalBackdrop?.querySelector(".modal");
 
       return !!(indexBar && listEl && detailTitle && detailMeta && detailContent);
     }
@@ -256,17 +259,18 @@
       const on = key === state.index ? "is-active" : "";
       return `<button class="index-btn ${on}" type="button" data-key="${key}">${label}</button>`;
     }
+
     function renderIndexBar() {
       const list = state.seg === "ko" ? KO_INDEX : state.seg === "en" ? EN_INDEX : NUM_INDEX;
-      const allOn = state.index === "all" ? "is-active" : "";
 
       indexBar.innerHTML = `
-        <button class="index-btn index-all ${allOn}" type="button" data-key="all">전체</button>
-        <div class="index-pill" role="tablist" aria-label="인덱스 선택">
-          ${list.map(k => renderIndexBtn(k, k)).join("")}
-        </div>
-      `;
+    <div class="index-pill" role="tablist" aria-label="인덱스 선택">
+      ${renderIndexBtn("all", "전체")}
+      ${list.map(k => renderIndexBtn(k, k)).join("")}
+    </div>
+  `;
     }
+
 
     // ===== Render: List / Detail =====
     function getFilteredWords() {
@@ -350,6 +354,11 @@
     // ===== Modal =====
     function openModal({ title, bodyHtml, footHtml, onBind }) {
       if (!modalBackdrop || !modalTitle || !modalBody || !modalFoot) return;
+
+      if (modalEl) {
+        modalEl.classList.toggle("is-confirm", variant === "confirm");
+      }
+
       modalTitle.textContent = title;
       modalBody.innerHTML = bodyHtml;
       modalFoot.innerHTML = footHtml;
@@ -368,6 +377,8 @@
     }
     function closeModal() {
       modalBackdrop?.classList.remove("is-open");
+
+      if (modalEl) modalEl.classList.remove("is-confirm");
     }
 
     function wordToTextarea(bodyArr) {
@@ -581,40 +592,47 @@
       });
     }
 
-    function openDeleteModal() {
-      if (!state.selectedId) { alert("삭제할 단어를 먼저 선택해줘."); return; }
-      const w0 = state.byId.get(state.selectedId);
-      if (!w0) return;
+    function openModal({ title = "", bodyHtml = "", footHtml = "", onBind, variant = "default" } = {}) {
+      // 혹시 캐시가 안 되어있을 수 있으니 한번 더 보장
+      if (!modalBackdrop || !modalBody || !modalFoot) cacheDom();
 
-      openModal({
-        title: "삭제 확인",
-        bodyHtml: `
-          <div style="font-weight:900; color:#1d2b42; line-height:1.6;">
-            정말 삭제할까?<br/>
-            <span style="color:#0462D2;">${escapeHtml(w0.term)}</span>
-          </div>
-          <div style="margin-top:10px; color:#8a97ad; font-weight:900; font-size:12px;">
-            (현재는 서버 반영 전 단계라, 브라우저 저장(localStorage) 기준으로만 삭제돼.)
-          </div>
-        `,
-        footHtml: `
-          <button class="word-outline-btn" type="button" data-wm-close>취소</button>
-          <button class="word-outline-btn word-danger-btn" type="button" id="wmDel">삭제</button>
-        `,
-        onBind: () => {
-          $("#wmDel").addEventListener("click", () => {
-            const id = state.selectedId;
-            deleteWordLocal(id);
+      if (!modalBackdrop || !modalBody || !modalFoot) return;
 
-            state.byId.delete(id);
-            state.words = Array.from(state.byId.values());
-            state.selectedId = null;
+      // modalEl은 열 때마다 최신 DOM으로 다시 잡는 게 안전
+      modalEl = modalBackdrop.querySelector(".modal");
 
-            closeModal();
-            refreshUI(true);
-          });
-        },
-      });
+      // confirm 모드 토글
+      if (modalEl) {
+        modalEl.classList.toggle("is-confirm", variant === "confirm");
+      }
+
+      if (modalTitle) modalTitle.textContent = title;
+      modalBody.innerHTML = bodyHtml;
+      modalFoot.innerHTML = footHtml;
+
+      modalBackdrop.classList.add("is-open");
+
+      const onBackdrop = (e) => { if (e.target === modalBackdrop) closeModal(); };
+      modalBackdrop.addEventListener("click", onBackdrop, { once: true });
+
+      const onEsc = (e) => { if (e.key === "Escape") closeModal(); };
+      document.addEventListener("keydown", onEsc, { once: true });
+
+      modalBackdrop.querySelectorAll("[data-wm-close]").forEach(btn =>
+        btn.addEventListener("click", closeModal)
+      );
+
+      onBind?.();
+      modalBody.querySelector("input, textarea, select, button")?.focus?.();
+    }
+
+    function closeModal() {
+      if (!modalBackdrop) return;
+      modalBackdrop.classList.remove("is-open");
+
+      // 닫을 때 confirm 모드 원복
+      const m = modalBackdrop.querySelector(".modal");
+      if (m) m.classList.remove("is-confirm");
     }
 
     // ===== Events =====
