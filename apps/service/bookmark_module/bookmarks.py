@@ -1,34 +1,31 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import List, Literal
+from typing import Literal
+from sqlalchemy.orm import Session
 
 from apps.common.db import get_db
-from apps.service.bookmark_module.db import (
-    get_my_term_bookmarks,
-    toggle_term_bookmark,
-    clear_term_bookmarks
-)
+from apps.service.bookmark_module.db import BookmarkRepository
 
 # API 라우터 생성 (이름 : bookmark)
-router = APIRouter(tags=["bookmark"])
+router = APIRouter(prefix="/bookmarks", tags=["bookmark"])
 
-# 로그인 체크
+
+# 로그인 체크 공통 함수
 def require_login(request: Request) -> str:
     user_id = request.session.get("user_id")
     if not user_id:
-        raise HTTPException(status_code=401, detail="로그인 안 됨")
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
     return user_id
 
 
-# ① 내 북마크 목록 (ADD만)
-@router.get("/me", response_model=List[str])
-def my_bookmarks(request: Request):
+# ③ 내 북마크 목록 (ADD만)
+@router.get("/me")
+def my_bookmarks(request: Request, db: Session = Depends(get_db)):
     user_id = require_login(request)
-    db = get_db()
-    try:
-        return get_my_term_bookmarks(db, user_id)
-    finally:
-        db.close()
+    repo = BookmarkRepository(db)
+    data = repo.get_my_term_bookmarks(user_id)
+    return {"status": "success", "data": data}
 
 
 # 요청 body 모델
@@ -38,28 +35,28 @@ class BookmarkToggleReq(BaseModel):
     state: Literal["ADD", "CANCEL"]
 
 
-# ② 북마크 토글 (ADD / CANCEL)
+# ④ 북마크 토글 (ADD / CANCEL)
 @router.post("/toggle")
-def toggle_bookmark(request: Request, body: BookmarkToggleReq):
+def toggle_bookmark(request: Request, data: BookmarkToggleReq, db: Session = Depends(get_db)):
     user_id = require_login(request)
-    db = get_db()
-    try:
-        return toggle_term_bookmark(
-            db,
-            user_id=user_id,
-            term_id=body.term_id,
-            state=body.state
-        )
-    finally:
-        db.close()
+
+    # 2. 리포지토리 생성
+    repo = BookmarkRepository(db)
+    success = repo.toggle_term_bookmark(
+        user_id=user_id,
+        term_id=data.term_id,
+        state=data.state
+    )
+
+    if success:
+        return {"status": "success"}
+    return JSONResponse(status_code=500, content={"message": "fail"})
 
 
-# ③ 북마크 전체 삭제(= 전체 해제)
+# ⑤ 북마크 전체 삭제(= 전체 해제)
 @router.post("/clear")
-def clear_bookmarks(request: Request):
+def clear_bookmarks(request: Request, db: Session = Depends(get_db)):
     user_id = require_login(request)
-    db = get_db()
-    try:
-        return clear_term_bookmarks(db, user_id)
-    finally:
-        db.close()
+    repo = BookmarkRepository(db)
+    result = repo.clear_all_bookmarks(user_id)
+    return result
