@@ -200,6 +200,26 @@ def get_sub_key(es, start: str, keyword: str):
     return {"sub_keywords":src.get("sub_keywords", []),"doc_id":doc_id}
 # endregion
 
+def get_keyword_trend_by_date(
+    es,
+    start_date: str,
+    end_date: str,
+    keywords: list[str],
+):
+    return es.search(
+        index=ISSUE_KEYWORD_INDEX,
+        query={
+            "bool": {
+                "filter": [
+                    {"range": {"date": {"gte": start_date, "lte": end_date}}},
+                    {"terms": {"keyword": keywords}},
+                ]
+            }
+        },
+        _source=["date", "keyword", "count"],
+        size=5000,
+    )["hits"]["hits"]
+
 if __name__ =="__main__":
     es = get_es()
     try:
