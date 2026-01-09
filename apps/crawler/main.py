@@ -428,9 +428,3 @@ def crawl_naver_news(date: str):
         return crawl_one_date(formatted_date)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error: {str(e)}")
-
-
-
-
-
-
