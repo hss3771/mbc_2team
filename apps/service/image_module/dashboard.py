@@ -57,31 +57,48 @@ def issue_wordcloud(
 def keyword_trend(
     start: str = Query(...),
     end: str = Query(...),
-    keywords: list[str] = Query(...),
+    keywords: list[str] | None = Query(None),
 ):
     es = get_es()
+
+    # 1️⃣ keywords 없으면: 해당 기간 Top 키워드 자동 추출
+    if not keywords:
+        resp = es.search(
+            index=ISSUE_INDEX,
+            query={
+                "range": {
+                    "date": {"gte": start, "lte": end}
+                }
+            },
+            aggs={
+                "top_keywords": {
+                    "terms": {
+                        "field": "keyword",
+                        "size": 5
+                    }
+                }
+            },
+            size=0
+        )
+        keywords = [b["key"] for b in resp["aggregations"]["top_keywords"]["buckets"]]
+
+    # 2️⃣ 기존 로직 그대로
     hits = get_keyword_trend_by_date(es, start, end, keywords)
 
     if not hits:
-        return {
-            "success": True,
-            "dates": [],
-            "series": {},
-            "empty": True
-        }
+        return {"success": True, "dates": [], "series": {}}
 
+    from collections import defaultdict
     data_by_date = defaultdict(dict)
     for hit in hits:
         src = hit["_source"]
         data_by_date[src["date"]][src["keyword"]] = src["count"]
 
     dates = sorted(data_by_date.keys())
-
-    series = {}
-    for kw in keywords:
-        series[kw] = [
-            data_by_date[d].get(kw, 0) for d in dates
-        ]
+    series = {
+        kw: [data_by_date[d].get(kw, 0) for d in dates]
+        for kw in keywords
+    }
 
     return {
         "success": True,

@@ -1,41 +1,3 @@
-// ===== 샘플 데이터 =====
-const KEYWORDS = [
-    { rank: 1, keyword: "주식", count: 223, rate: +94, move: "NEW" },
-    { rank: 2, keyword: "부동산", count: 201, rate: -22, move: "▼2" },
-    { rank: 3, keyword: "고용", count: 189, rate: +10, move: "▲1" },
-    { rank: 4, keyword: "경기침체", count: 173, rate: -7, move: "▼1" },
-    { rank: 5, keyword: "유가", count: 162, rate: +18, move: "▲1" },
-    { rank: 6, keyword: "반도체", count: 155, rate: +50, move: "▲3" },
-    { rank: 7, keyword: "수출", count: 149, rate: -12, move: "▼2" },
-    { rank: 8, keyword: "노동", count: 130, rate: -42, move: "▼3" },
-    { rank: 9, keyword: "경제", count: 121, rate: +8, move: "▲1" },
-    { rank: 10, keyword: "현금", count: 108, rate: -13, move: "▼1" },
-];
-
-const SUMMARY_MAP = {
-    "주식": [
-        "키워드 관련 기사 목록 조회(2~06건)",
-        "전체 요약 생성(기사 내용 기반, 800~1200자)",
-        "요약 API 호출 및 저장(예: summary_all 필드)",
-        "사용자 선택 시점에 요약 제공(드롭다운/행 클릭)",
-        "키워드별 요약/메타정보(언급량, 증감률, 변동) 함께 표시"
-    ],
-    "부동산": [
-        "부동산 정책/금리/거래량 관련 기사 우선 수집",
-        "기간별 비교(전주/전월) 기반 증감률 계산",
-        "중복 기사/유사 기사 제거 후 요약 생성",
-        "요약 결과를 키워드별 캐싱하여 빠르게 제공",
-        "핵심 지표(거래, 대출, 가격) 중심으로 요약 구성"
-    ],
-    "고용": [
-        "고용지표/실업률/채용시장 관련 기사 분류",
-        "산업별 이슈 키워드(제조/서비스 등) 태깅",
-        "요약 생성 후 핵심 문장 3~5개로 정리",
-        "기간 단위(일/주/월/연) 변경 시 재집계",
-        "요약과 함께 관련 기사 링크/제목 리스트 확장 가능"
-    ]
-};
-
 // dropdownApi는 selectKeyword에서 쓰므로 위에 선언 (TDZ 방지)
 let dropdownApi = null;
 
@@ -61,43 +23,107 @@ function moveClass(move) {
     return "is-flat";
 }
 
-function renderRanking(selectedKeyword) {
+async function renderRanking(selectedKeyword) {
     if (!rankListEl) return;
     rankListEl.innerHTML = "";
 
-    KEYWORDS.slice(0, 10).forEach((k) => {
+    const { start, end } = window.getAppRange?.() || {};
+    if (!start || !end) return;
+
+    const res = await fetch(
+        `/api/keyword_trend?start=${start}&end=${end}`,
+        { credentials: "same-origin" }
+    );
+    const data = await res.json();
+    if (!data.success) return;
+
+    /*
+      data 구조 (dashboard.py 기준)
+      {
+        dates: [...],
+        series: {
+          키워드: [count, count, ...]
+        }
+      }
+    */
+
+    const latestDateIndex = data.dates.length - 1;
+
+    const ranking = Object.entries(data.series)
+        .map(([keyword, counts]) => {
+            const count = counts[latestDateIndex] ?? 0;
+            return { keyword, count };
+        })
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10)
+        .map((item, idx) => ({
+            rank: idx + 1,
+            keyword: item.keyword,
+            count: item.count,
+            rate: 0,
+            move: "-"
+        }));
+
+    ranking.forEach((k) => {
         const row = document.createElement("button");
         row.type = "button";
-        row.className = "rank-row rank-item" + (k.keyword === selectedKeyword ? " is-selected" : "");
-        row.setAttribute("role", "listitem");
+        row.className =
+            "rank-row rank-item" +
+            (k.keyword === selectedKeyword ? " is-selected" : "");
 
         row.innerHTML = `
           <div class="c-rank"><span class="rank-badge">${k.rank}</span></div>
           <div class="c-keyword">${k.keyword}</div>
           <div class="c-count">${k.count}</div>
-          <div class="c-rate ${rateClass(k.rate)}">${fmtRate(k.rate)}</div>
-          <div class="c-move ${moveClass(k.move)}">${k.move}</div>
+          <div class="c-rate is-flat">0%</div>
+          <div class="c-move is-flat">-</div>
         `;
 
-        // 랭킹 클릭하면 selectKeyword 실행 (드롭다운도 같이 동기화)
         row.addEventListener("click", () => selectKeyword(k.keyword));
         rankListEl.appendChild(row);
     });
 }
 
-function renderSummary(keyword) {
-    if (!summaryKeywordEl || !summaryListEl) return;
+async function renderSummary(keyword) {
+  if (!summaryKeywordEl || !summaryListEl) return;
 
-    summaryKeywordEl.textContent = keyword;
-    summaryListEl.innerHTML = "";
+  summaryKeywordEl.textContent = keyword;
+  summaryListEl.innerHTML = "";
 
-    const items = SUMMARY_MAP[keyword] || SUMMARY_MAP["주식"];
-    items.forEach((txt) => {
-        const li = document.createElement("li");
-        li.textContent = txt;
-        summaryListEl.appendChild(li);
+  try {
+    const { start } = window.getAppRange?.() || {};
+    if (!start) throw new Error("start date missing");
+
+    const res = await fetch(
+      `/api/issue_wordcloud?start=${start}&keyword=${encodeURIComponent(keyword)}`,
+      { credentials: "same-origin" }
+    );
+    const data = await res.json();
+
+    const items =
+      data && data.success && Array.isArray(data.sub_keywords)
+        ? data.sub_keywords.slice(0, 6)
+        : [];
+
+    if (items.length === 0) {
+      const li = document.createElement("li");
+      li.textContent = "요약 데이터가 없습니다.";
+      summaryListEl.appendChild(li);
+      return;
+    }
+
+    items.forEach((word) => {
+      const li = document.createElement("li");
+      li.textContent = `연관 키워드: ${word}`;
+      summaryListEl.appendChild(li);
     });
-}
+  } catch (e) {
+    const li = document.createElement("li");
+    li.textContent = "요약 데이터를 불러오지 못했습니다.";
+    summaryListEl.appendChild(li);
+  }
+};
+
 
 function selectKeyword(keyword) {
     renderRanking(keyword);
@@ -221,44 +247,10 @@ selectKeyword(bootKeyword);
 (function TS2() {
     function toDateNum(iso) { return Number(String(iso || "").replaceAll("-", "")) || 0; }
 
-    function isInRange(iso, startISO, endISO) {
-        const n = toDateNum(iso);
-        let s = toDateNum(startISO);
-        let e = toDateNum(endISO);
-        if (!n || !s || !e) return true;
-        if (s > e) [s, e] = [e, s];
-        return s <= n && n <= e;
-    }
 
-    // ===== 샘플 데이터(너가 쓰던 거 그대로) =====
-    const allData = [
-        /* ===================== 주식 ===================== */
-        { keyword: '주식', sent: 'pos', source: '매일경제', flag: '정상', date: '2025-12-18', popular: 46, title: '코스피 반등…외국인 매수세 유입', desc: '대형주 중심으로 매수세가 유입되며 지수가 반등했습니다. 환율 안정과 실적 기대가 투자심리를 지지했다는 분석입니다…' },
-        { keyword: '주식', sent: 'pos', source: '머니투데이', flag: '정상', date: '2025-12-16', popular: 31, title: '배당 확대 기대…가치주 재평가 움직임', desc: '연말 배당 시즌을 앞두고 가치주로 수급이 이동하는 모습입니다. 일부 종목은 자사주 매입 기대도 반영됐습니다…' },
-        { keyword: '주식', sent: 'neu', source: '연합뉴스', flag: '정상', date: '2025-12-18', popular: 28, title: '증시 혼조…업종별 차별화 지속', desc: '지수는 방향성을 찾지 못한 채 업종별로 등락이 엇갈렸습니다. 금리 전망과 수급 변화가 변수로 거론됩니다…' },
-        { keyword: '주식', sent: 'neu', source: '서울경제', flag: '정상', date: '2025-12-15', popular: 17, title: '기관 수급 관망…거래대금 감소', desc: '변동성 확대 우려로 기관 수급이 관망세를 보이며 거래대금이 줄었습니다. 이벤트 대기 심리가 강해졌습니다…' },
-        { keyword: '주식', sent: 'neg', source: '한국경제', flag: '의심', date: '2025-12-14', popular: 34, title: '급등주 경고…단기 과열 신호', desc: '일부 테마주가 단기간 급등하며 과열 논란이 커지고 있습니다. 변동성 관리가 필요하다는 경고가 나옵니다…' },
-        { keyword: '주식', sent: 'neg', source: '조선비즈', flag: '위험', date: '2025-12-12', popular: 22, title: '대외 변수 부담…투심 위축', desc: '글로벌 금리·환율 변수에 대한 우려가 커지며 투자심리가 위축되는 모습입니다. 방어주 선호가 강화됐습니다…' },
+    });
 
-        /* ===================== 부동산 ===================== */
-        { keyword: '부동산', sent: 'pos', source: '한국경제', flag: '정상', date: '2025-12-18', popular: 39, title: '규제 완화 기대…매수 문의 소폭 증가', desc: '일부 지역에서 규제 완화 기대감이 확산되며 매수 문의가 늘었습니다. 다만 실제 거래로 이어지는지는 지켜봐야 합니다…' },
-        { keyword: '부동산', sent: 'pos', source: '이데일리', flag: '정상', date: '2025-12-16', popular: 24, title: '전세 시장 안정…가격 상승세 둔화', desc: '전세 매물 증가와 수요 분산으로 가격 상승세가 둔화됐습니다. 지역별로는 차별화가 이어졌습니다…' },
-        { keyword: '부동산', sent: 'neu', source: '연합뉴스', flag: '정상', date: '2025-12-17', popular: 21, title: '거래량 정체…관망세 지속', desc: '금리와 정책 불확실성이 겹치며 시장은 관망세가 이어지고 있습니다. 단기 반등 재료는 제한적이라는 평가입니다…' },
-        { keyword: '부동산', sent: 'neu', source: '서울경제', flag: '정상', date: '2025-12-14', popular: 16, title: '분양 시장, 청약 경쟁률 지역별 엇갈려', desc: '대도시는 경쟁률이 견조한 반면 외곽은 미달이 발생했습니다. 수요 양극화가 뚜렷해졌다는 분석입니다…' },
-        { keyword: '부동산', sent: 'neg', source: '매일경제', flag: '의심', date: '2025-12-15', popular: 29, title: '대출 규제 여파…매수심리 위축', desc: '대출 규제 강화가 체감되며 실수요자의 매수 결정이 지연되고 있습니다. 거래절벽 우려가 재점화됐습니다…' },
-        { keyword: '부동산', sent: 'neg', source: '조선비즈', flag: '위험', date: '2025-12-12', popular: 26, title: '미분양 부담 확대…건설사 재무 우려', desc: '일부 지역에서 미분양이 늘며 건설사 유동성에 대한 우려가 제기됩니다. 자금 조달 비용도 부담으로 작용합니다…' },
-
-        /* ===================== 고용 ===================== */
-        { keyword: '고용', sent: 'pos', source: '연합뉴스', flag: '정상', date: '2025-12-18', popular: 33, title: '취업자 증가…서비스업 채용 확대', desc: '서비스업을 중심으로 채용이 늘며 고용 지표가 개선됐습니다. 다만 질적 개선 여부는 추가 확인이 필요합니다…' },
-        { keyword: '고용', sent: 'pos', source: '서울경제', flag: '정상', date: '2025-12-16', popular: 19, title: '청년 고용 지원 확대…정책 효과 기대', desc: '청년층을 겨냥한 고용 지원이 확대되며 고용 개선 기대가 커지고 있습니다. 기업 인센티브 강화도 검토됩니다…' },
-        { keyword: '고용', sent: 'neu', source: '한국경제', flag: '정상', date: '2025-12-17', popular: 18, title: '임금 상승세 유지…업종별 격차 지속', desc: '임금 상승세는 이어졌지만 업종별로 격차가 확대되는 모습입니다. 기업은 인건비 부담을 우려하고 있습니다…' },
-        { keyword: '고용', sent: 'neu', source: '머니투데이', flag: '정상', date: '2025-12-13', popular: 12, title: '비정규직 비중 변동…통계 해석 엇갈려', desc: '지표 변동 폭은 크지 않지만 표본과 계절요인에 대한 해석이 엇갈립니다. 추세 확인이 필요합니다…' },
-        { keyword: '고용', sent: 'neg', source: '매일경제', flag: '의심', date: '2025-12-14', popular: 23, title: '제조업 고용 둔화…수주 감소 영향', desc: '수주 감소와 투자 축소로 제조업 고용이 둔화됐습니다. 구조조정 우려까지 거론되며 경계감이 커졌습니다…' },
-        { keyword: '고용', sent: 'neg', source: '조선비즈', flag: '위험', date: '2025-12-12', popular: 20, title: '체감실업 증가…구직기간 장기화', desc: '체감실업과 장기 구직 비중이 늘고 있다는 지적이 나옵니다. 고용의 질을 둘러싼 논의가 확대되고 있습니다…' },
-
-        // 나머지(경기침체/유가/반도체/수출/노동/경제/현금)도 너 원래대로 계속 두면 됨
-        // (너가 이미 아래에 다 적어둔거면 그대로 붙여넣어도 상관없음)
-    ];
+    
 
     let currentKeyword = '주식';
     const sortMode = { pos: 'recent', neu: 'recent', neg: 'recent' };
@@ -385,14 +377,6 @@ selectKeyword(bootKeyword);
   `;
     }
 
-    function getDataBySent(sent) {
-        const { start, end } = window.getAppRange?.() || {};
-        return allData.filter(d =>
-            d.keyword === currentKeyword &&
-            d.sent === sent &&
-            isInRange(d.date, start, end)
-        );
-    }
 
     function px(v) {
         const n = parseFloat(v);
@@ -637,36 +621,28 @@ selectKeyword(bootKeyword);
     };
     const colorFor = (kw) => COLOR[kw] || '#0462D2';
 
-    // ===== (샘플) 워드/감성 =====
-    const WORDS = {
-        '주식': ['주식', '주식시장', '인상', '물가', '정부', '정책', '대출', '연준', '경기', '부동산', '금리', '인하'],
-        '부동산': ['부동산', '전세', '매매', '대출', '금리', '규제', '청약', '거래량', '분양', '전월세', '집값', '정책'],
-        '고용': ['고용', '취업자', '실업률', '청년', '임금', '채용', '서비스업', '제조업', '구직', '정책', '경기', '노동'],
-    };
-    const SENT = {
-        '주식': { pos: 40, neu: 30, neg: 30 },
-        '부동산': { pos: 35, neu: 40, neg: 25 },
-        '고용': { pos: 45, neu: 35, neg: 20 },
-    };
 
-    function renderCloud(keyword) {
-        const list = WORDS[keyword] || WORDS['주식'];
-        const main = list[0] || keyword;
-        const rest = list.slice(1).slice(0, 11);
+async function renderCloud(keyword) {
+    const { start } = window.getAppRange?.() || {};
+    if (!start) return;
 
-        const colors = ['#1e63ff', '#e53935', '#6a7a93', '#2a4f98', '#8a97ad'];
-        const spans = [
-            `<span class="ts3-w lg">${main}</span>`,
-            `<span class="ts3-w lg" style="color:#1e63ff">${(list[1] || '키워드')}</span>`,
-            ...rest.map((w, i) => {
-                const cls = i % 3 === 0 ? 'md' : 'sm';
-                const c = colors[i % colors.length];
-                return `<span class="ts3-w ${cls}" style="--c:${c}">${w}</span>`;
-            })
-        ].join('');
+    const res = await fetch(
+        `/api/issue_wordcloud?start=${start}&keyword=${encodeURIComponent(keyword)}`
+    );
+    const data = await res.json();
 
-        cloudEl.innerHTML = `<div class="ts3-cloud-inner">${spans}</div>`;
+    if (!data.success || !data.sub_keywords.length) {
+        cloudEl.innerHTML = `<div class="ts3-cloud-inner">데이터 없음</div>`;
+        return;
     }
+
+    const spans = data.sub_keywords.slice(0, 12).map((w, i) => {
+        const cls = i === 0 ? 'lg' : i < 3 ? 'md' : 'sm';
+        return `<span class="ts3-w ${cls}">${w}</span>`;
+    }).join('');
+
+    cloudEl.innerHTML = `<div class="ts3-cloud-inner">${spans}</div>`;
+}
 
     function renderDonut(keyword) {
         const v = SENT[keyword] || SENT['주식'];
@@ -818,53 +794,28 @@ selectKeyword(bootKeyword);
     // 첫 로드도 프리셋으로 시작일 자동 세팅 + 종료일 어제 고정
     emitRangeChange({ preset: true });
 
-
-    // ===== (임시) 라인차트 시계열 생성기 =====
-    // TODO: 나중에 실제 API/DB에서 날짜별 언급량 배열로 교체하면 됨
-    function hash32(str) {
-        let h = 2166136261;
-        for (let i = 0; i < str.length; i++) {
-            h ^= str.charCodeAt(i);
-            h = Math.imul(h, 16777619);
-        }
-        return h >>> 0;
-    }
-
-    // labels(YYYY-MM-DD / YYYY-MM / YYYY) 각각에 대해 "안정적으로" 같은 값이 나오도록 생성
-    function makeSeries(keyword, labels) {
-        const seed = hash32(keyword);
-        const base = (seed % 25) + 15; // 키워드별 기본 레벨
-        const len = Math.max(1, labels.length);
-
-        return labels.map((lab, i) => {
-            const t = i / len;
-
-            // 완만한 추세 + 파동 + 라벨 기반 노이즈(결정적)
-            const drift = t * 8;
-            const wave = Math.sin(t * Math.PI * 2) * 6;
-            const noise = (hash32(keyword + "|" + lab) % 11) - 5;
-
-            const v = Math.round(base + drift + wave + noise);
-            return Math.max(0, v);
-        });
-    }
-
     // ===== Chart.js =====
     let chart = null;
 
-    function buildDatasets(labels) {
-        const kws = [baseKeyword, ...Array.from(compareSet)];
-        return kws.map((kw) => ({
-            label: kw,
-            data: makeSeries(kw, labels),
-            borderColor: colorFor(kw),
-            backgroundColor: colorFor(kw),
-            borderWidth: kw === baseKeyword ? 3 : 2,
-            tension: 0.3,
-            pointRadius: 2,
-            pointHoverRadius: 4,
-        }));
-    }
+async function buildDatasets(labels) {
+    const { start, end } = window.getAppRange?.() || {};
+    const res = await fetch(`/api/keyword_trend?start=${start}&end=${end}`);
+    const data = await res.json();
+    if (!data.success) return [];
+
+    const kws = [baseKeyword, ...Array.from(compareSet)];
+
+    return kws.map((kw) => ({
+        label: kw,
+        data: data.series[kw] || [],
+        borderColor: colorFor(kw),
+        backgroundColor: colorFor(kw),
+        borderWidth: kw === baseKeyword ? 3 : 2,
+        tension: 0.3,
+        pointRadius: 2,
+        pointHoverRadius: 4,
+    }));
+}
 
     function renderLineChart() {
         if (!canvas || typeof Chart === 'undefined') return;
@@ -971,3 +922,8 @@ selectKeyword(bootKeyword);
         renderLineChart();
     });
 })();
+
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("🔥 main.js loaded");
+  renderRanking();
+});
