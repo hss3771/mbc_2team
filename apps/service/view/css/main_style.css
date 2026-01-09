@@ -1379,3 +1379,27 @@ body {
     font-size: 12px;
   }
 }
+
+/* ===== TS3 도넛 퍼센트 라벨 ===== */
+#ts3Donut { position: relative; }
+
+#ts3Donut .ts3-donut-labels{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+#ts3Donut .ts3-donut-label{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(0,0,0,0.08);
+  color: #1d2b42;
+  white-space: nowrap;
+}

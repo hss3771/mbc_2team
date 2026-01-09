@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from apps.service.article_module.article_service import get_articles_by_sentiment
-
+from apps.service.article_module.article_service import get_sentiment_sum
 router = APIRouter(
     prefix="/articles",
     tags=["Articles"]
@@ -23,13 +23,6 @@ def articles_by_sentiment(
         orderby
     )
 
-# ====== 그래프(도넛 차트) ======
-from apps.service.article_module.article_service import get_sentiment_stats
-
-
-@router.get("/sentiment-stats")
-def sentiment_stats(
-    keyword: str,
-    date: str
-):
-    return get_sentiment_stats(keyword, date)
+@router.get("/sentiment-sum")
+def sentiment_sum(keyword: str, start: str, end: str):
+    return get_sentiment_sum(keyword, start, end)

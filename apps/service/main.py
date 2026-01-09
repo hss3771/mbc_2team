@@ -20,11 +20,14 @@ app = FastAPI()
 from apps.service.bookmark_module.bookmarks import router as bookmarks_router
 from apps.service.user_module.user_router import router as user_router
 from apps.service.image_module.dashboard import router as image_router
+from apps.service.keyword_ranking_module.keyword_ranking_router import router as ranking_router
+from apps.service.article_module.article import router as article_router
 
 app.include_router(bookmarks_router)
 app.include_router(user_router)
 app.include_router(image_router)
-
+app.include_router(ranking_router)
+app.include_router(article_router)
 ################################ 경로 설정 ################################
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 app.mount("/view", StaticFiles(directory=BASE_DIR / "view"), name="view")

@@ -1,4 +1,4 @@
-from apps.service.article_module.article_repo import fetch_articles_by_sentiment
+from apps.service.article_module.article_repo import fetch_articles_by_sentiment, fetch_sentiment_sum
 
 
 def get_articles_by_sentiment(
@@ -36,29 +36,26 @@ def get_articles_by_sentiment(
         "articles": articles
     }
 
-# ====== 그래프(도넛 차트) 전용 ======
-from apps.service.article_module.article_repo import fetch_sentiment_stats
 
-
-def get_sentiment_stats(keyword: str, date: str):
-    res = fetch_sentiment_stats(keyword, date)
-
+def get_sentiment_sum(keyword: str, start: str, end: str):
+    res = fetch_sentiment_sum(keyword, start, end)
     buckets = res["aggregations"]["sentiment_count"]["buckets"]
 
-    stats = {
-        "positive": 0,
-        "neutral": 0,
-        "negative": 0
-    }
+    stats = {"positive": 0, "neutral": 0, "negative": 0}
 
     for b in buckets:
-        stats[b["key"]] = b["doc_count"]
+        if b["key"] in stats:
+            stats[b["key"]] = b["doc_count"]
+
+    total = sum(stats.values())
 
     return {
+        "success": True,
         "keyword": keyword,
-        "date": date,
+        "start": start,
+        "end": end,
         "positive": stats["positive"],
         "neutral": stats["neutral"],
         "negative": stats["negative"],
-        "total": sum(stats.values())
+        "total": total
     }

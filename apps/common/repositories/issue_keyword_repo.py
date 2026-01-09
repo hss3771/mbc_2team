@@ -122,7 +122,7 @@ def delete_by_date_keyword(es, date: str, keyword: str):
 
 # region 검색
 ############################ 검색 ############################
-# 키워드 랭킹 불러오기(날짜, 키워드)
+# 키워드 랭킹 불러오기(날짜, 하위키워드)
 def get_sub_keywords_by_query(es, date: str, keyword: str):
     """
     date + keyword로 문서를 검색해 sub_keywords를 반환한다.\n
@@ -151,6 +151,7 @@ def get_sub_keywords_by_query(es, date: str, keyword: str):
 
     return hits[0]["_source"].get("sub_keywords", [])
 
+# 키워드 랭킹 불러오기_하루치(날짜, 키워드, 합계, 요약)
 def get_issue_ranking_by_date(es, date: str, size: int = 10):
     """
     해당 날을 검색하면 날짜, 키워드, 합계, 요약문을 반환한다.\n
@@ -169,6 +170,7 @@ def get_issue_ranking_by_date(es, date: str, size: int = 10):
         size=size,
     )
 
+# 키워드 랭킹 불러오기_범위(날짜, 키워드, 합계, 요약)
 def get_issue_ranking_by_date_range(
     es,
     start_date: str,  # YYYY-MM-DD
@@ -190,6 +192,38 @@ def get_issue_ranking_by_date_range(
         size=size,
     )
 
+# 주/월/연도별 랭킹용 "기간 합산 TOP N"
+def get_top_keywords_sum_by_range(
+    es,
+    start_date: str,  # YYYY-MM-DD
+    end_date: str,    # YYYY-MM-DD
+    size: int = 10,
+):
+    """
+    start~end 범위에서 keyword별 count 합계(sum) TOP N을 반환한다.
+    - 반환: [{keyword, count}, ...]
+    """
+    resp = es.search(
+        index=ISSUE_KEYWORD_INDEX,
+        size=0,
+        query={"range": {"date": {"gte": start_date, "lte": end_date}}},
+        aggs={
+            "by_keyword": {
+                "terms": {
+                    "field": "keyword",
+                    "size": size,
+                    "order": [{"sum_count": "desc"}, {"_key": "asc"}],
+                },
+                "aggs": {
+                    "sum_count": {"sum": {"field": "count"}}
+                },
+            }
+        },
+    )
+
+    buckets = resp.get("aggregations", {}).get("by_keyword", {}).get("buckets", [])
+    return [{"keyword": b["key"], "count": int(b["sum_count"]["value"])} for b in buckets]
+
 def get_sub_key(es, start: str, keyword: str):
     doc_id = make_issue_ranking_id(start, keyword)
     res = es.get(
@@ -198,7 +232,6 @@ def get_sub_key(es, start: str, keyword: str):
         )
     src = res.get("_source", {})
     return {"sub_keywords":src.get("sub_keywords", []),"doc_id":doc_id}
-# endregion
 
 def get_keyword_trend_by_date(
     es,
@@ -219,6 +252,7 @@ def get_keyword_trend_by_date(
         _source=["date", "keyword", "count"],
         size=5000,
     )["hits"]["hits"]
+# endregion
 
 if __name__ =="__main__":
     es = get_es()

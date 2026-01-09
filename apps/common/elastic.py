@@ -7,7 +7,10 @@ es = Elasticsearch(
 )
 
 def get_es():
-    return es
+    return Elasticsearch(
+        hosts=["http://192.168.0.34:9200"],
+        request_timeout=30,
+    )
 
 def delete_indices():
     es = get_es()

@@ -51,12 +51,12 @@ def fetch_articles_by_sentiment(
 
     return es.search(index="news_info", body=body)
 
-# ====== 그래프(도넛 차트) 전용 ======
-def fetch_sentiment_stats(keyword: str, date: str):
+
+def fetch_sentiment_sum(keyword: str, start: str, end: str):
     es = elastic.get_es()
 
     body = {
-        "size": 0,  # 문서 안 가져옴 (집계만)
+        "size": 0,
         "query": {
             "bool": {
                 "must": [
@@ -64,8 +64,8 @@ def fetch_sentiment_stats(keyword: str, date: str):
                     {
                         "range": {
                             "published_at": {
-                                "gte": f"{date}T00:00:00+09:00",
-                                "lte": f"{date}T23:59:59+09:00"
+                                "gte": f"{start}T00:00:00+09:00",
+                                "lte": f"{end}T23:59:59+09:00"
                             }
                         }
                     }
