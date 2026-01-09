@@ -7,8 +7,8 @@ import hashlib
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from urllib.parse import urlencode, urljoin
+import json
 
-from fastapi import FastAPI
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -23,19 +23,43 @@ from elasticsearch.helpers import bulk
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from logger import Logger
-# db.py에서 구현
-# 시작 시 1번 insert + 끝날 때 1번 update
-from db import create_batch_run, finish_batch_run
-
-
-app = FastAPI()
-logger = Logger().get_logger(__name__)
-
-ES_HOST = "http://localhost:9200"
-ES_INDEX = "news_info"
+from apps.crawler.logger import Logger
+from apps.crawler.db import create_batch_run, finish_batch_run
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException
 
 KST = ZoneInfo("Asia/Seoul")
+
+# Scheduler 객체 먼저 초기화
+scheduler = AsyncIOScheduler(timezone=KST)
+
+# lifespan 정의
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    scheduler.add_job(
+        scheduled_crawl_job,
+        CronTrigger(hour=0, minute=0),
+        id="naver_news_daily",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+        misfire_grace_time=60 * 30,
+    )
+    scheduler.start()
+    logger.info("[SCHEDULER] started (15:30 Asia/Seoul)")
+
+    try:
+        yield
+    finally:
+        scheduler.shutdown(wait=False)
+        logger.info("[SCHEDULER] stopped")
+
+# FastAPI 앱 생성
+app = FastAPI(lifespan=lifespan)
+logger = Logger().get_logger(__name__)
+
+ES_HOST = "http://192.168.0.34:9200"
+ES_INDEX = "news_info"
 
 
 def get_es() -> Elasticsearch:
@@ -57,10 +81,23 @@ options.add_argument(
 def normalize_published_at(dt: str | None) -> str | None:
     if not dt:
         return None
-    dt = dt.strip()
-    if not dt:
+    s = dt.strip()
+    if not s:
         return None
-    return dt if "T" in dt else dt.replace(" ", "T")
+
+    # "2026-01-04 23:55:11" -> "2026-01-04T23:55:11"
+    s = s.replace(" ", "T")
+
+    try:
+        parsed = datetime.fromisoformat(s)  # tz 없으면 tzinfo=None
+    except ValueError:
+        return None
+
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=KST)
+
+    # "2026-01-04T23:55:11+09:00" 형태로 반환
+    return parsed.isoformat(timespec="seconds")
 
 
 def clean_doc_for_es(doc: dict) -> dict:
@@ -221,7 +258,7 @@ def es_exists(es: Elasticsearch, article_id: str) -> bool:
     return es.exists(index=ES_INDEX, id=article_id)
 
 
-def bulk_index_news(es: Elasticsearch, docs: list[dict]) -> int:
+def bulk_index_news(es: Elasticsearch, docs: list[dict]) -> list[str]:
     actions = [
         {
             "_op_type": "index",
@@ -231,37 +268,54 @@ def bulk_index_news(es: Elasticsearch, docs: list[dict]) -> int:
         }
         for d in docs
     ]
+
     success, errors = bulk(es, actions, raise_on_error=False)
+
+    reasons: list[str] = []
     if errors:
-        logger.error(f"[ES bulk errors] {errors[:2]}")
-    return success
+        for e in errors:
+            try:
+                op = next(iter(e.keys()))
+                detail = e.get(op, {})
+                err = (detail.get("error") or {})
+                reason = err.get("reason") or err.get("type") or "unknown_error"
+                reasons.append(reason)
+            except Exception:
+                reasons.append("unknown_error")
 
+        # 너무 많이 쌓이면 message가 커질 수 있으니, 필요하면 상한 걸어도 됨
+        # reasons = reasons[:200]
 
+        logger.error(f"[ES bulk errors] count={len(reasons)} sample={reasons[:3]}")
+
+    return reasons
+
+# 뉴스 크롤링 함수
 def crawl_one_date(date: str) -> dict:
     es = get_es()
     if not es.ping():
         return {"error": "Elasticsearch is not available"}
 
-    # ✅ batch_runs: 시작 기록(INSERT)
-    # db.py 로부터 run_id 받아야 함!!!!!!! -> 종료 시 update 할 때 필요
-    start_at = datetime.now(KST)
-    try:
-        run_id = create_batch_run(
-            job_name="naver_news_daily",
-            work_at=date,
-            start_at=start_at,
-        )
-    except Exception as e:
-        logger.error(f"[batch_runs] create_batch_run failed: {e}")
-        run_id = None
+    work_date = date  # YYYYMMDD
+    start_at = datetime.strptime(work_date, "%Y%m%d").replace(tzinfo=KST)
+    end_at = start_at + timedelta(days=1)
+
+    work_at = datetime.now(KST)
+
+    run_id = create_batch_run(
+        job_name="naver_news_daily",
+        work_at=work_at,
+        start_at=start_at
+    )
 
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
 
     crawled_ok = 0
     skipped = 0
-    failed = 0
+    parse_failed = 0
     buffer = []
+    chunk_errors: list[str] = []  # ✅ 에러만 담기
 
     try:
         logger.info(f"=== NAVER NEWS CRAWL START / date={date} ===")
@@ -289,52 +343,58 @@ def crawl_one_date(date: str) -> dict:
                 crawled_ok += 1
 
                 if len(buffer) >= 200:
-                    bulk_index_news(es, buffer)
+                    reasons = bulk_index_news(es, buffer)  # ✅ list[str]
+                    if reasons:
+                        chunk_errors.extend(reasons)       # ✅ 에러만 누적
                     buffer = []
 
                 time.sleep(0.25)
 
-            except Exception:
-                failed += 1
+            except Exception as e:
+                parse_failed += 1
+                # 파싱 에러도 message에 남기고 싶으면 유지, 아니면 아래 1줄 삭제해도 됨
+                chunk_errors.append(f"parse_error: {str(e)[:300]}")
 
         if buffer:
-            bulk_index_news(es, buffer)
+            reasons = bulk_index_news(es, buffer)
+            if reasons:
+                chunk_errors.extend(reasons)
 
         logger.info("=== NAVER NEWS CRAWL DONE ===")
 
-        # ✅ batch_runs: 종료 기록(UPDATE)
-        # finish_batch_run() — 배치 종료 기록
-        end_at = datetime.now(KST)
+        # 에러가 하나라도 있으면 PARTIAL(300)
+        # state_code = 200 → “정상”
+        state_code = 200 if (parse_failed == 0 and len(chunk_errors) == 0) else 300
 
-        if failed == 0:
-            state_code = 200
-            message = f"SUCCESS | total_links={total_links}, crawled={crawled_ok}, skipped={skipped}"
-        else:
-            state_code = 300
-            message = f"PARTIAL | total_links={total_links}, crawled={crawled_ok}, failed={failed}, skipped={skipped}"
+        message_obj = {
+            "chunks": chunk_errors,  # ✅ 정상완료는 없음. 에러만.
+            "summary": {
+                "total_links": total_links,
+                "crawled_ok": crawled_ok,
+                "skipped": skipped
+            }
+        }
+        message = json.dumps(message_obj, ensure_ascii=False)
 
         if run_id is not None:
-            try:
-                finish_batch_run(
-                    run_id=run_id,
-                    end_at=end_at,
-                    state_code=state_code,
-                    message=message,
-                )
-            except Exception as e:
-                logger.error(f"[batch_runs] finish_batch_run failed: {e}")
+            finish_batch_run(
+                run_id=run_id,
+                end_at=end_at,
+                state_code=state_code,
+                message=message,
+            )
 
         return {
             "date": date,
             "total_links": total_links,
             "crawled_ok": crawled_ok,
             "skipped_existing": skipped,
-            "failed": failed,
+            "parse_failed": parse_failed,
             "saved": True,
         }
 
     except Exception as e:
-        end_at = datetime.now(KST)
+        # state_code = 400 → “실패”
         state_code = 400
         message = f"FAILED | error={str(e)[:200]}"
 
@@ -354,39 +414,23 @@ def crawl_one_date(date: str) -> dict:
     finally:
         driver.quit()
 
-
-@app.get("/naver/news")
-def crawl_naver_news(date: str):
-    return crawl_one_date(date)
-
-
+# 스케쥴러 작업
 def scheduled_crawl_job():
     yesterday = (datetime.now(KST) - timedelta(days=1)).strftime("%Y%m%d")
     logger.info(f"[SCHEDULER] start scheduled crawl for date={yesterday}")
     result = crawl_one_date(yesterday)
     logger.info(f"[SCHEDULER] done scheduled crawl result={result}")
 
-
-scheduler = AsyncIOScheduler(timezone=KST)
-
-
-@app.on_event("startup")
-def start_scheduler():
-    scheduler.add_job(
-        scheduled_crawl_job,
-        CronTrigger(hour=0, minute=0),
-        id="naver_news_daily_midnight",
-        replace_existing=True,
-        max_instances=1,
-        coalesce=True,
-        misfire_grace_time=60 * 30,
-    )
-    scheduler.start()
-    logger.info("[SCHEDULER] started (daily 00:00 Asia/Seoul)")
+@app.get("/naver/news")
+def crawl_naver_news(date: str):
+    try:
+        formatted_date = datetime.strptime(date, "%Y-%m-%d").strftime("%Y%m%d")
+        return crawl_one_date(formatted_date)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error: {str(e)}")
 
 
-@app.on_event("shutdown")
-def stop_scheduler():
-    scheduler.shutdown(wait=False)
-    logger.info("[SCHEDULER] stopped")
+
+
+
 
