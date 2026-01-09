@@ -2,31 +2,6 @@
    admin.css (관리자 수집 모니터링 전용)
    - main_style.css 톤 유지 + 관리자 전용 컴포넌트
    ========================================================= */
-
-/* 사이드바: "관리 메뉴" 타이틀 */
-.admin-side-title {
-  padding: 18px 18px 8px;
-  font-size: 14px;
-  font-weight: 1000;
-  color: #1d2b42;
-}
-
-/* ✅ 메뉴 옆에 체크박스(아이콘)처럼 뜨는 pseudo 제거 */
-.sidebar .menu li::before,
-.sidebar .menu li::after {
-  content: none !important;
-  display: none !important;
-}
-
-/* divider */
-.sidebar .menu .menu-divider {
-  height: 1px;
-  margin: 10px 16px;
-  background: #e8eef8;
-  border-radius: 999px;
-  padding: 0 !important;
-}
-
 /* 관리자 툴바 */
 .admin-toolbar {
   gap: 14px; /* main-toolbar 기본 gap 유지 + 안정 */
@@ -212,6 +187,14 @@
 }
 .admin-table-body::-webkit-scrollbar-thumb:hover { background: #a9c2f2; }
 
+.admin-page-title{
+  font-size: 13px;
+  font-weight: 900;
+  color: #6a7a93;
+  padding: 2px 6px 0;
+  margin: 2px 0 8px;
+}
+
 /* 상태코드 배지 */
 .status-badge {
   display: inline-flex;
@@ -389,6 +372,7 @@
   color:#1d2b42;
 }
 .admin-modal__close{
+  padding-bottom: 5px;
   width: 34px;
   height: 34px;
   border-radius: 12px;
