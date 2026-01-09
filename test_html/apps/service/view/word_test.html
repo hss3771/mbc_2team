@@ -7,16 +7,29 @@
   <title>단어 사전</title>
 
   <link rel="icon" href="/view/img/favicon.png">
-  <link rel="stylesheet" href="/view/css/my_page_style.css" />
-  <link rel="stylesheet" href="/view/css/main_style.css" />
-  <link rel="stylesheet" href="./css/word.css" />
+  <link rel="stylesheet" href="/view/css/word.css" />
 </head>
 
 <body>
-  <div id="headerMount" aria-label="공통 헤더"></div>
+  <header class="header">
+    <div class="header-inner">
+      <a class="brand" href="/">
+        <span class="sidebar_logo"><img src="/view/img/logo_white.png" alt=""></span>
+      </a>
+      <a href="/" class="logout-button">로그아웃</a>
+    </div>
+  </header>
 
   <div class="app">
-    <aside id="sidebarMount" class="sidebar" aria-label="사이드바"></aside>
+    <aside class="sidebar">
+      <ul class="menu">
+        <li><a href="/main">경제 키워드 트렌드</a></li>
+        <li><a href="/main2">기사</a></li>
+        <li><a href="/main3">키워드 언급량 및 감성분석</a></li>
+        <li><a href="/word">단어 사전</a></li>
+        <li><a href="/my_page">마이페이지</a></li>
+      </ul>
+    </aside>
     <main>
       <div class="word-wrap">
         <div class="word-page-title">단어 사전</div>
@@ -70,21 +83,21 @@
       </div>
 
       <!-- 북마크 모달 -->
-      <div class="word-modal-backdrop" id="bookmarkModal" aria-hidden="true">
-        <div class="word-modal" role="dialog" aria-modal="true" aria-label="Bookmark list">
-          <div class="word-modal-head">
-            <div class="word-modal-title">Bookmark list</div>
-            <button class="word-modal-close" id="closeBookmark" type="button" aria-label="닫기">✕</button>
+      <div class="modal-backdrop" id="bookmarkModal" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-label="Bookmark list">
+          <div class="modal-head">
+            <div class="modal-title">Bookmark list</div>
+            <button class="modal-close" id="closeBookmark" type="button" aria-label="닫기">✕</button>
           </div>
 
-          <div class="word-modal-body">
+          <div class="modal-body">
             <div class="bookmark-list" id="bookmarkList"></div>
             <div class="bookmark-empty" id="bookmarkEmpty" hidden>
               아직 즐겨찾기한 단어가 없어요 🙂
             </div>
           </div>
 
-          <div class="word-modal-foot">
+          <div class="modal-foot">
             <button class="word-outline-btn" id="clearBookmarks" type="button">전체 삭제</button>
             <button class="word-primary-btn" id="closeBookmark2" type="button">닫기</button>
           </div>
@@ -93,12 +106,8 @@
     </main>
   </div>
 
-  <script src="/static/word.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="/static/header_init.js" defer></script>
-  <script src="/static/base.js" defer></script>
-  <script src="/static/sidebar_init.js" defer></script>
-  <script src="/static/sidebar.js" defer></script>
+<script src="/static/word.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </body>
 
 </html>
