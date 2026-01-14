@@ -1,88 +1,119 @@
 from apps.common import elastic
 
+def _make_range_filter(start: str, end: str):
+    return {
+        "range": {
+            "published_at": {
+                "gte": f"{start}T00:00:00+09:00",
+                "lte": f"{end}T23:59:59+09:00",
+            }
+        }
+    }
 
-def fetch_articles_by_sentiment(
-    sentiment: str,   # positive | neutral | negative
+def _make_sort(orderby: str):
+    if orderby == "latest":
+        return [{"published_at": {"order": "desc"}}]
+    if orderby == "old":
+        return [{"published_at": {"order": "asc"}}]
+    if orderby == "trust_high":
+        return [
+            {"trust.score": {"order": "desc", "missing": "_last"}},
+            {"published_at": {"order": "desc"}}
+        ]
+    if orderby == "trust_low":
+        return [
+            {"trust.score": {"order": "asc", "missing": "_last"}},
+            {"published_at": {"order": "desc"}}
+        ]
+    # 기본 : 최신순
+    return [{"published_at": {"order": "desc"}}]
+
+
+# 단일 date 기반
+def fetch_articles_by_keyword(
+    keyword: str,
     date: str,
+    sentiment: str,
     page: int,
     size: int,
     orderby: str
 ):
     es = elastic.get_es()
 
-    # 정렬
-    if orderby == "score":
-        sort = [
-            {"sentiment.score": {"order": "desc", "missing": "_last"}},
-            {"published_at": {"order": "desc"}}
-        ]
-    else:  # latest (기본)
-        sort = [
-            {"published_at": {"order": "desc"}}
-        ]
-
-    body = {
-        "query": {
-            "bool": {
-                "filter": [
-                    {
-                        "range": {
-                            "published_at": {
-                                "gte": f"{date}T00:00:00+09:00",
-                                "lt": f"{date}T23:59:59+09:00"
-                            }
-                        }
-                    },
-                    {
-                        "term": {
-                            "sentiment.label": sentiment
-                        }
-                    }
-                ],
-                "must": [
-                    {"exists": {"field": "sentiment.label"}}
-                ]
+    filters = [
+        {"term": {"keywords.label": keyword}},
+        {
+            "range": {
+                "published_at": {
+                    "gte": f"{date}T00:00:00+09:00",
+                    "lte": f"{date}T23:59:59+09:00",
+                }
             }
         },
-        "sort": sort,
+        {"exists": {"field": "sentiment.label"}},
+    ]
+
+    if sentiment != "all":
+        filters.append({"term": {"sentiment.label": sentiment}})
+
+    body = {
+        "query": {"bool": {"filter": filters}},
+        "sort": _make_sort(orderby),
         "from": (page - 1) * size,
-        "size": size
+        "size": size,
+    }
+
+    return es.search(index="news_info", body=body)
+
+# 기간(start~end) 기반 리스트
+def fetch_articles_by_keyword_range(
+    keyword: str,
+    start: str,
+    end: str,
+    sentiment: str,
+    page: int,
+    size: int,
+    orderby: str
+):
+    es = elastic.get_es()
+
+    filters = [
+        {"term": {"keywords.label": keyword}},
+        _make_range_filter(start, end),
+        {"exists": {"field": "sentiment.label"}},
+    ]
+
+    if sentiment != "all":
+        filters.append({"term": {"sentiment.label": sentiment}})
+
+    body = {
+        "query": {"bool": {"filter": filters}},
+        "sort": _make_sort(orderby),
+        "from": (page - 1) * size,
+        "size": size,
     }
 
     return es.search(index="news_info", body=body)
 
 
-def fetch_sentiment_sum(keyword: str, start: str, end: str):
+# 도넛 집계: 기간 감성 합계
+def fetch_sentiment_summary(keyword: str, start: str, end: str):
     es = elastic.get_es()
 
+    filters = [
+        {"term": {"keywords.label": keyword}},
+        _make_range_filter(start, end),
+        {"exists": {"field": "sentiment.label"}},
+    ]
+
     body = {
-        "size": 0,
-        "query": {
-            "bool": {
-                "must": [
-                    {"term": {"keywords.label": keyword}},
-                    {
-                        "range": {
-                            "published_at": {
-                                "gte": f"{start}T00:00:00+09:00",
-                                "lte": f"{end}T23:59:59+09:00"
-                            }
-                        }
-                    }
-                ],
-                "filter": [
-                    {"exists": {"field": "sentiment.label"}}
-                ]
+        "size": 0,  # ✅ 문서 필요 없음(집계만)
+        "query": {"bool": {"filter": filters}},
+        "aggs": {
+            "sentiment_counts": {
+                "terms": {"field": "sentiment.label", "size": 10}
             }
         },
-        "aggs": {
-            "sentiment_count": {
-                "terms": {
-                    "field": "sentiment.label",
-                    "size": 3
-                }
-            }
-        }
     }
 
     return es.search(index="news_info", body=body)

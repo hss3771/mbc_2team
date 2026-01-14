@@ -741,9 +741,8 @@
   width: 100%;
   height: 100%;
   /* 로고를 완전히 꽉 채우고 싶으면 cover (잘릴 수 있음) */
-  object-fit: cover;
+  object-fit: contain;
   /* 로고가 안 잘리게 넣고 싶으면 contain (여백 생길 수 있음) */
-  /* object-fit: contain; */
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -787,11 +786,48 @@
   display: block;
 }
 
-.ts2-meta {
-  display: flex;
+/* 줄바꿈 금지 */
+.ts2-meta{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  flex-wrap:nowrap;
+  white-space:nowrap;
+  min-width:0;
+  margin-left: -3px;
+}
+
+/* 언론사 로고 작아지지 않게 고정 */
+.ts2-card__top .ts2-src{
+  flex: 0 0 auto;
+  flex-shrink: 0;
+}
+
+/* 로고 정확한 사이즈 유지(원래 설정한 값) */
+.ts2-card__top .ts2-src.ts2-src--logoonly{
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  width: 86px;  
+  height: 30px; 
+}
+
+/* 신뢰도/날짜/기사요약 알약들 */
+.ts2-meta .ts2-chip{
+  flex: 0 0 auto;
+  flex-shrink: 0;    
+  height: 26px;     
+  padding: 0 8px;  
+  font-size: 11px;   
+  line-height: 1;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* 버튼(기사요약)은 기본 버튼 영향 제거 */
+.ts2-meta .ts2-chip--btn{
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .ts2-chip {
@@ -1403,3 +1439,133 @@ body {
   color: #1d2b42;
   white-space: nowrap;
 }
+
+/* =====================
+   TS2 기사 상세 모달
+===================== */
+#ts2ModalRoot { position: relative; }
+
+#ts2ModalRoot .ts2m-backdrop[hidden]{
+  display: none !important;
+}
+
+#ts2ModalRoot .ts2m-backdrop{
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#ts2ModalRoot .ts2m-panel{
+  width: min(980px, 92vw);
+  height: min(760px, 86vh);
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#ts2ModalRoot .ts2m-close{
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  color: #6a7a93;
+}
+
+#ts2ModalRoot .ts2m-close:hover{
+  background: #f1f5fb;
+}
+
+#ts2ModalRoot .ts2m-head{
+  padding: 18px 22px 12px;
+  border-bottom: 1px solid #eef2fb;
+}
+
+#ts2ModalRoot .ts2m-press{
+  font-size: 12px;
+  font-weight: 900;
+  color: #0462D2;
+  margin-bottom: 6px;
+}
+
+#ts2ModalRoot .ts2m-title{
+  font-size: 18px;
+  font-weight: 900;
+  color: #1d2b42;
+  line-height: 1.35;
+  margin-bottom: 10px;
+}
+
+#ts2ModalRoot .ts2m-meta{
+  font-size: 12px;
+  font-weight: 800;
+  color: #8a97ad;
+}
+
+#ts2ModalRoot .ts2m-body{
+  padding: 18px 22px;
+  overflow: auto;
+  flex: 1;
+}
+
+#ts2ModalRoot .ts2m-summary{
+  font-size: 14px;
+  line-height: 1.7;
+  color: #2c3a52;
+  white-space: pre-wrap;
+}
+
+#ts2ModalRoot .ts2m-actions{
+  padding: 12px 22px 18px;
+  border-top: 1px solid #eef2fb;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+#ts2ModalRoot .ts2m-btn{
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid #dfe8f7;
+  background: #fff;
+  font-weight: 900;
+  cursor: pointer;
+  color: #24324a;
+}
+
+#ts2ModalRoot .ts2m-btn:hover{
+  background: #f5f8ff;
+}
+
+#ts2ModalRoot .ts2m-btn-primary{
+  background: #0462D2;
+  border-color: transparent;
+  color: #fff;
+}
+
+#ts2ModalRoot .ts2m-btn-primary:hover{
+  filter: brightness(0.98);
+}
+
+/* 모달 열렸을 때 바디 스크롤 잠금 */
+body.is-modal-open{
+  overflow: hidden;
+}
+
+
