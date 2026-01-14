@@ -299,7 +299,7 @@ def crawl_one_date(date: str) -> dict:
     work_date = date  # YYYYMMDD
     start_at = datetime.strptime(work_date, "%Y%m%d").replace(tzinfo=KST)
     end_at = start_at + timedelta(days=1)
-
+    end_at = "2025-12-15T00:00:00"
     work_at = datetime.now(KST)
 
     run_id = create_batch_run(
@@ -385,6 +385,8 @@ def crawl_one_date(date: str) -> dict:
             )
 
         return {
+            "run_id": run_id,
+            "state_code": state_code,
             "date": date,
             "total_links": total_links,
             "crawled_ok": crawled_ok,

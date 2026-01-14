@@ -126,14 +126,3 @@ def update_sentiment(es: Elasticsearch, start_dt: str, end_dt: str):
     print(f"완료. 총 업데이트: {count}")
 
 
-# -------------------------------
-# Example
-# -------------------------------
-if __name__ == "__main__":
-    es = Elasticsearch("http://192.168.0.34:9200")
-
-    update_sentiment(
-        es,
-        "2026-01-04T00:00:00+09:00",
-        "2026-01-06T00:00:00+09:00"
-    )

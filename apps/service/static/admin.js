@@ -1,4 +1,8 @@
 (function () {
+  "use strict";
+
+  console.log("✅ admin.js LOADED");
+
   // ===== util =====
   const $ = (sel, el = document) => el.querySelector(sel);
 
@@ -14,21 +18,12 @@
   function toDateNum(iso) {
     // "YYYY-MM-DD" -> YYYYMMDD number
     if (!iso) return 0;
-    return Number(iso.replaceAll("-", ""));
+    return Number(String(iso).replaceAll("-", ""));
   }
 
-  function randInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
-
-  function formatDateTime(d) {
-    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(
-      d.getMinutes()
-    )}:${pad2(d.getSeconds())}`;
-  }
-
-  function formatWorkAt(d) {
-    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} / ${pad2(d.getHours())}시`;
+  function isoToYmd(iso) {
+    // "YYYY-MM-DD" -> "YYYYMMDD"
+    return String(iso || "").replaceAll("-", "");
   }
 
   function codeClass(code) {
@@ -51,247 +46,199 @@
     return escapeHtml(s).replaceAll("\n", " ");
   }
 
-  // ===== auth area =====
-  // 공통헤더(#headerMount)를 쓰는 페이지에서는 header_init.js가 auth 토글을 담당하므로
-  //    여기서 #authArea.innerHTML을 덮어쓰면 헤더 메뉴가 깨질 수 있음.
-  async function renderAuth() {
-    // 공통헤더 사용 시: authArea 조작 금지
-    if (document.querySelector("#headerMount")) return;
+  // ===== API endpoints (same-origin) =====
+  const API = {
+    listRuns: "/admin/collection/runs",
+    runDetail: (runId) => `/admin/collection/runs/${encodeURIComponent(runId)}`,
+    rerun: (runId) => `/admin/collection/runs/${encodeURIComponent(runId)}/rerun`,
+    progress: "/admin/collection/progress",
+  };
 
-    const authArea = $("#authArea");
-    if (!authArea) return;
+  // ===== fetch wrapper (credentials + timeout) =====
+  async function apiJson(url, opts = {}) {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), opts.timeoutMs ?? 15000);
+
+    const method = (opts && opts.method) ? opts.method : "GET";
+    console.log(`🌐 [admin.js] FETCH ${method} ${url}`);
 
     try {
-      const res = await fetch("/api/session", { credentials: "include" });
-      const data = await res.json();
+      const res = await fetch(url, {
+        ...opts,
+        signal: controller.signal,
+        credentials: "include",
+        headers: {
+          ...(opts.headers || {}),
+        },
+      });
 
-      if (!data.logged_in) {
-        location.replace("/view/login.html");
-        return;
+      // 401/403이면 관리자 세션 문제 → 로그인으로
+      if (res.status === 401 || res.status === 403) {
+        location.replace("/login");
+        return null;
       }
 
-      // (레거시 모드) 관리자 페이지: 로그아웃만
-      authArea.innerHTML = `<a href="/logout" class="btn-secondary logout-button">로그아웃</a>`;
-    } catch (e) {
-      location.replace("/view/login.html");
-    }
-  }
+      const ct = res.headers.get("content-type") || "";
+      const isJson = ct.includes("application/json");
+      const body = isJson ? await res.json() : await res.text();
 
-  // =========================================================
-  // 설계서 요구: 컬럼(Keyword/Sentiment/Trust/Summary) 고정 + 비활성 컬럼 스타일
-  // - 기존/다른 JS가 display:none 처리해도, 이 스크립트가 "되돌리고" 클래스만 토글
-  // - 비활성 컬럼은 점(·) 표시 + 연한색(사진6 느낌)
-  // =========================================================
-  const RERUN_MODELS = ["keyword", "sentiment", "trust", "summary"];
-  let __rerunFixedColumnsInited = false;
-
-  function initRerunFixedColumns() {
-    if (__rerunFixedColumnsInited) return;
-
-    const chipsWrap = document.getElementById("modelChips");
-    if (!chipsWrap) return; // 이 페이지가 아니면 아무것도 안 함
-
-    __rerunFixedColumnsInited = true;
-
-    const btnAll = document.getElementById("chipAll");
-    const btnClear = document.getElementById("chipClear");
-    const tbodyArticles = document.getElementById("tbodyArticles");
-
-    const selectedModels = new Set();
-
-    const getModelButtons = () =>
-      Array.from(chipsWrap.querySelectorAll('button[data-model]'));
-
-    function readSelectedFromDOM() {
-      selectedModels.clear();
-      getModelButtons().forEach((btn) => {
-        const m = btn.dataset.model;
-        const on = btn.classList.contains("is-active");
-        if (on) selectedModels.add(m);
-      });
-    }
-
-    function setBtnActive(btn, on) {
-      btn.classList.toggle("is-active", !!on);
-    }
-
-    function setAll(on) {
-      getModelButtons().forEach((btn) => setBtnActive(btn, on));
-      readSelectedFromDOM();
-      applyColumnState();
-    }
-
-    function toggleOne(btn) {
-      const now = !btn.classList.contains("is-active");
-      setBtnActive(btn, now);
-      readSelectedFromDOM();
-      applyColumnState();
-    }
-
-    function applyColumnState() {
-      RERUN_MODELS.forEach((m) => {
-        const on = selectedModels.has(m);
-
-        // ✅ 헤더/바디의 data-col 컬럼을 "숨기지 말고" 상태 클래스만 토글
-        document.querySelectorAll(`[data-col="${m}"]`).forEach((cell) => {
-          // 다른 코드가 display:none을 걸어놔도 강제로 복구
-          cell.style.display = "";
-
-          cell.classList.toggle("is-col-off", !on);
-
-          // ✅ 바디 td는 내용까지 점(·) 처리
-          if (cell.tagName === "TD") {
-            if (!cell.dataset.tsOrigHtml) {
-              cell.dataset.tsOrigHtml = cell.innerHTML;
-            }
-
-            if (!on) {
-              cell.innerHTML = `<span class="rerun-pill is-off">•</span>`;
-            } else {
-              cell.innerHTML = cell.dataset.tsOrigHtml;
-            }
-          }
-        });
-      });
-    }
-
-    // ✅ 칩 클릭 이벤트(위임)
-    chipsWrap.addEventListener("click", (e) => {
-      const btn = e.target.closest("button");
-      if (!btn) return;
-
-      // data-model 버튼만 토글
-      if (btn.dataset && btn.dataset.model) {
-        e.preventDefault();
-        toggleOne(btn);
+      if (!res.ok) {
+        const msg =
+          (isJson && (body?.detail || body?.message)) ||
+          (typeof body === "string" ? body : "") ||
+          `HTTP ${res.status}`;
+        throw new Error(msg);
       }
-    });
 
-    // ✅ 전체 선택 / 전체 해제
-    btnAll?.addEventListener("click", (e) => {
-      e.preventDefault();
-      // "전체 선택"은 UX상 항상 active처럼 보이게 유지하고 싶으면 class도 맞춰줌
-      btnAll.classList.add("is-active");
-      setAll(true);
-    });
-
-    btnClear?.addEventListener("click", (e) => {
-      e.preventDefault();
-      btnAll?.classList.remove("is-active");
-      setAll(false);
-    });
-
-    // ✅ tbody가 동적으로 갱신되는 경우(조회/필터 등) 자동 반영
-    if (tbodyArticles) {
-      const mo = new MutationObserver(() => {
-        // 새로 추가된 td들도 원본 캐시(tsOrigHtml) 잡고 상태 적용
-        applyColumnState();
-      });
-      mo.observe(tbodyArticles, { childList: true, subtree: true });
+      return body;
+    } finally {
+      clearTimeout(t);
     }
-
-    // ✅ 초기 1회 반영
-    readSelectedFromDOM();
-    applyColumnState();
   }
 
-  // =========================================================
-  // MOCK: batch_runs (크롤링 오류만)
-  // =========================================================
-  const JOB_NAME = "크롤링";
+  // ===== normalize (서버 응답 형태가 조금 달라도 UI가 받는 형태로 맞춤) =====
+  function normalizeRun(raw) {
+    if (!raw || typeof raw !== "object") return null;
 
-  const ERR_MSG = [
-    "Invalid format. Please check the input format and try again.",
-    "DB 연결 실패: timeout",
-    "외부 API rate limit 초과",
-    "필수 파라미터 누락: keyword",
-    "HTML 파싱 실패: selector not found",
-    "네트워크 오류: connection reset",
-    "403 Forbidden: robots 정책 차단",
-    "500 Internal Error: parsing pipeline failed",
-  ];
+    // 가능한 키 후보들
+    const run_id = raw.run_id ?? raw.id ?? raw.runId ?? raw.runID;
+    const job_name = raw.job_name ?? raw.job ?? raw.jobName ?? raw.name ?? "수집";
+    const start_at = raw.start_at ?? raw.started_at ?? raw.startAt ?? raw.startedAt ?? raw.start_time ?? "";
+    const end_at = raw.end_at ?? raw.ended_at ?? raw.endAt ?? raw.endedAt ?? raw.end_time ?? "";
+    const work_at = raw.work_at ?? raw.workAt ?? raw.work_time ?? raw.workTime ?? raw.scheduled_at ?? "";
+    const state_code = Number(raw.state_code ?? raw.status_code ?? raw.stateCode ?? raw.code ?? 0);
+    const message = raw.message ?? raw.msg ?? raw.error ?? raw.summary ?? "";
 
-  function pickErrorCode() {
-    // 2xx는 절대 없음
-    const r = Math.random();
-    if (r < 0.1) return randInt(300, 308); // 10%
-    if (r < 0.85) return randInt(400, 429); // 75%
-    return randInt(500, 504); // 15%
+    const detail =
+      raw.detail ??
+      raw.trace ??
+      raw.stack ??
+      raw.error_detail ??
+      raw.errorDetail ??
+      raw.log ??
+      raw.raw ??
+      "";
+
+    return {
+      run_id,
+      job_name,
+      start_at,
+      end_at,
+      work_at,
+      state_code,
+      message,
+      detail,
+    };
   }
 
-  function makeDetail(run) {
-    return `${run.message}
-
-run_id=${run.run_id}
-job_name=${run.job_name}
-start_at=${run.start_at}
-end_at=${run.end_at}
-work_at=${run.work_at}
-state_code=${run.state_code}
-
-Trace:
-  at crawler.fetch(url)
-  at parser.extract(html)
-  at pipeline.run()
-(임시 데이터)
-`;
+  function pickListItems(payload) {
+    // list payload가 {items:[]}, {runs:[]}, [] 등 아무거나 와도 대응
+    if (Array.isArray(payload)) return payload;
+    if (!payload || typeof payload !== "object") return [];
+    return (
+      payload.items ||
+      payload.runs ||
+      payload.data ||
+      payload.rows ||
+      payload.results ||
+      payload.list ||
+      []
+    );
   }
 
-  function createMockBatchRuns(days = 220) {
-    const now = new Date();
-    const runs = [];
-    let runId = 1000;
+  function pickNextCursor(payload) {
+    if (!payload || typeof payload !== "object") return null;
+    return payload.next_cursor ?? payload.nextCursor ?? payload.cursor_next ?? payload.cursorNext ?? null;
+  }
 
-    for (let dayOffset = 0; dayOffset < days; dayOffset++) {
-      // 날짜별 0~1건만 생성
-      const hasError = Math.random() < 0.65; // 65% 확률로 오류 1건
-      if (!hasError) continue;
+  async function fetchRunsPage({ startIso, endIso, cursor, limit }) {
+    // 1차: ISO(YYYY-MM-DD)로 시도
+    const qs1 = new URLSearchParams();
+    if (startIso) qs1.set("start", startIso);
+    if (endIso) qs1.set("end", endIso);
+    if (cursor) qs1.set("cursor", cursor);
+    if (limit) qs1.set("limit", String(limit));
 
-      runId++;
+    try {
+      console.log("📌 fetchRunsPage ISO", { startIso, endIso, cursor, limit });
+      const payload = await apiJson(`${API.listRuns}?${qs1.toString()}`, { cache: "no-store" });
+      const items = pickListItems(payload).map(normalizeRun).filter(Boolean);
+      return { items, nextCursor: pickNextCursor(payload) };
+    } catch (e1) {
+      // 2차: YYYYMMDD로 fallback (서버가 숫자 날짜를 원할 수도 있어서)
+      const qs2 = new URLSearchParams();
+      if (startIso) qs2.set("start", isoToYmd(startIso));
+      if (endIso) qs2.set("end", isoToYmd(endIso));
+      if (cursor) qs2.set("cursor", cursor);
+      if (limit) qs2.set("limit", String(limit));
 
-      const base = new Date(now);
-      base.setDate(now.getDate() - dayOffset);
-      base.setHours(2, randInt(0, 10), randInt(0, 59), 0);
-
-      const durationMin = randInt(3, 35);
-      const end = new Date(base.getTime() + durationMin * 60 * 1000);
-
-      const run = {
-        run_id: runId,
-        job_name: JOB_NAME,
-        start_at: formatDateTime(base),
-        end_at: formatDateTime(end),
-        work_at: formatWorkAt(base),
-        state_code: pickErrorCode(),
-        message: ERR_MSG[randInt(0, ERR_MSG.length - 1)],
-      };
-      run.detail = makeDetail(run);
-      runs.push(run);
+      console.log("📌 fetchRunsPage YMD fallback", { start: isoToYmd(startIso), end: isoToYmd(endIso), cursor, limit });
+      const payload = await apiJson(`${API.listRuns}?${qs2.toString()}`, { cache: "no-store" });
+      const items = pickListItems(payload).map(normalizeRun).filter(Boolean);
+      return { items, nextCursor: pickNextCursor(payload) };
     }
-
-    // 최신순
-    runs.sort((a, b) => b.run_id - a.run_id);
-    return runs;
   }
 
-  const ALL_RUNS = createMockBatchRuns(240);
+  async function fetchRunDetail(runId) {
+    const payload = await apiJson(API.runDetail(runId), { cache: "no-store" });
+    // detail endpoint가 {item:{...}}로 줄 수도 있어서 대응
+    const raw = payload?.item ?? payload?.data ?? payload;
+    return normalizeRun(raw) || null;
+  }
+
+  function normalizeProgress(payload) {
+    // {running:true, percent:30} or {pct:30} or {progress:0.3} 등 대응
+    if (!payload || typeof payload !== "object") return { running: false, percent: 0, runId: null };
+
+    const running =
+      payload.running ??
+      payload.is_running ??
+      payload.isRunning ??
+      payload.active ??
+      payload.in_progress ??
+      payload.inProgress ??
+      false;
+
+    let p =
+      payload.percent ??
+      payload.pct ??
+      payload.percentage ??
+      payload.progress ??
+      payload.rate ??
+      0;
+
+    // progress가 0~1로 오면 0~100으로
+    if (typeof p === "number" && p > 0 && p <= 1) p = p * 100;
+
+    const runId = payload.run_id ?? payload.runId ?? payload.active_run_id ?? payload.activeRunId ?? null;
+
+    return {
+      running: !!running,
+      percent: Math.max(0, Math.min(100, Math.round(Number(p) || 0))),
+      runId,
+    };
+  }
 
   // =========================================================
-  // UI state
+  // UI state (cursor 기반 무한스크롤)
   // =========================================================
   const PAGE_SIZE = 20;
-  let filtered = [];
-  let page = 0;
+
+  let queryStartIso = null;
+  let queryEndIso = null;
+
+  let nextCursor = null;
   let loading = false;
   let done = false;
 
   // 현재 선택된(상세로 열어둔) 행 1건
   let selectedRun = null;
 
-  // ✅ rerun 진행률: "선택 1건" 기준 퍼센트
+  // 진행률 pill
   let rerunRunning = false;
   let rerunPct = 0;
   let rerunTimer = null;
+  let rerunJobId = null;
   let rerunActiveRunId = null;
 
   // ===== elements =====
@@ -375,10 +322,8 @@ Trace:
   function openDetail(run) {
     if (!detailModal) return;
 
-    // 지금 상세로 보는(선택된) run 저장
     selectedRun = run;
 
-    // meta chips
     if (detailMeta) {
       detailMeta.innerHTML = `
         <div class="admin-meta">run_id: ${escapeHtml(run.run_id)}</div>
@@ -411,7 +356,7 @@ Trace:
   }
 
   // =========================================================
-  // rerun progress (pill + 5초 갱신)
+  // progress pill (서버 progress polling)
   // =========================================================
   function updateRunRatePill() {
     if (!runRatePill || !runRate) return;
@@ -423,33 +368,79 @@ Trace:
     }
 
     runRatePill.hidden = false;
-
-    // 라벨은 필요하면 여기서 상황별 변경 가능
     if (runRateLabel) runRateLabel.textContent = "분석 작업 실행 중";
 
     const pct = Math.max(0, Math.min(100, Math.round(rerunPct)));
     runRate.textContent = `(${pct}%)`;
   }
 
+  function stopRerunPolling() {
+    if (rerunTimer) clearInterval(rerunTimer);
+    rerunTimer = null;
+  }
+
   function stopRerun() {
     rerunRunning = false;
     rerunPct = 0;
+    rerunJobId = null;
     rerunActiveRunId = null;
-
-    if (rerunTimer) clearInterval(rerunTimer);
-    rerunTimer = null;
-
+    stopRerunPolling();
     updateRunRatePill();
   }
 
-  function startRerun() {
-    // 상세(선택된 행) 없이 실행 방지
+  async function pollProgressOnce() {
+    try {
+      const qs = new URLSearchParams();
+      if (rerunJobId) qs.set("job_id", String(rerunJobId));
+      else if (rerunActiveRunId) qs.set("run_id", String(rerunActiveRunId));
+
+      const url = qs.toString() ? `${API.progress}?${qs.toString()}` : API.progress;
+      const payload = await apiJson(url, { cache: "no-store", timeoutMs: 12000 });
+      if (!payload) return;
+
+      const p = normalizeProgress(payload);
+      rerunRunning = p.running;
+      rerunPct = p.percent;
+      if (p.runId) rerunActiveRunId = p.runId;
+
+      updateRunRatePill();
+
+      // 완료 판단(서버가 running false로 주거나, percent 100)
+      if (!rerunRunning || rerunPct >= 100) {
+        stopRerun();
+        showToast("재실행이 완료되었습니다.");
+      }
+    } catch (e) {
+      console.warn("[collection.progress] poll failed:", e?.message || e);
+    }
+  }
+
+  async function syncProgressFromServer() {
+    try {
+      const payload = await apiJson(API.progress, { cache: "no-store", timeoutMs: 12000 });
+      if (!payload) return;
+      const p = normalizeProgress(payload);
+      rerunRunning = p.running;
+      rerunPct = p.percent;
+      rerunActiveRunId = p.runId;
+
+      updateRunRatePill();
+
+      if (rerunRunning) {
+        stopRerunPolling();
+        rerunTimer = setInterval(pollProgressOnce, 5000);
+      }
+    } catch (e) {
+      console.warn("[collection.progress] init failed:", e?.message || e);
+    }
+  }
+
+  async function startRerun() {
     if (!selectedRun) {
       showToast("실행할 작업(행)을 먼저 선택해주세요.");
       return;
     }
 
-    // 이미 실행중이면 안내
     if (rerunRunning) {
       showToast(
         "현재 실행이 진행 중입니다.<br>완료까지 재실행은 제한되며,<br>조회 기능은 정상적으로 이용 가능합니다."
@@ -457,48 +448,33 @@ Trace:
       return;
     }
 
-    // ✅ 선택한 1건만 재실행 진행률 표시
-    rerunRunning = true;
-    rerunActiveRunId = selectedRun.run_id;
-    rerunPct = 0;
-    updateRunRatePill();
-
-    // 5초마다 진행률 업데이트(샘플)
-    rerunTimer = setInterval(() => {
-      // 8~20%씩 증가
-      rerunPct += randInt(8, 20);
-
-      if (rerunPct >= 100) {
-        rerunPct = 100;
-        updateRunRatePill();
-
-        stopRerun();
-        showToast("재실행이 완료되었습니다.");
-        return;
-      }
-
+    try {
+      rerunRunning = true;
+      rerunPct = 0;
+      rerunActiveRunId = selectedRun.run_id;
       updateRunRatePill();
-    }, 5000);
+
+      const payload = await apiJson(API.rerun(selectedRun.run_id), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      rerunJobId = payload?.job_id ?? payload?.id ?? payload?.jobId ?? null;
+
+      // 즉시 1회 반영 + 5초 폴링 시작
+      await pollProgressOnce();
+      stopRerunPolling();
+      rerunTimer = setInterval(pollProgressOnce, 5000);
+    } catch (e) {
+      stopRerun();
+      showToast(`실행 시작 실패: ${escapeHtml(e?.message || e)}`);
+    }
   }
 
   // =========================================================
-  // render / data
+  // render / data (API 기반)
   // =========================================================
-  function filterByDate(startIso, endIso) {
-    const s = toDateNum(startIso);
-    const e = toDateNum(endIso);
-
-    const out = ALL_RUNS.filter((r) => {
-      // start_at "YYYY-MM-DD HH:mm:ss" -> date part
-      const datePart = r.start_at?.slice(0, 10) || "";
-      const dn = toDateNum(datePart);
-      return dn >= s && dn <= e;
-    });
-
-    // 혹시 모르니 2xx 제외
-    return out.filter((r) => !(r.state_code >= 200 && r.state_code < 300));
-  }
-
   function appendRows(rows) {
     if (!tbody) return;
 
@@ -520,12 +496,21 @@ Trace:
         <td title="${escapeAttr(r.message)}">${escapeHtml(r.message)}</td>
       `;
 
-      tr.addEventListener("click", () => {
-        // selected row UI
+      tr.addEventListener("click", async () => {
         tbody?.querySelectorAll("tr").forEach((x) => x.classList.remove("is-selected"));
         tr.classList.add("is-selected");
 
-        openDetail(r);
+        const base = { ...r, detail: "" };
+        if (detailMessage) detailMessage.textContent = "불러오는 중...";
+        openDetail(base);
+
+        try {
+          const full = await fetchRunDetail(r.run_id);
+          if (full) openDetail(full);
+        } catch (e) {
+          if (detailMessage) detailMessage.textContent = r.message || "";
+          showToast(`상세 조회 실패: ${escapeHtml(e?.message || e)}`);
+        }
       });
 
       frag.appendChild(tr);
@@ -535,96 +520,101 @@ Trace:
   }
 
   function resetList() {
-    page = 0;
     loading = false;
     done = false;
+    nextCursor = null;
     if (tbody) tbody.innerHTML = "";
     showEmpty(false);
     setLoader("hide");
-
-    // ✅ 조회 새로 하면 선택 초기화
     selectedRun = null;
   }
 
-  function loadNextPage() {
+  async function loadNextPage() {
     if (loading || done) return;
-    loading = true;
+    if (!queryStartIso || !queryEndIso) return;
 
+    loading = true;
     setLoader("loading");
 
-    // 네트워크처럼 보이게 약간 딜레이
-    setTimeout(() => {
-      const start = page * PAGE_SIZE;
-      const end = start + PAGE_SIZE;
-      const slice = filtered.slice(start, end);
+    try {
+      const { items, nextCursor: nc } = await fetchRunsPage({
+        startIso: queryStartIso,
+        endIso: queryEndIso,
+        cursor: nextCursor,
+        limit: PAGE_SIZE,
+      });
 
-      if (slice.length === 0) {
-        done = true;
-        loading = false;
-        setLoader("done");
-        if (filtered.length === 0) {
+      if (items.length === 0) {
+        if (!tbody || tbody.children.length === 0) {
           setLoader("hide");
           showEmpty(true);
+        } else {
+          done = true;
+          setLoader("done");
         }
+        loading = false;
         return;
       }
 
-      appendRows(slice);
-      page += 1;
+      appendRows(items);
 
-      // 끝이면 "모든 오류 건" 표시
-      if (page * PAGE_SIZE >= filtered.length) {
+      nextCursor = nc;
+
+      if (!nextCursor) {
         done = true;
         setLoader("done");
       } else {
         setLoader("hide");
       }
-
+    } catch (e) {
+      setLoader("hide");
+      showToast(`조회 실패: ${escapeHtml(e?.message || e)}`);
+      if (!tbody || tbody.children.length === 0) showEmpty(true);
+    } finally {
       loading = false;
-    }, randInt(250, 650));
+    }
   }
 
-  function doSearch() {
+  async function doSearch() {
     const today = isoToday();
 
-    // 값이 비어 있으면 오늘 날짜로
     let startIso = startInput && startInput.value ? startInput.value : today;
     let endIso = endInput && endInput.value ? endInput.value : today;
 
-    // input에도 반영
     if (startInput) startInput.value = startIso;
     if (endInput) endInput.value = endIso;
 
-    // 시작일 > 종료일이면 스왑
     if (toDateNum(startIso) > toDateNum(endIso)) {
       [startIso, endIso] = [endIso, startIso];
       if (startInput) startInput.value = startIso;
       if (endInput) endInput.value = endIso;
     }
 
+    console.log("🔎 doSearch()", { startIso, endIso });
+
+    queryStartIso = startIso;
+    queryEndIso = endIso;
+
     resetList();
-
-    filtered = filterByDate(startIso, endIso);
-    filtered.sort((a, b) => b.run_id - a.run_id);
-
-    if (filtered.length === 0) {
-      showEmpty(true);
-      return;
-    }
-
-    loadNextPage();
+    await loadNextPage();
   }
 
   // =========================================================
   // events
   // =========================================================
   function bindEvents() {
-    btnSearch?.addEventListener("click", doSearch);
+    // ✅ 조회 버튼: 무조건 로그 + doSearch 실행되게
+    btnSearch?.addEventListener("click", (e) => {
+      e.preventDefault();
+      console.log("🖱️ btnSearch CLICK", startInput?.value, endInput?.value);
+      doSearch();
+    });
 
     // 무한 스크롤
     tableBodyWrap?.addEventListener("scroll", () => {
       if (loading || done) return;
-      const nearBottom = tableBodyWrap.scrollTop + tableBodyWrap.clientHeight >= tableBodyWrap.scrollHeight - 120;
+      const nearBottom =
+        tableBodyWrap.scrollTop + tableBodyWrap.clientHeight >= tableBodyWrap.scrollHeight - 120;
       if (nearBottom) loadNextPage();
     });
 
@@ -646,11 +636,10 @@ Trace:
     // 토스트 닫기
     btnToastClose?.addEventListener("click", hideToast);
 
-    // ✅ i 버튼 클릭 -> 안내 토스트(실행중일 때만)
+    // i 버튼 클릭 -> 안내 토스트(실행중일 때만)
     runRateInfo?.addEventListener("click", (e) => {
       e.preventDefault();
-      e.stopPropagation(); // ✅ pill 클릭으로 이벤트 번짐 방지
-
+      e.stopPropagation();
       if (!rerunRunning) return;
 
       showToast(
@@ -659,13 +648,16 @@ Trace:
     });
 
     // 실행 버튼 -> 확인 모달(실행중이면 토스트)
-    btnRun?.addEventListener("click", () => {
+    btnRun?.addEventListener("click", async () => {
+      await syncProgressFromServer();
+
       if (rerunRunning) {
         showToast(
           "현재 실행이 진행 중입니다.<br>완료까지 재실행은 제한되며,<br>조회 기능은 정상적으로 이용 가능합니다."
         );
         return;
       }
+
       openConfirm();
     });
 
@@ -677,9 +669,9 @@ Trace:
 
     // 확인/취소
     btnConfirmCancel?.addEventListener("click", closeConfirm);
-    btnConfirmOk?.addEventListener("click", () => {
+    btnConfirmOk?.addEventListener("click", async () => {
       closeConfirm();
-      startRerun();
+      await startRerun();
     });
   }
 
@@ -687,29 +679,19 @@ Trace:
   // init
   // =========================================================
   async function init() {
-    await renderAuth();
-
-    // ✅ (핵심) rerun 페이지라면 컬럼 고정/비활성 스타일 초기화
-    initRerunFixedColumns();
-
-    // 기본 날짜: 오늘로
     const today = isoToday();
     if (startInput) startInput.value = today;
     if (endInput) endInput.value = today;
 
     bindEvents();
-
-    // 초기엔 아무것도 안 띄우고, 조회 버튼 누르면 리스트 생성
     updateRunRatePill();
-  }
 
-  // DOM이 늦게 구성되거나 header가 나중에 주입되는 케이스까지 커버
-  document.addEventListener("DOMContentLoaded", () => {
-    initRerunFixedColumns();
-  });
-  document.addEventListener("header:loaded", () => {
-    initRerunFixedColumns();
-  });
+    // 서버 progress 상태 동기화(실행중이면 pill 띄우고 폴링)
+    await syncProgressFromServer();
+
+    // ✅ 페이지 처음 열리면 1회 자동 조회 (원하면 삭제 가능)
+    await doSearch();
+  }
 
   init();
 })();

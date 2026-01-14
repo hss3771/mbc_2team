@@ -4,22 +4,17 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from transformers import ElectraTokenizerFast, ElectraForSequenceClassification
 from tqdm import tqdm
-from elasticsearch import Elasticsearch
 
 # =====================
 # CONFIG
 # =====================
-ES_HOST = "http://192.168.0.34:9200"
 NEWS_INDEX = "news_info"
 CLEAN_INDEX = "clean_text"
 
-TARGET_DATE = "2026-01-05T09:01:10+09:00"
-
 MODEL_DIR = "apps/analyzer/model/trust_electra20251209"
-MAX_LEN = 256
+MAX_LEN = 512
 BATCH_SIZE = 32
-MODEL_VERSION = "trust_electra20251212"
-
+MODEL_VERSION = "trust_electra20251209"
 
 # =====================
 # Dataset
@@ -48,7 +43,7 @@ class InferenceDataset(Dataset):
             "attention_mask": encoding["attention_mask"].squeeze(0),
         }
 
-def fetch_news_by_date_range(es):
+def fetch_news_by_date_range(es, start_at, end_at):
     query = {
         "query": {
             "bool": {
@@ -56,8 +51,8 @@ def fetch_news_by_date_range(es):
                     {
                         "range": {
                             "published_at": {
-                                "gte": "2026-01-04T00:00:00+09:00",
-                                "lt": "2026-01-07T00:00:00+09:00"
+                                "gte": start_at,
+                                "lt": end_at
                             }
                         }
                     }
@@ -97,14 +92,11 @@ def fetch_news_by_date_range(es):
 # =====================
 # Main
 # =====================
-def main():
-    # ES client
-    es = Elasticsearch(ES_HOST)
-
+def trust_analyze(es, start_at, end_at):
     # ---------------------
     # 1. news_info 날짜 검색
     # ---------------------
-    news_docs = fetch_news_by_date_range(es)
+    news_docs = fetch_news_by_date_range(es, start_at, end_at)
 
     if not news_docs:
         print("[INFO] 해당 기간 뉴스 없음")
@@ -189,7 +181,3 @@ def main():
         )
 
     print(f"[DONE] trust 업데이트 완료 ({len(valid_article_ids)}건)")
-
-
-if __name__ == "__main__":
-    main()

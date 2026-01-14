@@ -12,12 +12,11 @@ import re
 # 기본 설정
 # =====================================================
 
-ES_HOST = "http://192.168.0.34:9200"
 # doc_id = f"{DATE}_{keyword}"
 SOURCE_INDEX = "news_info"
 TARGET_INDEX = "issue_keyword_count"
 
-DATE = "2026-01-06"
+DATE = "2026-01-10"
 
 START_AT = f"{DATE}T00:00:00+09:00"
 END_AT   = f'{(datetime.fromisoformat(DATE) + timedelta(days=1)).strftime("%Y-%m-%dT00:00:00")}+09:00'
@@ -92,26 +91,19 @@ def is_valid_token(token: str) -> bool:
 
     return True
 
-# =====================================================
-# ES Client
-# =====================================================
-
-def get_es() -> Elasticsearch:
-    return Elasticsearch(ES_HOST)
-
 
 # =====================================================
 # 1️⃣ 상위 키워드별 count 집계
 # =====================================================
 
-def compute_issue_ranking(es: Elasticsearch) -> Dict[str, int]:
+def compute_issue_ranking(es: Elasticsearch, statr_at, end_at) -> Dict[str, int]:
     query = {
         "size": 0,
         "query": {
             "range": {
                 "published_at": {
-                    "gte": START_AT,
-                    "lt": END_AT,
+                    "gte": statr_at,
+                    "lt": end_at,
                 }
             }
         },
@@ -135,7 +127,7 @@ def compute_issue_ranking(es: Elasticsearch) -> Dict[str, int]:
 # 2️⃣ 특정 이슈 키워드의 원문 수집
 # =====================================================
 
-def fetch_texts_by_issue(es, issue_keyword: str) -> list[str]:
+def fetch_texts_by_issue(es, issue_keyword: str, start_at, end_at) -> list[str]:
     texts = []
     search_after = None
 
@@ -149,8 +141,8 @@ def fetch_texts_by_issue(es, issue_keyword: str) -> list[str]:
                         {
                             "range": {
                                 "published_at": {
-                                    "gte": START_AT,
-                                    "lt": END_AT,
+                                    "gte": start_at,
+                                    "lt": end_at,
                                 }
                             }
                         },
@@ -224,7 +216,6 @@ def compute_sub_keywords(
 # =====================================================
 # 4️⃣ issue_keyword_count upsert
 # =====================================================
-
 def upsert_issue_keyword(
     es: Elasticsearch,
     keyword: str,
@@ -252,13 +243,11 @@ def upsert_issue_keyword(
 # 5️⃣ 전체 파이프라인
 # =====================================================
 
-def run_pipeline() -> None:
-    es = get_es()
-
+def run_pipeline(es, start_at, end_at) -> None:
     try:
-        ranking = compute_issue_ranking(es)
+        ranking = compute_issue_ranking(es, start_at, end_at)
         for issue_keyword, count in ranking.items():
-            texts = fetch_texts_by_issue(es, issue_keyword)
+            texts = fetch_texts_by_issue(es, issue_keyword=issue_keyword, start_at=start_at, end_at=end_at)
             sub_keywords = extract_sub_keywords(texts)
             print(f'issu_keyword = {issue_keyword}')
             print(f'count = {count}')
@@ -277,12 +266,3 @@ def run_pipeline() -> None:
         print(e)
     finally:
         es.close()
-
-
-# =====================================================
-# Entry Point
-# =====================================================
-
-if __name__ == "__main__":
-    print("1_2_build_trend_ranking시작")
-    run_pipeline()

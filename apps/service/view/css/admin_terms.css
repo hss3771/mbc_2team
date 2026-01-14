@@ -462,23 +462,42 @@ main.word-main {
   color: #6a7a93;
 }
 
-/* 모달 */
-.modal-backdrop {
+/* =========================================================
+   ✅ 모달 (정중앙 FIX: 다른 공용 CSS의 .modal 충돌 방지)
+   - 핵심: #wordModal 범위로 스코프 + .modal의 position/top/left/transform 강제 초기화
+========================================================= */
+
+/* 모달 백드롭 */
+#wordModal.modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(15, 40, 90, 0.35);
   display: none;
-  align-items: center;
-  justify-content: center;
   z-index: 2000;
   padding: 20px;
 }
 
-.modal-backdrop.is-open {
+/* 열렸을 때: 무조건 화면 정중앙 */
+#wordModal.modal-backdrop.is-open,
+#wordModal.modal-backdrop[aria-hidden="false"],
+.modal-backdrop.is-open,
+.modal-backdrop[aria-hidden="false"] {
+  display: grid !important;
+  place-items: center !important;
   backdrop-filter: blur(3px);
 }
 
-.modal {
+/* ✅ 공용 CSS가 .modal을 top/left로 잡아도 무시시키기 */
+#wordModal .modal {
+  position: relative !important;    /* absolute/fixed 강제 해제 */
+  inset: auto !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;       /* translate(-50%, -50%) 같은 것도 제거 */
+  margin: 0 !important;
+
   width: min(680px, 96vw);
   max-height: min(640px, 86vh);
   background: #fff;
@@ -490,7 +509,7 @@ main.word-main {
   overflow: hidden;
 }
 
-.modal-head {
+#wordModal .modal-head {
   padding: 14px 14px;
   border-bottom: 1px solid #eef2fb;
   display: flex;
@@ -500,13 +519,13 @@ main.word-main {
   background: #f5f8ff;
 }
 
-.modal-title {
+#wordModal .modal-title {
   font-size: 14px;
   font-weight: 900;
   color: #1d2b42;
 }
 
-.modal-close {
+#wordModal .modal-close {
   border: none;
   background: #fff;
   border: 1px solid #dfe8f7;
@@ -518,19 +537,19 @@ main.word-main {
   color: #6a7a93;
 }
 
-.modal-close:hover {
+#wordModal .modal-close:hover {
   background: #e8f1ff;
   border-color: #a6c8ef;
   color: #0462D2;
 }
 
-.modal-body {
+#wordModal .modal-body {
   padding: 12px 14px;
   min-height: 0;
   overflow: auto;
 }
 
-.modal-foot {
+#wordModal .modal-foot {
   padding: 12px 14px 14px;
   border-top: 1px solid #eef2fb;
   display: flex;
@@ -540,23 +559,25 @@ main.word-main {
 }
 
 /* 삭제 확인 전용 모달 스타일 */
-.modal.is-confirm {
-  width: min(520px, 92vw);
-  max-height: none;
-  border-radius: 18px;
+#wordModal .modal.is-confirm {
+  width: 520px;
+  max-width: calc(100vw - 40px);
+  height: auto;
+  max-height: 320px;
+  border-radius: 16px;
 }
 
-.modal.is-confirm .modal-head {
-  display: none; /* 이미지처럼 헤더 제거 */
+#wordModal .modal.is-confirm .modal-head {
+  display: none;
 }
 
-.modal.is-confirm .modal-body {
-  padding: 34px 28px 18px;
+#wordModal .modal.is-confirm .modal-body {
+  padding: 28px 28px 16px;
   text-align: center;
 }
 
-.modal.is-confirm .modal-foot {
-  padding: 0 28px 26px;
+#wordModal .modal.is-confirm .modal-foot {
+  padding: 0 28px 24px;
   justify-content: center;
   gap: 14px;
   border-top: none;
@@ -590,13 +611,12 @@ main.word-main {
   font-size: 13px;
 }
 
+/* 즐겨찾기(사용중이면 유지) */
 .bookmark-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-
-
 
 .bookmark-item {
   border: 1px solid #e8eef8;
@@ -662,4 +682,118 @@ main.word-main {
     min-width: 0;
     max-height: 320px;
   }
+}
+
+/* =========================================
+   인라인 편집/추가 에디터 스타일 (FIX)
+========================================= */
+
+.word-detail-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.word-inline-editor.wm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wm-label {
+  font-size: 12px;
+  font-weight: 900;
+  color: #6a7a93;
+  margin-top: 6px;
+}
+
+.wm-input,
+.wm-textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #dfe8f7;
+  background: #fff;
+  padding: 10px 12px;
+  font-weight: 800;
+  font-size: 13px;
+  color: #1d2b42;
+  outline: none;
+}
+
+.wm-textarea {
+  resize: vertical;
+  min-height: 240px;
+  line-height: 1.6;
+}
+
+.wm-input:focus,
+.wm-textarea:focus {
+  box-shadow: 0 0 0 3px rgba(4, 98, 210, 0.15);
+  border-color: #a6c8ef;
+}
+
+.word-tail {
+  font-size: 13px;
+  font-weight: 900;
+  color: #0462D2;
+}
+
+/* =========================================
+   ✅ 편집/추가 모드: 상세만 크게 보여주기
+========================================= */
+
+.word-panel.is-editing .word-toolbar,
+.word-panel.is-editing .word-indexbar,
+.word-panel.is-editing .word-list-card {
+  display: none !important;
+}
+
+.word-panel.is-editing .word-body {
+  padding: 0;
+  gap: 0;
+}
+
+.word-panel.is-editing .word-detail-card {
+  margin: 12px 14px 14px;
+}
+
+.word-panel.is-editing .word-detail-head {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.word-panel.is-editing .word-detail-title {
+  min-width: 0;
+}
+
+.word-panel.is-editing .word-detail-meta {
+  display: none;
+}
+
+.word-panel.is-editing #detailActions {
+  margin-left: auto;
+}
+
+.word-panel.is-editing .word-detail-content {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+}
+
+.word-panel.is-editing .word-inline-editor {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.word-panel.is-editing #editContent {
+  flex: 1;
+  min-height: 260px;
+  resize: none;
+  overflow: auto;
 }
