@@ -8,7 +8,6 @@ from starlette.requests import Request
 
 
 from apps.common.logger import Logger
-import apps.service.image_module.dashboard as dashboard
 
 
 logger = Logger().get_logger(__name__)
@@ -23,7 +22,9 @@ from apps.service.image_module.dashboard import router as image_router
 from apps.service.keyword_ranking_module.keyword_ranking_router import router as ranking_router
 from apps.service.article_module.article import router as article_router
 from apps.service.word_module.word_dict import router as word_dict_router
+from apps.service.image_module.press_logo import router as logo_router
 
+app.include_router(logo_router)
 app.include_router(bookmarks_router)
 app.include_router(user_router)
 app.include_router(image_router)

@@ -14,8 +14,8 @@ const ts3Canvas = document.getElementById('ts3LineCanvas');
 const ts3KlistEl = ts3Root?.querySelector(".ts3-klist") ?? null;
 const ts3WordTag = ts3Root?.querySelector('#ts3WordTag') ?? null;
 const ts3DonutTag = ts3Root?.querySelector('#ts3DonutTag') ?? null;
-const ts3DonutEl  = ts3Root?.querySelector('#ts3Donut') ?? null;
-const ts3CloudEl  = ts3Root?.querySelector('#ts3WordCloud') ?? null;
+const ts3DonutEl = ts3Root?.querySelector('#ts3Donut') ?? null;
+const ts3CloudEl = ts3Root?.querySelector('#ts3WordCloud') ?? null;
 const ts3Placeholder = ts3Root?.querySelector('.ts3-placeholder') ?? null;
 const btns = ts3Root ? Array.from(ts3Root.querySelectorAll('.ts3-kbtn')) : [];
 // #endregion
@@ -591,11 +591,11 @@ document.addEventListener("app:rangechange", () => {
 // main2 (TS2)
 // =====================================================
 (function TS2() {
-    function hidePopularSortOptions() {
-        document.querySelectorAll('.ts2-sort .cselect__opt[data-value="popular"]').forEach((opt) => {
-            opt.remove(); // ✅ 아예 제거
-        });
-    }
+  function hidePopularSortOptions() {
+    document.querySelectorAll('.ts2-sort .cselect__opt[data-value="popular"]').forEach((opt) => {
+      opt.remove(); // ✅ 아예 제거
+    });
+  }
   "use strict";
 
   // =========================
@@ -609,23 +609,28 @@ document.addEventListener("app:rangechange", () => {
   // =========================
   // util
   // =========================
-  const PRESS_LOGO_MAP = {
-    "연합뉴스": "/view/img/연합뉴스_로고.png",
-    "한국경제": "/view/img/한국경제_로고.png",
-    "매일경제": "/view/img/매일경제_로고.png",
-    "서울경제": "/view/img/서울경제_로고.png",
-    "이데일리": "/view/img/이데일리_로고.png",
-    "아시아경제": "/view/img/아시아경제_로고.png",
-    "조선일보": "/view/img/조선일보_로고.png",
-    "중앙일보": "/view/img/중앙일보_로고.png",
-    "동아일보": "/view/img/동아일보_로고.png",
-    "한겨레신문": "/view/img/한겨레신문_로고.png",
-    "경향신문": "/view/img/경향신문_로고.png",
-    "뉴스1": "/view/img/뉴스1_로고.png",
-    "뉴시스": "/view/img/뉴시스_로고.png",
-    "헤럴드경제": "/view/img/헤럴드경제_로고.png",
-    "KBS": "/view/img/KBS_로고.png",
-  };
+  let PRESS_LOGO_MAP;
+    async function PRESS_LOGO(){
+      try {
+        const r = await fetch("/api/PRESS_LOGO", {
+          credentials: "same-origin"
+        });
+
+        if (!r.ok) {
+          throw new Error(`PRESS_LOGO fetch failed: ${r.status}`);
+        }
+
+        PRESS_LOGO_MAP = await r.json();
+        console.log("[TS2] PRESS_LOGO_MAP loaded");
+
+      } catch (err) {
+        console.error("[TS2] load failed", err);
+        PRESS_LOGO_MAP = {}; // fallback
+      }
+      console.log("PRESS_LOGO_MAP")
+      console.log(PRESS_LOGO_MAP)
+  }
+  PRESS_LOGO()
 
   // ✅ TS2 컬럼(pos/neu/neg) -> ES sentiment.label 후보들
   const SENTIMENT_CANDIDATES = {
@@ -637,23 +642,23 @@ document.addEventListener("app:rangechange", () => {
   // ✅ UI 정렬 -> py가 허용하는 orderby(latest|score)로만 매핑
   function mapOrderby(uiMode) {
     switch (uiMode) {
-        case "recent":     return "latest";
-        case "old":        return "old";
-        case "trust_high": return "trust_high";
-        case "trust_low":  return "trust_low";
-        // popular은 UI에서 제거했지만 혹시 남아있으면 폴백
-        case "popular":    return "latest";
-        default:           return "latest";
+      case "recent": return "latest";
+      case "old": return "old";
+      case "trust_high": return "trust_high";
+      case "trust_low": return "trust_low";
+      // popular은 UI에서 제거했지만 혹시 남아있으면 폴백
+      case "popular": return "latest";
+      default: return "latest";
     }
-}
+  }
 
-function shouldShowTrustBadge(sent) {
-  const mode = state.sortMode?.[sent] || "recent";
-  // ✅ 최신순/오래된순에서는 신뢰도 숨김
-  return mode === "trust_high" || mode === "trust_low";
-}
+  function shouldShowTrustBadge(sent) {
+    const mode = state.sortMode?.[sent] || "recent";
+    // ✅ 최신순/오래된순에서는 신뢰도 숨김
+    return mode === "trust_high" || mode === "trust_low";
+  }
 
-function escapeHtml(s) {
+  function escapeHtml(s) {
     return String(s ?? "")
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
@@ -678,23 +683,23 @@ function escapeHtml(s) {
   }
 
   function getTrustInfo(a) {
-  const sRaw = a?.trustScore ?? a?.score ?? null;
-  if (sRaw == null) return { text: "", cls: "", title: "" };
+    const sRaw = a?.trustScore ?? a?.score ?? null;
+    if (sRaw == null) return { text: "", cls: "", title: "" };
 
-  let s = Number(sRaw);
-  if (!Number.isFinite(s)) return { text: "", cls: "", title: "" };
+    let s = Number(sRaw);
+    if (!Number.isFinite(s)) return { text: "", cls: "", title: "" };
 
-  // 0~1 또는 0~100 들어와도 대응
-  if (s > 1 && s <= 100) s = s / 100;
+    // 0~1 또는 0~100 들어와도 대응
+    if (s > 1 && s <= 100) s = s / 100;
 
-  // ✅ 뱃지 텍스트는 score 자체
-  const text = s.toFixed(2); // 예: 0.83
+    // ✅ 뱃지 텍스트는 score 자체
+    const text = s.toFixed(2); // 예: 0.83
 
-  // (선택) 색은 점수로만 구분
-  const cls = s >= 0.7 ? "is-ok" : s >= 0.4 ? "is-warn" : "is-risk";
+    // (선택) 색은 점수로만 구분
+    const cls = s >= 0.7 ? "is-ok" : s >= 0.4 ? "is-warn" : "is-risk";
 
-  return { text, cls, title: `trust.score: ${s.toFixed(4)}` };
-}
+    return { text, cls, title: `trust.score: ${s.toFixed(4)}` };
+  }
 
   function makeBadgeSvg(text) {
     const t = String(text || "NEWS").trim().slice(0, 2);
@@ -774,7 +779,7 @@ function escapeHtml(s) {
   function getRangeForTS2() {
     const r = window.getAppRange?.() || {};
     return { start: r.start, end: r.end };
-  } 
+  }
 
 
   // =========================
@@ -807,7 +812,7 @@ function escapeHtml(s) {
     sentimentEndpointMissing: false,
   };
 
-   // =========================
+  // =========================
   // TS2 정렬 드롭다운 바인딩
   // =========================
   function initTS2SortDropdowns() {
@@ -898,7 +903,7 @@ function escapeHtml(s) {
             state.sentimentEndpoint = pick;
             return pick;
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // 2) 흔한 후보 probe
@@ -919,7 +924,7 @@ function escapeHtml(s) {
             state.sentimentEndpoint = p;
             return p;
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       state.sentimentEndpointMissing = true;
@@ -961,66 +966,66 @@ function escapeHtml(s) {
 
   // 기사 필드 normalize
   function normalizeArticle(a) {
-  const raw = a || {};
-  const src = raw._source || raw.source || raw.doc || raw.data || raw;
+    const raw = a || {};
+    const src = raw._source || raw.source || raw.doc || raw.data || raw;
 
-  const title = src?.title ?? src?.headline ?? src?.news_title ?? "";
+    const title = src?.title ?? src?.headline ?? src?.news_title ?? "";
 
-  // 요약: summary.summary_text 우선
-  const summary =
-    src?.summary?.summary_text ??
-    src?.summary_text ??
-    src?.summary ??
-    src?.snippet ??
-    src?.description ??
-    src?.news_summary ??
-    "";
+    // 요약: summary.summary_text 우선
+    const summary =
+      src?.summary?.summary_text ??
+      src?.summary_text ??
+      src?.summary ??
+      src?.snippet ??
+      src?.description ??
+      src?.news_summary ??
+      "";
 
-  // 본문: body
-  const body =
-    src?.body ??
-    src?.content ??
-    src?.news_content ??
-    "";
+    // 본문: body
+    const body =
+      src?.body ??
+      src?.content ??
+      src?.news_content ??
+      "";
 
-  // 언론사: press_name
-  const press =
-    src?.press_name ??
-    src?.press ??
-    src?.publisher ??
-    src?.media ??
-    src?.source ??
-    "";
+    // 언론사: press_name
+    const press =
+      src?.press_name ??
+      src?.press ??
+      src?.publisher ??
+      src?.media ??
+      src?.source ??
+      "";
 
-  // URL
-  const url = src?.url ?? src?.link ?? src?.news_url ?? "";
+    // URL
+    const url = src?.url ?? src?.link ?? src?.news_url ?? "";
 
-  // 날짜: published_at
-  const date = src?.published_at ?? src?.date ?? src?.publishedAt ?? src?.pubDate ?? src?.datetime ?? "";
+    // 날짜: published_at
+    const date = src?.published_at ?? src?.date ?? src?.publishedAt ?? src?.pubDate ?? src?.datetime ?? "";
 
-  // trust.score
-  const trustScoreRaw =
-    src?.trust?.score ??
-    src?.trust_score ??
-    src?.trustScore ??
-    raw?.trust?.score ??
-    raw?.trust_score ??
-    raw?.trustScore ??
-    null;
+    // trust.score
+    const trustScoreRaw =
+      src?.trust?.score ??
+      src?.trust_score ??
+      src?.trustScore ??
+      raw?.trust?.score ??
+      raw?.trust_score ??
+      raw?.trustScore ??
+      null;
 
-  let trustScore = trustScoreRaw == null ? null : Number(trustScoreRaw);
-  if (!Number.isFinite(trustScore)) trustScore = null;
+    let trustScore = trustScoreRaw == null ? null : Number(trustScoreRaw);
+    if (!Number.isFinite(trustScore)) trustScore = null;
 
-  const trustLabelRaw =
-    src?.trust?.label ??
-    src?.trust_label ??
-    src?.trustLabel ??
-    null;
+    const trustLabelRaw =
+      src?.trust?.label ??
+      src?.trust_label ??
+      src?.trustLabel ??
+      null;
 
-  const trustLabel = trustLabelRaw == null ? null : (String(trustLabelRaw).trim() || null);
+    const trustLabel = trustLabelRaw == null ? null : (String(trustLabelRaw).trim() || null);
 
-  return { title, summary, body, press, url, date, trustScore, trustLabel, raw };
-}
+    return { title, summary, body, press, url, date, trustScore, trustLabel, raw };
+  }
 
 
   function setListMessage(listEl, msg) {
@@ -1029,69 +1034,69 @@ function escapeHtml(s) {
   }
 
   // ✅ 카드 클릭 모달: 이벤트 위임(한 번만 바인딩)
-function bindTS2CardOpen(listEl) {
-  if (!listEl) return;
-  if (listEl.dataset.boundCardOpen) return;
-  listEl.dataset.boundCardOpen = "1";
+  function bindTS2CardOpen(listEl) {
+    if (!listEl) return;
+    if (listEl.dataset.boundCardOpen) return;
+    listEl.dataset.boundCardOpen = "1";
 
-  function openFromCard(card) {
-    if (!card) return;
-    openTS2Modal({
+    function openFromCard(card) {
+      if (!card) return;
+      openTS2Modal({
         press: card.dataset.ts2Press || "",
         date: card.dataset.ts2Date || "",
         title: card.dataset.ts2Title || "",
         summary: card.dataset.ts2Body || card.dataset.ts2Summary || "", // ✅
         url: card.dataset.ts2Url || "",
+      });
+    }
+
+    listEl.addEventListener("click", (e) => {
+      // ✅ 요약 버튼 클릭이면 모달 금지
+      if (e.target.closest(".js-ts2-toggle")) return;
+
+      const card = e.target.closest(".js-ts2-card");
+      if (!card || !listEl.contains(card)) return;
+
+      e.preventDefault();
+      openFromCard(card);
+    });
+
+    listEl.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+
+      const card = e.target.closest(".js-ts2-card");
+      if (!card || !listEl.contains(card)) return;
+
+      e.preventDefault();
+      openFromCard(card);
     });
   }
 
-  listEl.addEventListener("click", (e) => {
-    // ✅ 요약 버튼 클릭이면 모달 금지
-    if (e.target.closest(".js-ts2-toggle")) return;
+  function renderCards(sent, cards, page, totalPages) {
+    const listEl = els[sent];
+    if (!listEl) return;
 
-    const card = e.target.closest(".js-ts2-card");
-    if (!card || !listEl.contains(card)) return;
+    if (!cards.length) {
+      setListMessage(listEl, "기사 데이터 없음");
+    } else {
+      listEl.innerHTML = cards
+        .map((a) => {
+          const press = String(a.press || "").trim();
+          const title = String(a.title || "").trim();
+          const summary = String(a.summary || "").trim();
+          const body = String(a.body || "").trim();
+          const url = String(a.url || "").trim();
+          const dateOnly = formatDateOnly(a.date);
 
-    e.preventDefault();
-    openFromCard(card);
-  });
+          const showTrust = shouldShowTrustBadge(sent);
+          const trust = getTrustInfo(a);
+          const trustChipHtml =
+            (showTrust && trust.text)
+              ? `<span class="ts2-chip ts2-chip--trust ${trust.cls}" title="${escapeHtml(trust.title)}">${escapeHtml(trust.text)}</span>`
+              : "";
 
-  listEl.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter" && e.key !== " ") return;
-
-    const card = e.target.closest(".js-ts2-card");
-    if (!card || !listEl.contains(card)) return;
-
-    e.preventDefault();
-    openFromCard(card);
-  });
-}
-
-function renderCards(sent, cards, page, totalPages) {
-  const listEl = els[sent];
-  if (!listEl) return;
-
-  if (!cards.length) {
-    setListMessage(listEl, "기사 데이터 없음");
-  } else {
-    listEl.innerHTML = cards
-      .map((a) => {
-        const press = String(a.press || "").trim();
-        const title = String(a.title || "").trim();
-        const summary = String(a.summary || "").trim();
-        const body = String(a.body || "").trim();
-        const url = String(a.url || "").trim();
-        const dateOnly = formatDateOnly(a.date);
-
-        const showTrust = shouldShowTrustBadge(sent);
-        const trust = getTrustInfo(a);
-        const trustChipHtml =
-          (showTrust && trust.text)
-            ? `<span class="ts2-chip ts2-chip--trust ${trust.cls}" title="${escapeHtml(trust.title)}">${escapeHtml(trust.text)}</span>`
-            : "";
-
-        // ✅ 제목 링크 제거(원문 이동 제거)
-        return `
+          // ✅ 제목 링크 제거(원문 이동 제거)
+          return `
 <article class="ts2-card js-ts2-card"
   role="button"
   tabindex="0"
@@ -1119,72 +1124,70 @@ function renderCards(sent, cards, page, totalPages) {
 
   ${summary ? `<p class="ts2-desc">${escapeHtml(summary)}</p>` : ""}
 </article>`;
-      })
-      .join("");
+        })
+        .join("");
 
-    hydratePressLogos(listEl);
+      hydratePressLogos(listEl);
 
-    // ✅ 카드 클릭 모달(한 번만)
-    bindTS2CardOpen(listEl);
+      // ✅ 카드 클릭 모달(한 번만)
+      bindTS2CardOpen(listEl);
 
-    // ✅ 요약 버튼만 토글 (모달 방지 stopPropagation)
-    listEl.querySelectorAll(".js-ts2-card").forEach((card) => {
-      const btn = card.querySelector(".js-ts2-toggle");
-      if (btn && !btn.dataset.bound) {
-        btn.dataset.bound = "1";
-        btn.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation(); // ⭐ 카드 클릭 모달 막기
-          card.classList.toggle("is-open");
-        });
-      }
-    });
+      // ✅ 요약 버튼만 토글 (모달 방지 stopPropagation)
+      listEl.querySelectorAll(".js-ts2-card").forEach((card) => {
+        const btn = card.querySelector(".js-ts2-toggle");
+        if (btn && !btn.dataset.bound) {
+          btn.dataset.bound = "1";
+          btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation(); // ⭐ 카드 클릭 모달 막기
+            card.classList.toggle("is-open");
+          });
+        }
+      });
+    }
 
-    applyFourCardScroll(listEl, 5);
+    // ✅ pager 갱신은 “딱 1번만”
+    const { text, btnPrev, btnNext } = getPager(sent);
+    if (text) text.textContent = `${page} / ${totalPages}`;
+    if (btnPrev) btnPrev.disabled = page <= 1;
+    if (btnNext) btnNext.disabled = page >= totalPages;
   }
-
-  // ✅ pager 갱신은 “딱 1번만”
-  const { text, btnPrev, btnNext } = getPager(sent);
-  if (text) text.textContent = `${page} / ${totalPages}`;
-  if (btnPrev) btnPrev.disabled = page <= 1;
-  if (btnNext) btnNext.disabled = page >= totalPages;
-}
   async function fetchSentiment(sent, page, size) {
-  // ✅ pos/neu/neg -> 서버 sentiment 값
-  const sentiment =
-    sent === "pos" ? "positive" :
-    sent === "neu" ? "neutral"  :
-    sent === "neg" ? "negative" :
-    "all";
+    // ✅ pos/neu/neg -> 서버 sentiment 값
+    const sentiment =
+      sent === "pos" ? "positive" :
+        sent === "neu" ? "neutral" :
+          sent === "neg" ? "negative" :
+            "all";
 
-  const { start, end } = getRangeForTS2();
-  if (!start || !end) throw new Error("range missing");
+    const { start, end } = getRangeForTS2();
+    if (!start || !end) throw new Error("range missing");
 
-  const orderby = mapOrderby(state.sortMode[sent] || "recent");
+    const orderby = mapOrderby(state.sortMode[sent] || "recent");
 
-  const qs = new URLSearchParams({
-    keyword: state.keyword,
-    start,
-    end,
-    sentiment,
-    page: String(page),
-    size: String(size),
-    orderby,
-  }).toString();
+    const qs = new URLSearchParams({
+      keyword: state.keyword,
+      start,
+      end,
+      sentiment,
+      page: String(page),
+      size: String(size),
+      orderby,
+    }).toString();
 
-  const url = `/articles/list?${qs}`;
+    const url = `/articles/list?${qs}`;
 
-  const r = await fetch(url, { credentials: "same-origin" });
-  const j = await r.json().catch(() => null);
+    const r = await fetch(url, { credentials: "same-origin" });
+    const j = await r.json().catch(() => null);
 
-  if (!r.ok || !j?.success) {
-    throw new Error(`[TS2] list failed ${r.status} ${url}`);
+    if (!r.ok || !j?.success) {
+      throw new Error(`[TS2] list failed ${r.status} ${url}`);
+    }
+
+    const { items, total } = normalizeList(j);
+    console.log("[TS2] fetched(list)", { sent, url, items: items.length, total });
+    return { items, total, url };
   }
-
-  const { items, total } = normalizeList(j);
-  console.log("[TS2] fetched(list)", { sent, url, items: items.length, total });
-  return { items, total, url };
-}
 
   async function loadOne(sent) {
     const listEl = els[sent];
@@ -1244,7 +1247,7 @@ function renderCards(sent, cards, page, totalPages) {
   hidePopularSortOptions();
   initTS2SortDropdowns();
   ts2ReloadAll();
-  
+
   function ts2ReloadAll() {
     return Promise.all(["pos", "neu", "neg"].map(loadOne));
   }
@@ -1277,8 +1280,16 @@ const ts3Api = (function TS3() {
   // 공통 util
   // -------------------------
   const LINE_PALETTE = [
-    "#0462D2", "#e53935", "#18a567", "#ff9800", "#7b61ff",
-    "#00acc1", "#795548", "#2a4f98", "#607d8b", "#d81b60",
+    "#6797ff",
+    "#36e7ac",
+    "#ffbc49",
+    "#ff6c6c",
+    "#a077ff",
+    "#51e5ff",
+    "#fff348",
+    "#ff80bf",
+    "#c6ff71",
+    "#8b8dff",
   ];
   const __kwColorMap = new Map();
 
@@ -1316,16 +1327,23 @@ const ts3Api = (function TS3() {
   // TS3: 워드클라우드
   // =========================================================
   const CLOUD_PALETTE = [
-    "#1e63ff", "#e53935", "#18a567", "#ff9800", "#7b61ff", 
-    "#00acc1", "#795548", "#2a4f98", "#607d8b", "#d81b60"];
+    "#3374ff",
+    "#13dd9a",
+    "#fdaf29",
+    "#ff5050",
+    "#824cff",
+    "#1fdcfd",
+    "#f3e300",
+    "#ff5dae",
+    "#afff37",
+    "#6a6cff",];
 
   function pickColor(word, i) {
     const h = hashStr(word) + i * 97;
     return CLOUD_PALETTE[h % CLOUD_PALETTE.length];
   }
   function pickRotateDeg(word) {
-    const r = (hashStr(word) % 5) - 2;
-    return r * 3;
+    return 0;
   }
 
   async function renderCloud(keyword) {
@@ -1395,10 +1413,41 @@ const ts3Api = (function TS3() {
         if (DEBUG_CLOUD) console.log("[TS3][cloud] items empty after normalize");
         return;
       }
+      // ✅ score가 있으면 score로, 없거나 분포가 같으면 rank로 크기 차등
+      const scoreVals = items
+        .map((x) => (typeof x.score === "number" ? x.score : null))
+        .filter((v) => v != null);
 
-      const scores = items.map((x) => (typeof x.score === "number" ? x.score : null)).filter((v) => v != null);
-      const minS = scores.length ? Math.min(...scores) : 0;
-      const maxS = scores.length ? Math.max(...scores) : 1;
+      const hasScore = scoreVals.length > 0;
+
+      let minS = 0, maxS = 1;
+      if (hasScore) {
+        minS = Math.min(...scoreVals);
+        maxS = Math.max(...scoreVals);
+      }
+
+      // ✅ 워드클라우드 컨테이너 안전장치
+      ts3CloudEl.style.overflow = "hidden";
+
+      const rect = ts3CloudEl.getBoundingClientRect();
+      const W = rect.width || 467;
+      const H = rect.height || 220;
+
+      // padding 감안(현재 UI가 14px라면)
+      const PAD = 14 * 2;
+      const effW = Math.max(120, W - PAD);
+      const effH = Math.max(120, H - PAD);
+
+      // 단어 수 기반으로 대략 줄 수 추정
+      const rows = Math.max(3, Math.ceil(Math.sqrt(items.length))); // 16개면 보통 4줄
+      const rowH = effH / rows;
+
+      // 높이 기준으로 MAX/MIN 제한 (박스 밖으로 안 나가게)
+      const MAX = clamp(rowH * 0.95, 34, 56);
+      const MIN = clamp(MAX * 0.45, 14, 24);
+
+      // 크기 분포 곡선
+      const gamma = 0.62;
 
       const wrap = document.createElement("div");
       wrap.className = "ts3-cloud-inner";
@@ -1409,23 +1458,71 @@ const ts3Api = (function TS3() {
         span.textContent = it.kw;
         span.style.color = pickColor(it.kw, i);
 
-        if (typeof it.score === "number" && maxS !== minS) {
-          const t = (it.score - minS) / (maxS - minS);
-          const sizePx = clamp(12 + t * 24, 12, 36);
-          span.style.fontSize = `${sizePx}px`;
-          span.style.fontWeight = t > 0.75 ? "800" : t > 0.45 ? "700" : "600";
-          span.style.opacity = String(clamp(0.7 + t * 0.3, 0.7, 1));
-          span.title = `score: ${it.score.toFixed(4)}`;
+        // 1) t: 0~1
+        let t;
+        if (typeof it.score === "number" && hasScore && maxS !== minS) {
+          t = (it.score - minS) / (maxS - minS);
         } else {
-          span.classList.add(i === 0 ? "lg" : i < 3 ? "md" : "sm");
+          t = 1 - (i / Math.max(1, items.length - 1));
         }
+        t = clamp(t, 0, 1);
 
-        span.style.transform = `rotate(${pickRotateDeg(it.kw)}deg)`;
+        // 2) 감마 적용
+        const tAdj = Math.pow(t, gamma);
+
+        // 3) 기본 폰트 크기
+        let sizePx = MIN + tAdj * (MAX - MIN);
+
+        // 4) 길이 패널티(약하게)
+        const len = (it.kw || "").length || 1;
+        const lenFactor = clamp(1 - Math.max(0, len - 10) * 0.02, 0.86, 1);
+        sizePx *= lenFactor;
+
+        // ✅ 5) 가로 넘침 방지 clamp (긴 단어 대비)
+        const maxByWidth = effW / (len * 0.92);
+        sizePx = Math.min(sizePx, maxByWidth);
+
+        span.style.fontSize = `${sizePx}px`;
+        span.style.fontWeight = tAdj > 0.70 ? "900" : tAdj > 0.40 ? "800" : "700";
+        span.style.opacity = String(0.72 + tAdj * 0.28);
+        span.style.display = "inline-block";
+        span.style.lineHeight = "1.05";
+
         wrap.appendChild(span);
       });
 
       ts3CloudEl.innerHTML = "";
       ts3CloudEl.appendChild(wrap);
+
+      // ✅ 렌더 후 실제 크기 측정해서 박스에 맞게 자동 축소
+      requestAnimationFrame(() => {
+        // ts3CloudEl의 실제 padding을 계산 (하드코딩 14 제거)
+        const cs = getComputedStyle(ts3CloudEl);
+        const pl = parseFloat(cs.paddingLeft) || 0;
+        const pr = parseFloat(cs.paddingRight) || 0;
+        const pt = parseFloat(cs.paddingTop) || 0;
+        const pb = parseFloat(cs.paddingBottom) || 0;
+
+        const availW = ts3CloudEl.clientWidth - pl - pr;
+        const availH = ts3CloudEl.clientHeight - pt - pb;
+
+        // wrap이 max-content면 커질 수 있으니 강제 제약
+        wrap.style.width = "100%";
+        wrap.style.height = "100%";
+        wrap.style.boxSizing = "border-box";
+        wrap.style.transformOrigin = "center center";
+
+        // 실제 컨텐츠 크기(줄바꿈 포함)
+        const contentW = wrap.scrollWidth;
+        const contentH = wrap.scrollHeight;
+
+        const scaleW = availW > 0 ? (availW / contentW) : 1;
+        const scaleH = availH > 0 ? (availH / contentH) : 1;
+
+        const scale = Math.min(1, scaleW, scaleH); // 1보다 크면 확대하지 않음
+        wrap.style.transform = `scale(${scale})`;
+      });
+
 
       if (DEBUG_CLOUD) console.log("[TS3][cloud] rendered", { count: items.length, items });
     } catch (e) {
@@ -1459,10 +1556,10 @@ const ts3Api = (function TS3() {
     const b = pPos + pNeu;
 
     ts3DonutEl.style.background = `conic-gradient(
-      #1e63ff 0 ${a}%,
-      #8a97ad ${a}% ${b}%,
-      #e53935 ${b}% 100%
-    )`;
+  #0073ff 0 ${a}%,
+  #e6e6e6 ${a}% ${b}%,
+  #ff0000 ${b}% 100%
+)`;
 
     ts3DonutEl.setAttribute(
       "aria-label",
@@ -1696,17 +1793,17 @@ const ts3Api = (function TS3() {
     const base = hashStr(kw) % LINE_PALETTE.length;
 
     for (let step = 0; step < LINE_PALETTE.length; step++) {
-        const idx = (base + step) % LINE_PALETTE.length;
-        const c = LINE_PALETTE[idx];
-        if (!usedColors.has(c)) {
+      const idx = (base + step) % LINE_PALETTE.length;
+      const c = LINE_PALETTE[idx];
+      if (!usedColors.has(c)) {
         usedColors.add(c);
         return c;
-        }
+      }
     }
 
     // 팔레트 다 썼으면 기본값
     return LINE_PALETTE[base];
-    }
+  }
 
   async function renderLineChart() {
     if (!ts3Canvas || typeof Chart === "undefined") return;
@@ -1755,23 +1852,23 @@ const ts3Api = (function TS3() {
 
       const usedColors = new Set(); // ✅ 차트 1회 렌더 기준
 
-        for (const uiKw of kws) {
+      for (const uiKw of kws) {
         const serverKw = resolveSeriesKey(uiKw);
         if (!serverKw) continue;
 
         const lineColor = pickUniqueColor(uiKw, usedColors);
 
         datasets.push({
-            label: uiKw,
-            data: seriesAll[serverKw] || new Array(labels.length).fill(0),
-            borderColor: lineColor,
-            backgroundColor: lineColor,
-            borderWidth: uiKw === baseKeyword ? 3 : 2,
-            tension: 0.3,
-            pointRadius: 2,
-            pointHoverRadius: 4,
+          label: uiKw,
+          data: seriesAll[serverKw] || new Array(labels.length).fill(0),
+          borderColor: lineColor,
+          backgroundColor: lineColor,
+          borderWidth: uiKw === baseKeyword ? 3 : 2,
+          tension: 0.3,
+          pointRadius: 2,
+          pointHoverRadius: 4,
         });
-        }
+      }
 
       if (!datasets.length) {
         if (ts3Placeholder) {

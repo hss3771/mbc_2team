@@ -5,6 +5,7 @@
   padding: 16px;
   box-sizing: border-box;
   align-items: stretch;
+  --content-pad: 14px;
 }
 
 .main-scroll {
@@ -556,6 +557,9 @@
   margin-top: 18px;
   scroll-margin-top: 14px;
   /* 앵커 이동시 살짝 여유 */
+  padding-left: var(--content-pad);
+  padding-right: var(--content-pad);
+  box-sizing: border-box;
 }
 
 .ts2-grid {
@@ -563,6 +567,8 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   align-items: start;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* 컬럼 패널 */
@@ -631,43 +637,6 @@
   flex-direction: column;
   min-height: 0;
   flex: 1;
-}
-
-/* 리스트 스크롤 */
-.ts2-list {
-  flex: 1;
-  min-height: 0;
-  max-height: none;
-  overflow: hidden;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.ts2-list.is-vscroll {
-  max-height: var(--ts2-list-max, 560px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 6px;
-}
-
-.ts2-list.is-vscroll::-webkit-scrollbar {
-  width: 10px;
-}
-
-.ts2-list.is-vscroll::-webkit-scrollbar-track {
-  background: #f1f4fb;
-  border-radius: 999px;
-}
-
-.ts2-list.is-vscroll::-webkit-scrollbar-thumb {
-  background: #c7d6f5;
-  border-radius: 999px;
-}
-
-.ts2-list.is-vscroll::-webkit-scrollbar-thumb:hover {
-  background: #a9c2f2;
 }
 
 /* 카드 */
@@ -787,37 +756,37 @@
 }
 
 /* 줄바꿈 금지 */
-.ts2-meta{
-  display:flex;
-  align-items:center;
-  gap:4px;
-  flex-wrap:nowrap;
-  white-space:nowrap;
-  min-width:0;
+.ts2-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  min-width: 0;
   margin-left: -3px;
 }
 
 /* 언론사 로고 작아지지 않게 고정 */
-.ts2-card__top .ts2-src{
+.ts2-card__top .ts2-src {
   flex: 0 0 auto;
   flex-shrink: 0;
 }
 
 /* 로고 정확한 사이즈 유지(원래 설정한 값) */
-.ts2-card__top .ts2-src.ts2-src--logoonly{
+.ts2-card__top .ts2-src.ts2-src--logoonly {
   flex: 0 0 auto;
   flex-shrink: 0;
-  width: 86px;  
-  height: 30px; 
+  width: 86px;
+  height: 30px;
 }
 
 /* 신뢰도/날짜/기사요약 알약들 */
-.ts2-meta .ts2-chip{
+.ts2-meta .ts2-chip {
   flex: 0 0 auto;
-  flex-shrink: 0;    
-  height: 26px;     
-  padding: 0 8px;  
-  font-size: 11px;   
+  flex-shrink: 0;
+  height: 26px;
+  padding: 0 8px;
+  font-size: 11px;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -825,7 +794,7 @@
 }
 
 /* 버튼(기사요약)은 기본 버튼 영향 제거 */
-.ts2-meta .ts2-chip--btn{
+.ts2-meta .ts2-chip--btn {
   appearance: none;
   -webkit-appearance: none;
 }
@@ -878,10 +847,86 @@
   background: #f1f5fb;
 }
 
+/* =========================
+   TS2 높이 고정(기사 수 무관)
+========================= */
+
+/* 1) 컬럼 높이 고정값(원하는대로 조절) */
+:root {
+  --ts2-col-h: clamp(560px, 62vh, 760px);
+}
+
+/* 2) grid 아이템 높이도 늘려서(하단 pager 라인 맞추기) */
+.ts2-grid {
+  align-items: stretch;
+  /* 기존 start -> stretch */
+}
+
+/* 3) 컬럼 패널 자체 높이 고정 */
+.ts2-col {
+  height: var(--ts2-col-h);
+}
+
+/* 4) 헤더는 고정, 바디가 남은 높이를 먹게 */
+.ts2-colhead {
+  flex: 0 0 auto;
+}
+
+.ts2-colbody {
+  flex: 1 1 auto;
+  min-height: 0;
+  /* ✅ flex 스크롤 필수 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* 5) 리스트가 남은 영역을 먹고, 항상 내부 스크롤(넘칠 때만 스크롤바) */
+.ts2-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  padding-right: 6px;
+}
+
+/* =========================
+   TS2 리스트 스크롤바 스킨(항상 적용)
+========================= */
+
+/* Firefox */
+.ts2-list{
+  scrollbar-width: auto;
+  scrollbar-color: #c7d6f5 #f1f4fb;
+  scrollbar-gutter: stable;
+}
+
+/* Chrome / Edge / Safari */
+.ts2-list::-webkit-scrollbar{
+  width: 15px;
+}
+.ts2-list::-webkit-scrollbar-track{
+  background: #f1f4fb;
+  border-radius: 999px;
+}
+.ts2-list::-webkit-scrollbar-thumb{
+  background: #c7d6f5;
+  border-radius: 999px;
+  border: 0;
+}
+.ts2-list::-webkit-scrollbar-thumb:hover{
+  background: #a9c2f2;
+}
+.ts2-list::-webkit-scrollbar-corner{
+  background: transparent;
+}
+
 /* ===================== /TS2 ===================== */
 /* ===================== TS3: MAIN3 (키워드 언급량 및 감성분석) ===================== */
 .ts3-panel {
   margin-top: 18px;
+  padding-left: var(--content-pad);
+  padding-right: var(--content-pad);
+  box-sizing: border-box;
 }
 
 .ts3-grid {
@@ -889,6 +934,8 @@
   grid-template-columns: 1fr 1fr;
   gap: 14px;
   align-items: start;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .ts3-card {
@@ -1114,15 +1161,15 @@
 }
 
 .ts3-dot--pos {
-  background: #1e63ff;
+  background: #0073ff;
 }
 
 .ts3-dot--neu {
-  background: #8a97ad;
+  background: #e6e6e6;
 }
 
 .ts3-dot--neg {
-  background: #e53935;
+  background: #ff0000;
 }
 
 /* ===================== /TS3 ===================== */
@@ -1241,6 +1288,200 @@ body {
   filter: brightness(0.98);
 }
 
+/* ===== TS3 도넛 퍼센트 라벨 ===== */
+#ts3Donut {
+  position: relative;
+}
+
+#ts3Donut .ts3-donut-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+#ts3Donut .ts3-donut-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #1d2b42;
+  white-space: nowrap;
+}
+
+/* =====================
+   TS2 기사 상세 모달
+===================== */
+#ts2ModalRoot {
+  position: relative;
+}
+
+#ts2ModalRoot .ts2m-backdrop[hidden] {
+  display: none !important;
+}
+
+#ts2ModalRoot .ts2m-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(15, 23, 42, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+#ts2ModalRoot .ts2m-panel {
+  width: min(980px, 92vw);
+  height: min(760px, 86vh);
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#ts2ModalRoot .ts2m-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  color: #6a7a93;
+}
+
+#ts2ModalRoot .ts2m-close:hover {
+  background: #f1f5fb;
+}
+
+#ts2ModalRoot .ts2m-head {
+  padding: 18px 22px 12px;
+  border-bottom: 1px solid #eef2fb;
+}
+
+#ts2ModalRoot .ts2m-press {
+  font-size: 12px;
+  font-weight: 900;
+  color: #0462D2;
+  margin-bottom: 6px;
+}
+
+#ts2ModalRoot .ts2m-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #1d2b42;
+  line-height: 1.35;
+  margin-bottom: 10px;
+}
+
+#ts2ModalRoot .ts2m-meta {
+  font-size: 12px;
+  font-weight: 800;
+  color: #8a97ad;
+}
+
+#ts2ModalRoot .ts2m-body {
+  padding: 18px 22px;
+  overflow: auto;
+  flex: 1;
+}
+
+#ts2ModalRoot .ts2m-summary {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #2c3a52;
+  white-space: pre-wrap;
+}
+
+#ts2ModalRoot .ts2m-actions {
+  padding: 12px 22px 18px;
+  border-top: 1px solid #eef2fb;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+#ts2ModalRoot .ts2m-btn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid #dfe8f7;
+  background: #fff;
+  font-weight: 900;
+  cursor: pointer;
+  color: #24324a;
+}
+
+#ts2ModalRoot .ts2m-btn:hover {
+  background: #f5f8ff;
+}
+
+#ts2ModalRoot .ts2m-btn-primary {
+  background: #0462D2;
+  border-color: transparent;
+  color: #fff;
+}
+
+#ts2ModalRoot .ts2m-btn-primary:hover {
+  filter: brightness(0.98);
+}
+
+/* 모달 열렸을 때 바디 스크롤 잠금 */
+body.is-modal-open {
+  overflow: hidden;
+}
+
+/* =========================
+   TS2 헤더 찌그러짐 방지
+========================= */
+
+/* 기본: 좌측 영역이 줄어들 수 있게 + pill은 안 줄어들게 */
+.ts2-colhead {
+  min-width: 0;
+}
+
+.ts2-coltitle {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ts2-pill {
+  flex: 0 0 auto;
+  /* ✅ pill 절대 찌그러지지 않게 */
+  white-space: nowrap;
+}
+
+/* 제목은 줄바꿈 대신 말줄임(한 줄 유지) */
+.ts2-h {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 드롭다운도 필요하면 살짝 줄어들게(너무 고정폭이면 제목이 찌그러짐) */
+.ts2-sort.cselect {
+  flex: 0 1 140px;
+  /* ✅ 150px 고정 대신 shrink 허용 */
+  min-width: 120px;
+}
+
 /* 반응형 */
 @media (max-width: 1300px) {
   .ts2-grid {
@@ -1317,7 +1558,7 @@ body {
 
 @media (max-width: 920px) {
   .mains {
-    padding: 12px;
+    --content-pad: 0px;
   }
 
   /* 툴바: wrap 허용 + 간격/패딩 조금 축소 */
@@ -1416,156 +1657,20 @@ body {
   }
 }
 
-/* ===== TS3 도넛 퍼센트 라벨 ===== */
-#ts3Donut { position: relative; }
+/* ✅ “열이 좁아지는 구간”에서 드롭다운을 아래로 내려서 공간 확보 */
+@media (max-width: 1320px) {
+  .ts2-colhead {
+    flex-wrap: wrap;
+    /* ✅ 여기서부터 찌그러지지 않게 줄바꿈 허용 */
+    row-gap: 8px;
+  }
 
-#ts3Donut .ts3-donut-labels{
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+  .ts2-sort.cselect {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .ts2-sort .cselect__btn {
+    width: 100%;
+  }
 }
-
-#ts3Donut .ts3-donut-label{
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 11px;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.92);
-  border: 1px solid rgba(0,0,0,0.08);
-  color: #1d2b42;
-  white-space: nowrap;
-}
-
-/* =====================
-   TS2 기사 상세 모달
-===================== */
-#ts2ModalRoot { position: relative; }
-
-#ts2ModalRoot .ts2m-backdrop[hidden]{
-  display: none !important;
-}
-
-#ts2ModalRoot .ts2m-backdrop{
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  background: rgba(15, 23, 42, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-#ts2ModalRoot .ts2m-panel{
-  width: min(980px, 92vw);
-  height: min(760px, 86vh);
-  background: #fff;
-  border-radius: 16px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-#ts2ModalRoot .ts2m-close{
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  font-size: 26px;
-  line-height: 1;
-  cursor: pointer;
-  color: #6a7a93;
-}
-
-#ts2ModalRoot .ts2m-close:hover{
-  background: #f1f5fb;
-}
-
-#ts2ModalRoot .ts2m-head{
-  padding: 18px 22px 12px;
-  border-bottom: 1px solid #eef2fb;
-}
-
-#ts2ModalRoot .ts2m-press{
-  font-size: 12px;
-  font-weight: 900;
-  color: #0462D2;
-  margin-bottom: 6px;
-}
-
-#ts2ModalRoot .ts2m-title{
-  font-size: 18px;
-  font-weight: 900;
-  color: #1d2b42;
-  line-height: 1.35;
-  margin-bottom: 10px;
-}
-
-#ts2ModalRoot .ts2m-meta{
-  font-size: 12px;
-  font-weight: 800;
-  color: #8a97ad;
-}
-
-#ts2ModalRoot .ts2m-body{
-  padding: 18px 22px;
-  overflow: auto;
-  flex: 1;
-}
-
-#ts2ModalRoot .ts2m-summary{
-  font-size: 14px;
-  line-height: 1.7;
-  color: #2c3a52;
-  white-space: pre-wrap;
-}
-
-#ts2ModalRoot .ts2m-actions{
-  padding: 12px 22px 18px;
-  border-top: 1px solid #eef2fb;
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-#ts2ModalRoot .ts2m-btn{
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 12px;
-  border: 1px solid #dfe8f7;
-  background: #fff;
-  font-weight: 900;
-  cursor: pointer;
-  color: #24324a;
-}
-
-#ts2ModalRoot .ts2m-btn:hover{
-  background: #f5f8ff;
-}
-
-#ts2ModalRoot .ts2m-btn-primary{
-  background: #0462D2;
-  border-color: transparent;
-  color: #fff;
-}
-
-#ts2ModalRoot .ts2m-btn-primary:hover{
-  filter: brightness(0.98);
-}
-
-/* 모달 열렸을 때 바디 스크롤 잠금 */
-body.is-modal-open{
-  overflow: hidden;
-}
-
-
