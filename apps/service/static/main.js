@@ -103,56 +103,126 @@ function getDonutWrap() {
   if (!ts3DonutEl) return null;
   return ts3DonutEl.closest(".ts3-donutwrap") || ts3DonutEl.parentElement;
 }
+
 function clearDonutLabels() {
   const wrap = getDonutWrap();
   if (!wrap) return;
   wrap.querySelectorAll(".donut-anno").forEach((el) => el.remove());
 }
+
+// ✅ 마지막 도넛 퍼센트(리사이즈 재배치용) - renderDonutPercentLabels 밖(전역/모듈 스코프)
+let __lastDonutPcts = null;
+
+// ✅ resize 연타 방지
+let __donutRaf = 0;
+
+// ✅ 리스너/옵저버 1회만 바인딩
+let __donutBound = false;
+let __donutRO = null;
+let __donutMql = null;
+
+function scheduleDonutLabelRerender() {
+  if (!__lastDonutPcts) return;
+  cancelAnimationFrame(__donutRaf);
+  __donutRaf = requestAnimationFrame(() => {
+    renderDonutPercentLabels(__lastDonutPcts.pos, __lastDonutPcts.neu, __lastDonutPcts.neg);
+  });
+}
+
+function bindDonutLabelAutoRerenderOnce() {
+  if (__donutBound) return;
+
+  const wrap = getDonutWrap();
+  if (!wrap) return; // wrap 아직 없으면(초기 렌더 타이밍) 다음 render에서 다시 시도됨
+
+  __donutBound = true;
+
+  window.addEventListener("resize", scheduleDonutLabelRerender, { passive: true });
+  window.visualViewport?.addEventListener("resize", scheduleDonutLabelRerender);
+
+  __donutMql = window.matchMedia("(max-width: 520px)");
+  __donutMql.addEventListener?.("change", scheduleDonutLabelRerender);
+
+  if (typeof ResizeObserver !== "undefined") {
+    __donutRO = new ResizeObserver(() => scheduleDonutLabelRerender());
+    __donutRO.observe(wrap);
+  }
+}
+
 function renderDonutPercentLabels(pPos, pNeu, pNeg) {
   if (!ts3DonutEl) return;
-  const wrap = getDonutWrap();
-  if (!wrap) return;
 
+  // 라벨 자동 재배치(리사이즈/컨테이너 변화)
+  bindDonutLabelAutoRerenderOnce();
+
+  const wrapEl = getDonutWrap();
+  if (!wrapEl) return;
+
+  // 기존 라벨 제거
   clearDonutLabels();
 
+  const COLOR = { pos: "#0073ff", neu: "#8a97ad", neg: "#ff0000" };
+
   const segments = [
-    { name: "긍정", pct: Number(pPos) || 0 },
-    { name: "중립", pct: Number(pNeu) || 0 },
-    { name: "부정", pct: Number(pNeg) || 0 },
+    { key: "pos", pct: Number(pPos) || 0, color: COLOR.pos },
+    { key: "neu", pct: Number(pNeu) || 0, color: COLOR.neu },
+    { key: "neg", pct: Number(pNeg) || 0, color: COLOR.neg },
   ].filter((s) => s.pct > 0);
 
   if (!segments.length) return;
 
-  const wrapRect = wrap.getBoundingClientRect();
+  const wrapRect = wrapEl.getBoundingClientRect();
   const donutRect = ts3DonutEl.getBoundingClientRect();
   const w = wrapRect.width;
   const h = wrapRect.height;
 
+  // 레이아웃 아직 0이면 다음 프레임에 재시도
   if (!w || !h || !donutRect.width || !donutRect.height) {
     requestAnimationFrame(() => renderDonutPercentLabels(pPos, pNeu, pNeg));
     return;
   }
 
-  // donut 중심을 wrap 좌표로 변환
+  // 도넛 중심 좌표(랩 기준)
   const cx = donutRect.left - wrapRect.left + donutRect.width / 2;
   const cy = donutRect.top - wrapRect.top + donutRect.height / 2;
   const size = Math.min(donutRect.width, donutRect.height);
-
-  // wrap이 기준이 되게
-  const csWrap = getComputedStyle(wrap);
-  if (csWrap.position === "static") wrap.style.position = "relative";
-
-  // ✅ wrap 밖으로 절대 안 나가게
-  wrap.style.overflow = "hidden";
-
-  // 거리 튜닝
   const rOuter = size * 0.5;
-  const rTick = rOuter + 10;
-  const rLabel = rOuter + 26;
-  const xGap = 16;
-  const margin = 8;
-  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
+  const isMobile = window.matchMedia("(max-width: 520px)").matches;
+
+  // 모바일: 안쪽, PC: 바깥쪽
+  const LABEL_MODE = isMobile ? "inside" : "outside";
+  const OUTSIDE_GAP = isMobile ? 6 : 13;
+  const INSIDE_RATIO = isMobile ? 0.80 : 0.84;
+
+  const rDesired =
+    LABEL_MODE === "inside" ? rOuter * INSIDE_RATIO : rOuter + OUTSIDE_GAP;
+
+  // inside일 때만 “박스 밖으로 튀지 않게” 전역 상한 적용
+  const margin = 10;
+  const sideNudge = 6;
+
+  const rMaxGlobal = Math.max(
+    0,
+    Math.min(
+      cx - margin,
+      (w - margin) - cx,
+      cy - margin,
+      (h - margin) - cy
+    )
+  );
+
+  const rFixed =
+    LABEL_MODE === "inside"
+      ? Math.min(rDesired, rMaxGlobal)
+      : rDesired; // PC outside는 반경 유지
+
+  // wrapEl positioning
+  const csWrap = getComputedStyle(wrapEl);
+  if (csWrap.position === "static") wrapEl.style.position = "relative";
+  wrapEl.style.overflow = (LABEL_MODE === "outside") ? "visible" : "hidden";
+
+  // SVG 라벨 레이어
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.classList.add("donut-anno");
   svg.setAttribute("width", String(w));
@@ -162,8 +232,9 @@ function renderDonutPercentLabels(pPos, pNeu, pNeg) {
   svg.style.left = "0";
   svg.style.top = "0";
   svg.style.pointerEvents = "none";
+  svg.style.overflow = "visible";
 
-  let acc = 0;
+  let acc = 0; // 누적 퍼센트
   segments.forEach((seg) => {
     const startDeg = acc * 3.6;
     const endDeg = (acc + seg.pct) * 3.6;
@@ -171,45 +242,38 @@ function renderDonutPercentLabels(pPos, pNeu, pNeg) {
     acc += seg.pct;
 
     const rad = (midDeg - 90) * (Math.PI / 180);
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
 
-    const x1 = cx + rOuter * Math.cos(rad);
-    const y1 = cy + rOuter * Math.sin(rad);
-    const x2 = cx + rTick * Math.cos(rad);
-    const y2 = cy + rTick * Math.sin(rad);
+    const isRight = cos >= 0;
 
-    const isRight = x2 >= cx;
-    let x3 = cx + rLabel * Math.cos(rad) + (isRight ? xGap : -xGap);
-    let y3 = cy + rLabel * Math.sin(rad);
+    let x = cx + rFixed * cos;
+    let y = cy + rFixed * sin;
 
-    // ✅ wrap 경계 안으로 가둠
-    x3 = clamp(x3, margin, w - margin);
-    y3 = clamp(y3, margin, h - margin);
-
-    const poly = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-    poly.setAttribute("points", `${x1},${y1} ${x2},${y2} ${x3},${y3}`);
-    poly.setAttribute("fill", "none");
-    poly.setAttribute("stroke", "#111");
-    poly.setAttribute("stroke-width", "1.5");
-    poly.setAttribute("stroke-linecap", "round");
-    poly.setAttribute("stroke-linejoin", "round");
-    svg.appendChild(poly);
+    // 좌/우 살짝 밀어서 겹침 완화
+    x += isRight ? sideNudge : -sideNudge;
 
     const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
     text.textContent = `${seg.pct}%`;
-    const tx = clamp(x3 + (isRight ? 6 : -6), margin, w - margin);
-    const ty = clamp(y3 + 4, margin, h - margin);
-    text.setAttribute("x", String(tx));
-    text.setAttribute("y", String(ty));
-    text.setAttribute("font-size", "12");
-    text.setAttribute("font-weight", "700");
-    text.setAttribute("fill", "#111");
+    text.setAttribute("x", String(x));
+    text.setAttribute("y", String(y));
     text.setAttribute("text-anchor", isRight ? "start" : "end");
+    text.setAttribute("dominant-baseline", "middle");
+    text.setAttribute("font-size", "12");
+    text.setAttribute("font-weight", "900");
+    text.setAttribute("fill", seg.color);
+
+    // 흰색 외곽선(가독성)
+    text.setAttribute("paint-order", "stroke");
+    text.setAttribute("stroke", "#ffffff");
+    text.setAttribute("stroke-width", "3");
+
     svg.appendChild(text);
   });
 
-  wrap.appendChild(svg);
+  wrapEl.appendChild(svg);
 }
-// #endregion
+
 
 // #region ===== 랭킹 렌더 유틸 =====
 function fmtRate(n) {
@@ -472,7 +536,7 @@ document.addEventListener("app:rangechange", () => {
   fetchRankingAndRender({ keepSelected: true });
 });
 
-// ===== 증감률/변동 안내 툴팁 (각 has-tip 안에서만 토글) =====
+// ===== 증감률/변동 안내 툴팁 (공통: viewport 안으로 자동 배치) =====
 (function () {
   const wraps = document.querySelectorAll(".has-tip");
   if (!wraps.length) return;
@@ -482,9 +546,54 @@ document.addEventListener("app:rangechange", () => {
       const btn = w.querySelector(".info-btn");
       const tip = w.querySelector(".tooltip");
       if (!btn || !tip) return;
+
       tip.hidden = true;
       btn.setAttribute("aria-expanded", "false");
+
+      // 다음 오픈 때 CSS 기본값으로 시작하도록 정리(선택)
+      tip.style.removeProperty("position");
+      tip.style.removeProperty("left");
+      tip.style.removeProperty("top");
+      tip.style.removeProperty("right");
     });
+  }
+
+  function placeTooltip(btn, tip) {
+    const GAP = 8;
+    const MARGIN = 12;
+    const ARROW = 10; // ::before size(너 CSS가 10px)
+
+    const vv = window.visualViewport;
+    const vw = vv?.width || window.innerWidth;
+    const vh = vv?.height || window.innerHeight;
+
+    const b = btn.getBoundingClientRect();
+    const t = tip.getBoundingClientRect(); // tip이 visible 상태여야 값이 나옴
+
+    // 기본: 버튼 중앙 아래
+    let left = b.left + b.width / 2 - t.width / 2;
+    left = Math.max(MARGIN, Math.min(left, vw - MARGIN - t.width));
+
+    let top = b.bottom + GAP;
+
+    // 아래로 못 놓으면 위로
+    if (top + t.height + MARGIN > vh) {
+      top = b.top - GAP - t.height;
+    }
+    top = Math.max(MARGIN, Math.min(top, vh - MARGIN - t.height));
+
+    // fixed로 박아버리면 main-scroll/overflow 영향 안 받음
+    tip.style.position = "fixed";
+    tip.style.left = `${left}px`;
+    tip.style.top = `${top}px`;
+    tip.style.right = "auto";
+
+    // 화살표를 버튼 중앙에 맞춤(툴팁 내부 좌표)
+    const arrowLeft = b.left + b.width / 2 - left - ARROW / 2;
+    tip.style.setProperty(
+      "--arrow-left",
+      `${Math.max(10, Math.min(arrowLeft, t.width - 20))}px`
+    );
   }
 
   wraps.forEach((w) => {
@@ -492,12 +601,22 @@ document.addEventListener("app:rangechange", () => {
     const tip = w.querySelector(".tooltip");
     if (!btn || !tip) return;
 
+    // 초기 상태 안전하게
+    tip.hidden = true;
+    btn.setAttribute("aria-expanded", "false");
+
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
+
       const willOpen = tip.hidden;
       closeAll();
+
       tip.hidden = !willOpen;
       btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+
+      if (willOpen) {
+        requestAnimationFrame(() => placeTooltip(btn, tip));
+      }
     });
 
     tip.addEventListener("click", (e) => e.stopPropagation());
@@ -507,13 +626,16 @@ document.addEventListener("app:rangechange", () => {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeAll();
   });
+
+  // 스크롤/리사이즈 시 닫기(고정툴팁 떠있는 느낌 방지)
+  document.querySelector(".main-scroll")?.addEventListener("scroll", closeAll, { passive: true });
+  window.addEventListener("resize", closeAll);
+  window.visualViewport?.addEventListener("resize", closeAll);
 })();
+
 
 // ===============================
 // TS2 기사 상세 팝업 모달 (전역)
-// ===============================
-// ===============================
-// TS2 기사 상세 팝업 모달 (전역) - 단순 버전(닫기 버튼만)
 // ===============================
 (function initTS2Modal() {
   let root = document.getElementById("ts2ModalRoot");
@@ -521,26 +643,32 @@ document.addEventListener("app:rangechange", () => {
     root = document.createElement("div");
     root.id = "ts2ModalRoot";
     root.innerHTML = `
-      <div class="ts2m-backdrop" hidden>
+    <div class="ts2m-backdrop" hidden>
         <div class="ts2m-panel" role="dialog" aria-modal="true" aria-label="기사 상세">
-          <button type="button" class="ts2m-close js-ts2m-close" aria-label="닫기">×</button>
+        <button type="button" class="ts2m-close js-ts2m-close" aria-label="닫기">×</button>
 
-          <div class="ts2m-head">
+        <!-- 헤더(고정) -->
+        <div class="ts2m-head">
             <div class="ts2m-press"></div>
             <div class="ts2m-title"></div>
             <div class="ts2m-meta"></div>
-          </div>
+        </div>
 
-          <div class="ts2m-body">
+        <!-- 본문 스크롤 영역 -->
+        <div class="ts2m-body">
+            <div class="ts2m-media" hidden>
+            <img class="ts2m-img" alt="" loading="lazy" />
+            </div>
             <div class="ts2m-summary"></div>
-          </div>
+        </div>
 
-          <div class="ts2m-actions">
+        <!-- 하단 버튼(항상 보이게) -->
+        <div class="ts2m-actions">
             <button type="button" class="ts2m-btn ts2m-btn-primary js-ts2m-open">원문 보기</button>
             <button type="button" class="ts2m-btn js-ts2m-close">닫기</button>
-          </div>
         </div>
-      </div>
+        </div>
+    </div>
     `;
     document.body.appendChild(root);
   }
@@ -551,6 +679,10 @@ document.addEventListener("app:rangechange", () => {
   const elMeta = root.querySelector(".ts2m-meta");
   const elSummary = root.querySelector(".ts2m-summary");
   const btnOpen = root.querySelector(".js-ts2m-open");
+  const elMedia = root.querySelector(".ts2m-media");
+  const elImg = root.querySelector(".ts2m-img");
+  const elBody = root.querySelector(".ts2m-body");
+
 
   function close() {
     backdrop.hidden = true;
@@ -571,11 +703,38 @@ document.addEventListener("app:rangechange", () => {
     const title = payload.title || "";
     const bodyOrSummary = payload.body || payload.summary || "";
     const url = payload.url || "";
+    const imageUrl = (payload.image_url || payload.imageUrl || "").trim();
 
     elPress.textContent = press;
     elTitle.textContent = title;
     elMeta.textContent = date;
     elSummary.textContent = bodyOrSummary;
+
+    // ✅ 내용 채운 뒤에 스크롤 맨 위로
+    if (elBody) {
+        elBody.scrollTop = 0;
+        requestAnimationFrame(() => { elBody.scrollTop = 0; });
+        }
+
+
+
+    // ✅ 이미지 처리
+    if (elMedia && elImg) {
+      if (imageUrl) {
+        elImg.src = imageUrl;
+        elImg.alt = title ? `${title} 기사 이미지` : "기사 이미지";
+        elMedia.hidden = false;
+
+        elImg.onerror = () => {
+          elImg.removeAttribute("src");
+          elMedia.hidden = true;
+        };
+      } else {
+        elImg.removeAttribute("src");
+        elImg.alt = "";
+        elMedia.hidden = true;
+      }
+    }
 
     btnOpen.disabled = !url;
     btnOpen.onclick = () => {
@@ -610,25 +769,25 @@ document.addEventListener("app:rangechange", () => {
   // util
   // =========================
   let PRESS_LOGO_MAP;
-    async function PRESS_LOGO(){
-      try {
-        const r = await fetch("/api/PRESS_LOGO", {
-          credentials: "same-origin"
-        });
+  async function PRESS_LOGO() {
+    try {
+      const r = await fetch("/api/PRESS_LOGO", {
+        credentials: "same-origin"
+      });
 
-        if (!r.ok) {
-          throw new Error(`PRESS_LOGO fetch failed: ${r.status}`);
-        }
-
-        PRESS_LOGO_MAP = await r.json();
-        console.log("[TS2] PRESS_LOGO_MAP loaded");
-
-      } catch (err) {
-        console.error("[TS2] load failed", err);
-        PRESS_LOGO_MAP = {}; // fallback
+      if (!r.ok) {
+        throw new Error(`PRESS_LOGO fetch failed: ${r.status}`);
       }
-      console.log("PRESS_LOGO_MAP")
-      console.log(PRESS_LOGO_MAP)
+
+      PRESS_LOGO_MAP = await r.json();
+      console.log("[TS2] PRESS_LOGO_MAP loaded");
+
+    } catch (err) {
+      console.error("[TS2] load failed", err);
+      PRESS_LOGO_MAP = {}; // fallback
+    }
+    console.log("PRESS_LOGO_MAP")
+    console.log(PRESS_LOGO_MAP)
   }
   PRESS_LOGO()
 
@@ -659,13 +818,41 @@ document.addEventListener("app:rangechange", () => {
   }
 
   function escapeHtml(s) {
-    return String(s ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
+  return String(s ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+/* =========================
+   요약(회원 전용) util
+========================= */
+const SUMMARY_CACHE = new Map(); // docId -> summaryText
+const LOGIN_URL = "/login";      // ✅ 너희 로그인 페이지 경로로 수정
+
+async function fetchArticleSummary(docId) {
+  if (!docId) return { ok: false, code: "NO_ID" };
+
+  if (SUMMARY_CACHE.has(docId)) {
+    return { ok: true, summary: SUMMARY_CACHE.get(docId) };
   }
+
+  // ✅ 보통 이게 맞음 (/api 아래에 라우터 mount되어 있으면)
+  const url = `/articles/${encodeURIComponent(docId)}/summary`;
+
+  const r = await fetch(url, { credentials: "same-origin" });
+
+  if (r.status === 401) return { ok: false, code: "LOGIN_REQUIRED" };
+  if (!r.ok) return { ok: false, code: "API_ERROR" };
+
+  const j = await r.json().catch(() => null);
+  const text = (j?.summary ?? "").trim();
+
+  SUMMARY_CACHE.set(docId, text);
+  return { ok: true, summary: text };
+}
 
   function pad2(n) {
     return String(n).padStart(2, "0");
@@ -971,15 +1158,13 @@ document.addEventListener("app:rangechange", () => {
 
     const title = src?.title ?? src?.headline ?? src?.news_title ?? "";
 
-    // 요약: summary.summary_text 우선
-    const summary =
-      src?.summary?.summary_text ??
-      src?.summary_text ??
-      src?.summary ??
-      src?.snippet ??
-      src?.description ??
-      src?.news_summary ??
-      "";
+    const docId =
+        src?.doc_id ??
+        src?.docId ??
+        raw?.doc_id ??
+        raw?.docId ??
+        raw?._id ??
+        "";
 
     // 본문: body
     const body =
@@ -987,6 +1172,8 @@ document.addEventListener("app:rangechange", () => {
       src?.content ??
       src?.news_content ??
       "";
+
+    const summary = "";
 
     // 언론사: press_name
     const press =
@@ -1024,7 +1211,15 @@ document.addEventListener("app:rangechange", () => {
 
     const trustLabel = trustLabelRaw == null ? null : (String(trustLabelRaw).trim() || null);
 
-    return { title, summary, body, press, url, date, trustScore, trustLabel, raw };
+    // ✅ 대표 이미지 URL
+    const imageUrl =
+      src?.image_url ??
+      src?.imageUrl ??
+      src?.image ??
+      src?.thumbnail ??
+      "";
+
+    return {docId, title, summary, body, press, url, date, trustScore, trustLabel, imageUrl, raw };
   }
 
 
@@ -1047,6 +1242,7 @@ document.addEventListener("app:rangechange", () => {
         title: card.dataset.ts2Title || "",
         summary: card.dataset.ts2Body || card.dataset.ts2Summary || "", // ✅
         url: card.dataset.ts2Url || "",
+        image_url: card.dataset.ts2Image || "",
       });
     }
 
@@ -1073,39 +1269,40 @@ document.addEventListener("app:rangechange", () => {
   }
 
   function renderCards(sent, cards, page, totalPages) {
-    const listEl = els[sent];
-    if (!listEl) return;
+  const listEl = els[sent];
+  if (!listEl) return;
 
-    if (!cards.length) {
-      setListMessage(listEl, "기사 데이터 없음");
-    } else {
-      listEl.innerHTML = cards
-        .map((a) => {
-          const press = String(a.press || "").trim();
-          const title = String(a.title || "").trim();
-          const summary = String(a.summary || "").trim();
-          const body = String(a.body || "").trim();
-          const url = String(a.url || "").trim();
-          const dateOnly = formatDateOnly(a.date);
+  if (!cards.length) {
+    setListMessage(listEl, "기사 데이터 없음");
+  } else {
+    listEl.innerHTML = cards
+      .map((a) => {
+        const press = String(a.press || "").trim();
+        const title = String(a.title || "").trim();
+        const body = String(a.body || "").trim();
+        const url = String(a.url || "").trim();
+        const dateOnly = formatDateOnly(a.date);
+        const imageUrl = String(a.imageUrl || a.image_url || "").trim();
+        const docId = String(a.docId || "").trim();
 
-          const showTrust = shouldShowTrustBadge(sent);
-          const trust = getTrustInfo(a);
-          const trustChipHtml =
-            (showTrust && trust.text)
-              ? `<span class="ts2-chip ts2-chip--trust ${trust.cls}" title="${escapeHtml(trust.title)}">${escapeHtml(trust.text)}</span>`
-              : "";
+        const showTrust = shouldShowTrustBadge(sent);
+        const trust = getTrustInfo(a);
+        const trustChipHtml =
+          (showTrust && trust.text)
+            ? `<span class="ts2-chip ts2-chip--trust ${trust.cls}" title="${escapeHtml(trust.title)}">${escapeHtml(trust.text)}</span>`
+            : "";
 
-          // ✅ 제목 링크 제거(원문 이동 제거)
-          return `
+        return `
 <article class="ts2-card js-ts2-card"
   role="button"
   tabindex="0"
+  data-ts2-id="${escapeHtml(docId)}"
   data-ts2-press="${escapeHtml(press)}"
   data-ts2-date="${escapeHtml(dateOnly)}"
   data-ts2-title="${escapeHtml(title || "제목 없음")}"
-  data-ts2-summary="${escapeHtml(summary || "")}"
   data-ts2-body="${escapeHtml(body || "")}"
   data-ts2-url="${escapeHtml(url || "")}"
+  data-ts2-image="${escapeHtml(imageUrl || "")}"
 >
   <div class="ts2-card__top">
     <div class="ts2-src ts2-src--logoonly">
@@ -1122,36 +1319,113 @@ document.addEventListener("app:rangechange", () => {
 
   <div class="ts2-title">${escapeHtml(title || "제목 없음")}</div>
 
-  ${summary ? `<p class="ts2-desc">${escapeHtml(summary)}</p>` : ""}
+  <!-- ✅ 요약 박스: 기본은 숨김 -->
+  <div class="ts2-sumbox" hidden>
+    <div class="ts2-sumtext"></div>
+  </div>
 </article>`;
-        })
-        .join("");
+      })
+      .join("");
 
-      hydratePressLogos(listEl);
+    hydratePressLogos(listEl);
 
-      // ✅ 카드 클릭 모달(한 번만)
-      bindTS2CardOpen(listEl);
+    // ✅ 카드 클릭 모달(한 번만)
+    bindTS2CardOpen(listEl);
 
-      // ✅ 요약 버튼만 토글 (모달 방지 stopPropagation)
-      listEl.querySelectorAll(".js-ts2-card").forEach((card) => {
-        const btn = card.querySelector(".js-ts2-toggle");
-        if (btn && !btn.dataset.bound) {
-          btn.dataset.bound = "1";
-          btn.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation(); // ⭐ 카드 클릭 모달 막기
-            card.classList.toggle("is-open");
-          });
+    // ✅ 요약 버튼 토글 + 로그인 안내
+    listEl.querySelectorAll(".js-ts2-card").forEach((card) => {
+      const btn = card.querySelector(".js-ts2-toggle");
+      if (!btn || btn.dataset.bound) return;
+
+      btn.dataset.bound = "1";
+
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const box = card.querySelector(".ts2-sumbox");
+        const textEl = box?.querySelector(".ts2-sumtext");
+        if (!box || !textEl) return;
+
+        const isOpen = !box.hasAttribute("hidden");
+        if (isOpen) {
+            box.setAttribute("hidden", "");
+            box.classList.remove("is-locked");
+            const old = box.querySelector(".ts2-sumoverlay");
+            if (old) old.remove();
+            return;
         }
-      });
-    }
 
-    // ✅ pager 갱신은 “딱 1번만”
-    const { text, btnPrev, btnNext } = getPager(sent);
-    if (text) text.textContent = `${page} / ${totalPages}`;
-    if (btnPrev) btnPrev.disabled = page <= 1;
-    if (btnNext) btnNext.disabled = page >= totalPages;
+
+        box.removeAttribute("hidden");
+
+        const docId = card.dataset.ts2Id || "";
+        textEl.textContent = "요약 불러오는 중...";
+
+        const res = await fetchArticleSummary(docId);
+
+        // ✅ 비로그인: 블러 처리 + 오버레이(클릭 시 로그인 이동)
+        if (!res.ok && res.code === "LOGIN_REQUIRED") {
+        // 1) 박스 locked 상태
+        box.classList.add("is-locked");
+
+        // 2) 블러될 "가짜 요약" 텍스트(보기만 되고 블러됨)
+        //    서버에서 못 받아오니까, 길이감만 있는 더미로 채워두면 UI가 자연스러워.
+        textEl.textContent =
+            "핵심 주장: (회원 전용 요약)\n\n근거:\n- (회원 전용 요약)\n- (회원 전용 요약)";
+
+        // 3) 오버레이가 없으면 생성
+        let overlay = box.querySelector(".ts2-sumoverlay");
+        if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.className = "ts2-sumoverlay";
+            overlay.innerHTML = `
+            <span class="ts2-sumoverlay__msg" role="link" tabindex="0">
+                기사 요약은 회원에게만 제공됩니다.<br/>로그인 후 열람 가능
+            </span>
+            `;
+            box.appendChild(overlay);
+
+            const msgEl = overlay.querySelector(".ts2-sumoverlay__msg");
+            const goLogin = (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            window.location.href = LOGIN_URL;
+            };
+
+            msgEl.addEventListener("click", goLogin);
+            msgEl.addEventListener("keydown", (ev) => {
+            if (ev.key === "Enter" || ev.key === " ") goLogin(ev);
+            });
+        }
+
+        return;
+        }
+
+
+        // 기타 에러
+        if (!res.ok) {
+          textEl.textContent = "(요약을 불러오지 못했어요)";
+          return;
+        }
+
+        // 로그인 성공
+        box.classList.remove("is-locked");
+        const old = box.querySelector(".ts2-sumoverlay");
+        if (old) old.remove();
+        textEl.textContent = res.summary || "(요약이 비어 있어요)";
+
+      });
+    });
   }
+
+  // ✅ pager 갱신은 “딱 1번만”
+  const { text, btnPrev, btnNext } = getPager(sent);
+  if (text) text.textContent = `${page} / ${totalPages}`;
+  if (btnPrev) btnPrev.disabled = page <= 1;
+  if (btnNext) btnNext.disabled = page >= totalPages;
+}
+
   async function fetchSentiment(sent, page, size) {
     // ✅ pos/neu/neg -> 서버 sentiment 값
     const sentiment =
@@ -1323,7 +1597,7 @@ const ts3Api = (function TS3() {
   let baseKeyword = (document.querySelector("#keywordDropdown .cselect__value")?.textContent || "주식").trim();
   let compareSet = new Set(); // base 제외한 비교 키워드만
 
-  // =========================================================
+    // =========================================================
   // TS3: 워드클라우드
   // =========================================================
   const CLOUD_PALETTE = [
@@ -1336,83 +1610,83 @@ const ts3Api = (function TS3() {
     "#f3e300",
     "#ff5dae",
     "#afff37",
-    "#6a6cff",];
+    "#6a6cff",
+  ];
 
   function pickColor(word, i) {
     const h = hashStr(word) + i * 97;
     return CLOUD_PALETTE[h % CLOUD_PALETTE.length];
   }
-  function pickRotateDeg(word) {
-    return 0;
-  }
+
+  // ✅ 요청 순서 관리(빠르게 기간 바꿀 때 이전 응답이 덮어쓰는 문제 방지)
+  let __cloudReqSeq = 0;
 
   async function renderCloud(keyword) {
     const DEBUG_CLOUD = false;
     if (!ts3CloudEl) return;
 
     const r = window.getAppRange?.() || {};
-    const dateISO = r.end || r.start;
-    if (!dateISO) return;
+    const start = r.start;
+    const end = r.end || r.start; // ✅ end 없으면 start
+    if (!start) return;
+
+    const seq = ++__cloudReqSeq;
 
     if (DEBUG_CLOUD) {
-      console.log("[TS3][cloud] called", { keyword });
-      console.log("[TS3][cloud] range", r, "targetDate:", dateISO);
+      console.log("[TS3][cloud] called", { keyword, start, end, grain: r.grain });
     }
 
     ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">불러오는 중…</div>`;
 
-    const candidates = [dateISO, r.start, r.prevEnd].filter(Boolean);
-    const uniqDates = [...new Set(candidates)];
+    try {
+      // ✅ 신규 백엔드: 기간 집계
+      const url =
+        `/api/issue_wordcloud?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}` +
+        `&keyword=${encodeURIComponent(keyword)}`;
 
-    async function tryFetch(d) {
-      const url = `/api/issue_wordcloud?start=${d}&keyword=${encodeURIComponent(keyword)}`;
       if (DEBUG_CLOUD) console.log("[TS3][cloud] request", url);
 
       const res = await fetch(url, { credentials: "same-origin" });
       const data = await res.json().catch(() => null);
 
-      if (DEBUG_CLOUD) console.log("[TS3][cloud] response", { dateISO: d, ok: res.ok, status: res.status, data });
+      if (seq !== __cloudReqSeq) return; // ✅ stale 응답 무시
 
-      if (!data?.success || !Array.isArray(data.sub_keywords) || data.sub_keywords.length === 0) {
-        return { ok: false, data, dateISO: d };
-      }
-      return { ok: true, data, dateISO: d };
-    }
+      if (DEBUG_CLOUD) console.log("[TS3][cloud] response", { ok: res.ok, status: res.status, data });
 
-    try {
-      let result = null;
-
-      for (const d of uniqDates) {
-        result = await tryFetch(d);
-        if (result.ok) break;
-      }
-
-      if (!result?.ok) {
+      if (!res.ok || !data?.success || !Array.isArray(data.sub_keywords) || data.sub_keywords.length === 0) {
         ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">데이터 없음</div>`;
-        if (DEBUG_CLOUD) console.log("[TS3][cloud] empty/fail case");
         return;
       }
 
-      const { data } = result;
-
+      // ✅ 백엔드 반환 포맷 우선: [{text, value}]
+      // 하위호환: [{keyword, score}] 또는 문자열 배열도 수용
       const items = data.sub_keywords
-        .slice(0, 16)
+        .slice(0, 30)
         .map((x) => {
+          // 문자열 배열
           if (typeof x === "string") return { kw: x, score: null };
+
           if (x && typeof x === "object") {
-            const kw = x.keyword ?? x.word ?? x.text ?? "";
-            const score = typeof x.score === "number" ? x.score : null;
+            // 신규 포맷
+            const kw = (x.text ?? x.keyword ?? x.word ?? "").trim();
+            const score =
+              typeof x.value === "number"
+                ? x.value
+                : typeof x.score === "number"
+                ? x.score
+                : null;
             return { kw, score };
           }
+
           return { kw: String(x), score: null };
         })
         .filter((it) => it.kw && it.kw !== "[object Object]");
 
       if (items.length === 0) {
         ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">데이터 없음</div>`;
-        if (DEBUG_CLOUD) console.log("[TS3][cloud] items empty after normalize");
         return;
       }
+
       // ✅ score가 있으면 score로, 없거나 분포가 같으면 rank로 크기 차등
       const scoreVals = items
         .map((x) => (typeof x.score === "number" ? x.score : null))
@@ -1420,7 +1694,8 @@ const ts3Api = (function TS3() {
 
       const hasScore = scoreVals.length > 0;
 
-      let minS = 0, maxS = 1;
+      let minS = 0,
+        maxS = 1;
       if (hasScore) {
         minS = Math.min(...scoreVals);
         maxS = Math.max(...scoreVals);
@@ -1438,52 +1713,56 @@ const ts3Api = (function TS3() {
       const effW = Math.max(120, W - PAD);
       const effH = Math.max(120, H - PAD);
 
-      // 단어 수 기반으로 대략 줄 수 추정
-      const rows = Math.max(3, Math.ceil(Math.sqrt(items.length))); // 16개면 보통 4줄
+      const rows = Math.max(3, Math.ceil(Math.sqrt(items.length)));
       const rowH = effH / rows;
 
-      // 높이 기준으로 MAX/MIN 제한 (박스 밖으로 안 나가게)
-      const MAX = clamp(rowH * 0.95, 34, 56);
-      const MIN = clamp(MAX * 0.45, 14, 24);
+      const MAX = clamp(rowH * 1.25, 44, 90);
+      const MIN = clamp(MAX * 0.38, 14, 24);
 
-      // 크기 분포 곡선
-      const gamma = 0.62;
+      const gamma = 2.2;
 
       const wrap = document.createElement("div");
       wrap.className = "ts3-cloud-inner";
+      wrap.style.display = "flex";
+      wrap.style.flexWrap = "wrap";
+      wrap.style.justifyContent = "center";
+      wrap.style.alignContent = "center";
+      wrap.style.gap = "2px 6px";
+      wrap.style.width = "100%";
+      wrap.style.height = "100%";
+      wrap.style.boxSizing = "border-box";
+      wrap.style.padding = "0px";
 
       items.forEach((it, i) => {
         const span = document.createElement("span");
         span.className = "ts3-w";
         span.textContent = it.kw;
         span.style.color = pickColor(it.kw, i);
+        span.style.transform = "none";
+        span.style.whiteSpace = "nowrap";
+        span.style.margin = "6px 10px";
 
-        // 1) t: 0~1
         let t;
         if (typeof it.score === "number" && hasScore && maxS !== minS) {
           t = (it.score - minS) / (maxS - minS);
         } else {
-          t = 1 - (i / Math.max(1, items.length - 1));
+          t = 1 - i / Math.max(1, items.length - 1);
         }
         t = clamp(t, 0, 1);
 
-        // 2) 감마 적용
         const tAdj = Math.pow(t, gamma);
 
-        // 3) 기본 폰트 크기
         let sizePx = MIN + tAdj * (MAX - MIN);
 
-        // 4) 길이 패널티(약하게)
         const len = (it.kw || "").length || 1;
-        const lenFactor = clamp(1 - Math.max(0, len - 10) * 0.02, 0.86, 1);
+        const lenFactor = clamp(1 - Math.max(0, len - 8) * 0.015, 0.78, 1);
         sizePx *= lenFactor;
 
-        // ✅ 5) 가로 넘침 방지 clamp (긴 단어 대비)
         const maxByWidth = effW / (len * 0.92);
         sizePx = Math.min(sizePx, maxByWidth);
 
         span.style.fontSize = `${sizePx}px`;
-        span.style.fontWeight = tAdj > 0.70 ? "900" : tAdj > 0.40 ? "800" : "700";
+        span.style.fontWeight = tAdj > 0.7 ? "900" : tAdj > 0.4 ? "800" : "700";
         span.style.opacity = String(0.72 + tAdj * 0.28);
         span.style.display = "inline-block";
         span.style.lineHeight = "1.05";
@@ -1494,9 +1773,9 @@ const ts3Api = (function TS3() {
       ts3CloudEl.innerHTML = "";
       ts3CloudEl.appendChild(wrap);
 
-      // ✅ 렌더 후 실제 크기 측정해서 박스에 맞게 자동 축소
       requestAnimationFrame(() => {
-        // ts3CloudEl의 실제 padding을 계산 (하드코딩 14 제거)
+        if (seq !== __cloudReqSeq) return; // ✅ 렌더 직후에도 stale 방지
+
         const cs = getComputedStyle(ts3CloudEl);
         const pl = parseFloat(cs.paddingLeft) || 0;
         const pr = parseFloat(cs.paddingRight) || 0;
@@ -1506,26 +1785,24 @@ const ts3Api = (function TS3() {
         const availW = ts3CloudEl.clientWidth - pl - pr;
         const availH = ts3CloudEl.clientHeight - pt - pb;
 
-        // wrap이 max-content면 커질 수 있으니 강제 제약
         wrap.style.width = "100%";
         wrap.style.height = "100%";
         wrap.style.boxSizing = "border-box";
         wrap.style.transformOrigin = "center center";
 
-        // 실제 컨텐츠 크기(줄바꿈 포함)
         const contentW = wrap.scrollWidth;
         const contentH = wrap.scrollHeight;
 
-        const scaleW = availW > 0 ? (availW / contentW) : 1;
-        const scaleH = availH > 0 ? (availH / contentH) : 1;
+        const scaleW = availW > 0 ? availW / contentW : 1;
+        const scaleH = availH > 0 ? availH / contentH : 1;
 
-        const scale = Math.min(1, scaleW, scaleH); // 1보다 크면 확대하지 않음
+        const scale = Math.min(1, scaleW, scaleH);
         wrap.style.transform = `scale(${scale})`;
       });
 
-
       if (DEBUG_CLOUD) console.log("[TS3][cloud] rendered", { count: items.length, items });
     } catch (e) {
+      if (seq !== __cloudReqSeq) return;
       ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">불러오기 실패</div>`;
       if (DEBUG_CLOUD) console.log("[TS3][cloud] error", e);
     }
@@ -1542,6 +1819,7 @@ const ts3Api = (function TS3() {
     const total = (pos + neu + neg) || 0;
 
     if (total <= 0) {
+      __lastDonutPcts = null;
       ts3DonutEl.style.background = "conic-gradient(#8a97ad 0 100%)";
       ts3DonutEl.setAttribute("aria-label", "감성 비율 도넛 차트 (데이터 없음)");
       clearDonutLabels();
@@ -1551,6 +1829,8 @@ const ts3Api = (function TS3() {
     const pPos = Math.floor((pos / total) * 100);
     const pNeu = Math.floor((neu / total) * 100);
     const pNeg = Math.max(0, 100 - pPos - pNeu);
+
+    __lastDonutPcts = { pos: pPos, neu: pNeu, neg: pNeg };
 
     const a = pPos;
     const b = pPos + pNeu;
@@ -2021,3 +2301,32 @@ const ts3Api = (function TS3() {
 })();
 
 window.ts3Api = ts3Api;
+
+
+// ===============================
+// date-pill 전체 클릭 -> date picker 열기
+// ===============================
+(function bindDatePillPicker() {
+  document.querySelectorAll(".date-pill").forEach((pill) => {
+    const input = pill.querySelector('input[type="date"]');
+    if (!input) return;
+
+    // 중복 바인딩 방지
+    if (pill.dataset.boundPicker) return;
+    pill.dataset.boundPicker = "1";
+
+    // 커서도 pill 전체가 클릭 가능하게
+    pill.style.cursor = "pointer";
+
+    pill.addEventListener("click", (e) => {
+      // 기본 label 클릭은 input focus로도 이어지지만,
+      // 확실히 picker까지 열어주기 위해 showPicker 사용
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (typeof input.showPicker === "function") input.showPicker();
+      else input.focus();
+    });
+  });
+})();
+
