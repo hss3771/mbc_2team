@@ -1,6 +1,7 @@
-ISSUE_KEYWORD_INDEX = "issue_keyword_count"
 from apps.common.elastic import get_es
 import hashlib
+
+ISSUE_KEYWORD_INDEX = "issue_keyword_count"
 
 # region 기타
 ############################ 기타 ############################
@@ -19,8 +20,8 @@ def make_issue_ranking_id(date: str, keyword: str):
     id = f"{date}|{keyword.strip()}"
     return hashlib.sha256(id.encode()).hexdigest()
 
-# endregion
 
+# endregion
 # region 추가
 ############################ 추가(업데이트) ############################
 # 랭킹정보 추가(날짜, 키워드, 카운트)
@@ -31,7 +32,6 @@ def upsert_issue_ranking(
     count: int,
 ):
     ranking_id = make_issue_ranking_id(date, keyword)
-    print(ranking_id)
     es.update(
         index=ISSUE_KEYWORD_INDEX,
         id=ranking_id,
@@ -51,13 +51,7 @@ def update_issue_sub_keywords(
     sub_keywords: list[dict],  # [{"keyword": str, "score": float}]
 ):
     """
-    이슈 키워드의 sub_keywords(TF-IDF) 업데이트
-
-    :param sub_keywords:
-        [
-            {"keyword": "금리", "score": 0.187},
-            {"keyword": "환율", "score": 0.142},
-        ]
+    sub_keywords: [{"keyword": str, "score": float}]
     """
     ranking_id = make_issue_ranking_id(date, keyword)
     es.update(
@@ -125,11 +119,7 @@ def delete_by_date_keyword(es, date: str, keyword: str):
 # 키워드 랭킹 불러오기(날짜, 하위키워드)
 def get_sub_keywords_by_query(es, date: str, keyword: str):
     """
-    date + keyword로 문서를 검색해 sub_keywords를 반환한다.\n
-    결과 {'score': 0.0301910489296558, 'keyword': '디스플레이'}를 여러개 갖는 2중배열
-
-    :param date: str
-    :param keyword: str
+    date + keyword로 문서를 검색해 sub_keywords 반환
     """
     resp = es.search(
         index=ISSUE_KEYWORD_INDEX,
@@ -153,13 +143,6 @@ def get_sub_keywords_by_query(es, date: str, keyword: str):
 
 # 키워드 랭킹 불러오기_하루치(날짜, 키워드, 합계, 요약)
 def get_issue_ranking_by_date(es, date: str, size: int = 10):
-    """
-    해당 날을 검색하면 날짜, 키워드, 합계, 요약문을 반환한다.\n
-    결과 {'score': 0.0301910489296558, 'keyword': '디스플레이'}를 여러개 갖는 2중배열
-
-    :param date: str
-    :param keyword: str
-    """
     return es.search(
         index="issue_keyword_count",
         query={
@@ -232,6 +215,67 @@ def get_sub_key(es, start: str, keyword: str):
         )
     src = res.get("_source", {})
     return {"sub_keywords":src.get("sub_keywords", []),"doc_id":doc_id}
+
+
+# 수정 : 하위키워드 집계 쿼리
+def get_sub_keywords_sum_by_range(
+    es,
+    start_date: str,
+    end_date: str,
+    keyword: str,
+    size: int = 80,
+    min_score: float = 0.0,
+):
+    """
+    수정 : 기간(start~end) 동안 특정 keyword의 nested sub_keywords를 ES에서 한 번에 집계
+    """
+    body = {
+        "size": 0,
+        "query": {
+            "bool": {
+                "filter": [
+                    {"term": {"keyword": keyword}},
+                    {"range": {"date": {"gte": start_date, "lte": end_date}}},
+                ]
+            }
+        },
+        "aggs": {
+            "sub": {
+                "nested": {"path": "sub_keywords"},
+                "aggs": {
+                    "by_kw": {
+                        "terms": {
+                            "field": "sub_keywords.keyword",
+                            "size": max(1, min(int(size), 500)),
+                            "order": {"score_sum": "desc"},
+                        },
+                        "aggs": {"score_sum": {"sum": {"field": "sub_keywords.score"}}},
+                    }
+                },
+            }
+        },
+    }
+
+    resp = es.search(index=ISSUE_KEYWORD_INDEX, body=body)
+    buckets = (
+        (resp.get("aggregations") or {})
+        .get("sub", {})
+        .get("by_kw", {})
+        .get("buckets", [])
+    )
+
+    out = []
+    for b in buckets:
+        k = b.get("key")
+        v = ((b.get("score_sum") or {}).get("value")) or 0.0
+        if k is None:
+            continue
+        if float(v) < float(min_score):
+            continue
+        out.append({"text": k, "value": float(v)})
+
+    return out
+
 
 def get_keyword_trend_by_date(
     es,

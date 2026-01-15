@@ -1,7 +1,9 @@
+from fastapi import HTTPException
 from apps.service.article_module.article_repo import (
     fetch_articles_by_keyword,            # legacy(date)
     fetch_articles_by_keyword_range,      # new(range)
     fetch_sentiment_summary,             # new(agg)
+    fetch_article_by_id,
 )
 
 # -----------------------------
@@ -72,20 +74,21 @@ def get_articles_by_keyword_range(keyword, start, end, sentiment, page, size, or
         published_at = src.get("published_at") or ""
 
         body = src.get("body") or ""
-        summary_obj = src.get("summary") or {}
-        summary_text = summary_obj.get("summary_text") or ""   # ✅ 요약은 여기서
+        #summary_obj = src.get("summary") or {}
+        #summary_text = summary_obj.get("summary_text") or ""   # 요약은 여기서
 
         items.append({
+            "doc_id": h.get("_id"),  # 요약 호출에 필요!
             "press": src.get("press_name"),
             "title": src.get("title"),
-            "summary": summary_text,                             # ✅ 요약
-            "body": body,                                        # ✅ 본문 추가 (이게 핵심)
             "published_at": published_at[:10] if published_at else "",
             "sentiment": sent.get("label"),
             "sentiment_score": sent.get("score"),
             "trust_score": trust.get("score"),
             "trust_label": trust.get("label"),
             "url": src.get("url"),
+            "image_url": src.get("image_url") or "", # 수정
+            "body" : src.get("body") or "",
         })
 
     return {
@@ -99,7 +102,6 @@ def get_articles_by_keyword_range(keyword, start, end, sentiment, page, size, or
         "size": size,
         "orderby": orderby,
         "items": items,
-        "articles": items,
     }
 
 
@@ -132,3 +134,16 @@ def get_sentiment_summary(keyword: str, start: str, end: str):
         "neutral": counts["neutral"],
         "negative": counts["negative"],
     }
+
+
+# 기사 요약 함수
+def get_article_summary_by_doc_id(doc_id: str) -> str:
+    doc = fetch_article_by_id(doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="NOT_FOUND")
+
+    src = doc.get("_source") or {}
+    summary_obj = src.get("summary") or {}
+    summary_text = summary_obj.get("summary_text") or ""
+
+    return summary_text

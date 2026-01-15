@@ -79,6 +79,9 @@ PRESS_LOGO_MAP = {
     "CJB청주방송": "/view/img/CJB청주방송_로고.png",
     "JIBS": "/view/img/JIBS_로고.png",
     "kbc광주방송": "/view/img/kbc광주방송_로고.png",
+    "문화일보": "/view/img/문화일보_로고.png", # 추가
+    "스포츠경향": "/view/img/스포츠경향_로고.png", # 추가 (img 파일도 업데이트 됨)
+    "스포츠조선": "/view/img/스포츠조선_로고.png", # 추가 (img 파일도 업데이트 됨)
 }
 
 DEFAULT_LOGO = "/view/img/favicon.png"

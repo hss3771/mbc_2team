@@ -117,3 +117,10 @@ def fetch_sentiment_summary(keyword: str, start: str, end: str):
     }
 
     return es.search(index="news_info", body=body)
+
+def fetch_article_by_id(doc_id: str):
+    es = elastic.get_es()
+    try:
+        return es.get(index="news_info", id=doc_id)
+    except Exception:
+        return None

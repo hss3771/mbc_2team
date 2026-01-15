@@ -155,13 +155,15 @@ def get_keyword_ranking(
         # ✅ 자유기간: 입력 start~end 그대로 사용, 비교기간 없음
         base_start, base_end = s, e
 
+        prev_start, prev_end = _prev_same_length_range(base_start, base_end)
+
         base = repo.get_top_keywords_sum_by_range(
             es, base_start.isoformat(), base_end.isoformat(), size=size
         )
 
-        # prev는 비우고(비교 계산 안 함)
-        prev = []
-        prev_start = prev_end = None
+        prev = repo.get_top_keywords_sum_by_range(
+            es, prev_start.isoformat(), prev_end.isoformat(), size=size
+        )
 
     elif mode == "month":
         # 월별은 종료일(end)이 속한 월 전체가 기준, 비교는 전월 전체
@@ -199,24 +201,20 @@ def get_keyword_ranking(
         kw = cur["keyword"]
         current_count = int(cur["count"])
 
-        if mode == "range":
-            chg = None
-            mov = None
-            badge = None
-        else:
-            prev_rank = prev_rank_map.get(kw)
-            prev_count = prev_count_map.get(kw, 0)
-            chg = calc_change_rate(current_count, prev_count)
-            mov = calc_rank_change(current_rank, prev_rank)
-            badge = _get_badge(mov, chg)
+        prev_rank = prev_rank_map.get(kw)
+        prev_count = prev_count_map.get(kw, 0)
+
+        chg = calc_change_rate(current_count, prev_count)
+        mov = calc_rank_change(current_rank, prev_rank)
+        badge = _get_badge(mov, chg)
 
         items.append({
-            "rank": current_rank,     # 기준 기간(base)에서의 현재 순위 (UI에서 랭킹 번호 표시)
-            "keyword": kw,        # 이슈 키워드 텍스트
-            "count": current_count,   # 기준 기간(base) 동안의 언급량 (UI에서 언급량 컬럼)
-            "change_rate": chg,   # 비교 기간(prev) 대비 증감률 (NEW면 None)
-            "rank_change": mov,   # 순위 변동 값 (NEW면 None)
-            "badge": badge,       # 랭킹 상태를 한 단어로 요약한 UI 전용 플래그( NEW/UP/DOWN/SAME)
+            "rank": current_rank,
+            "keyword": kw,
+            "count": current_count,
+            "change_rate": chg,
+            "rank_change": mov,
+            "badge": badge,
         })
 
     return {
@@ -247,3 +245,15 @@ def _hits_to_items(es_resp: dict) -> list[dict]:
             "count": int(src.get("count", 0) or 0),
         })
     return out
+
+def _ensure_items(x):
+    # 이미 list면 그대로
+    if isinstance(x, list):
+        return x
+
+    # ES aggregation dict면 변환
+    buckets = x.get("aggregations", {}).get("keywords", {}).get("buckets", [])
+    return [
+        {"keyword": b["key"], "count": int(b["doc_count"])}
+        for b in buckets
+    ]
