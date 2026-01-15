@@ -695,3 +695,30 @@
 
   init();
 })();
+
+// ===============================
+// date-pill 전체 클릭 -> date picker 열기
+// ===============================
+(function bindDatePillPicker() {
+  document.querySelectorAll(".date-pill").forEach((pill) => {
+    const input = pill.querySelector('input[type="date"]');
+    if (!input) return;
+
+    // 중복 바인딩 방지
+    if (pill.dataset.boundPicker) return;
+    pill.dataset.boundPicker = "1";
+
+    // 커서도 pill 전체가 클릭 가능하게
+    pill.style.cursor = "pointer";
+
+    pill.addEventListener("click", (e) => {
+      // 기본 label 클릭은 input focus로도 이어지지만,
+      // 확실히 picker까지 열어주기 위해 showPicker 사용
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (typeof input.showPicker === "function") input.showPicker();
+      else input.focus();
+    });
+  });
+})();

@@ -8,6 +8,7 @@ from starlette.requests import Request
 
 
 from apps.common.logger import Logger
+import apps.service.image_module.dashboard as dashboard
 
 
 logger = Logger().get_logger(__name__)
@@ -21,18 +22,23 @@ from apps.service.user_module.user_router import router as user_router
 from apps.service.image_module.dashboard import router as image_router
 from apps.service.keyword_ranking_module.keyword_ranking_router import router as ranking_router
 from apps.service.article_module.article import router as article_router
-from apps.service.word_module.word_dict import router as word_dict_router
+from apps.service.admin_module.collection import router as admin_crawl_router
+from apps.service.admin_module.reanalyze import router as reanalyze_router
+from apps.service.admin_module.term_manage import router as term_manager_router
+from apps.service.word_module.word_dict import router as word_router
 from apps.service.image_module.press_logo import router as logo_router
-from apps.service.image_crawler_module.image_crawler import router as image_crawler_router
 
-app.include_router(image_crawler_router)
-app.include_router(logo_router)
+
 app.include_router(bookmarks_router)
 app.include_router(user_router)
 app.include_router(image_router)
 app.include_router(ranking_router)
 app.include_router(article_router)
-app.include_router(word_dict_router)
+app.include_router(admin_crawl_router)
+app.include_router(reanalyze_router)
+app.include_router(term_manager_router)
+app.include_router(word_router)
+app.include_router(logo_router)
 ################################ 경로 설정 ################################
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 app.mount("/view", StaticFiles(directory=BASE_DIR / "view"), name="view")
@@ -41,7 +47,7 @@ app.mount("/view", StaticFiles(directory=BASE_DIR / "view"), name="view")
 app.add_middleware(SessionMiddleware,secret_key='session_secret_key',max_age=1800)
 
 ################################ 페이지 라우팅 ################################
-# region
+# region 
 # Page Loading Routes
 @app.get("/")
 def read_root():

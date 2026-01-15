@@ -12,7 +12,7 @@ url = f'mysql+pymysql://{user_id}:{pw}@{host}:{port}/{db}'
 
 def get_db():
     engine = create_engine(url,echo=True,
-                       pool_size=10,
+                       pool_size=100,
                        max_overflow=20,
                        pool_timeout=30,
                        pool_pre_ping=True,)

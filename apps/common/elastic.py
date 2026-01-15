@@ -9,7 +9,8 @@ es = Elasticsearch(
 def get_es():
     return Elasticsearch(
         hosts=["http://192.168.0.34:9200"],
-        request_timeout=30,
+        connections_per_node=10,
+        request_timeout=120,
     )
 
 def delete_indices():
