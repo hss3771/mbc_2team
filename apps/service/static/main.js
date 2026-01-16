@@ -353,11 +353,16 @@ function renderSummary(keyword) {
 
   // 2) 서버가 내려주는 형태: item.summary (지금은 summary_text를 바로 넣는 중)
   const reasonRaw = String(item?.summary ?? "").trim();
+  const mode = getActiveMode(); // day | week | month | year | range (모드 확인)
 
   // 3) 아직 없으면 안내 문구
   if (!reasonRaw) {
     const li = document.createElement("li");
-    li.textContent = "※ 랭킹 키워드 선정 이유는 일별 선택을 했을 때만 제공됩니다.";
+    if (mode === "day") {
+      li.textContent = "해당 날짜의 랭킹 키워드 선정 이유가 아직 생성되지 않았습니다.";
+    } else {
+      li.innerHTML = '랭킹 키워드 선정 이유는 <span class="highlight-blue">일별 선택</span> 시에만 제공됩니다.';
+    }
     summaryListEl.appendChild(li);
     return;
   }
@@ -535,7 +540,6 @@ async function fetchRankingAndRender({ keepSelected = true } = {}) {
 
   if (!res.ok) {
     const msg = await res.text().catch(() => "");
-    console.error("[ranking] fetch failed:", res.status, msg);
     alert("랭킹 조회에 실패했습니다.");
     return;
   }
@@ -807,14 +811,10 @@ document.addEventListener("app:rangechange", () => {
       }
 
       PRESS_LOGO_MAP = await r.json();
-      console.log("[TS2] PRESS_LOGO_MAP loaded");
 
     } catch (err) {
-      console.error("[TS2] load failed", err);
       PRESS_LOGO_MAP = {}; // fallback
     }
-    console.log("PRESS_LOGO_MAP")
-    console.log(PRESS_LOGO_MAP)
   }
   PRESS_LOGO()
 
@@ -1560,7 +1560,6 @@ async function fetchSentiment(sent, page, size) {
     }
 
     const { items, total } = normalizeList(j);
-    console.log("[TS2] fetched(list)", { sent, url, items: items.length, total });
     return { items, total, url };
   }
 
@@ -1587,7 +1586,6 @@ async function fetchSentiment(sent, page, size) {
       state.uiPage[sent] = clampedPage;
       renderCards(sent, show, clampedPage, totalPages);
     } catch (e) {
-      console.log("[TS2] load failed", sent, e);
       setListMessage(listEl, "기사 API를 찾지 못했거나 응답이 없습니다(콘솔 로그 확인).");
 
       const { text, btnPrev, btnNext } = getPager(sent);
@@ -1696,98 +1694,210 @@ const ts3Api = (function TS3() {
   let baseKeyword = (document.querySelector("#keywordDropdown .cselect__value")?.textContent || "주식").trim();
   let compareSet = new Set(); // base 제외한 비교 키워드만
 
-    // =========================================================
+  // =========================================================
   // TS3: 워드클라우드
   // =========================================================
   // ✅ 요청 순서 관리(빠르게 기간 바꿀 때 이전 응답이 덮어쓰는 문제 방지)
-  let __cloudReqSeq = 0;
+let __cloudReqSeq = 0;
+// ✅ 마지막 렌더 정보(리사이즈 재렌더용)
+let __lastCloudState = { keyword: null, start: null, end: null };
 
-  async function renderCloud(keyword) {
-    const DEBUG_CLOUD = false;
-    if (!ts3CloudEl) return;
+// ------------------------------
+// util: 캔버스를 컨테이너에 딱 맞게 + DPR 반영
+// ------------------------------
+function setupCanvasToFillBox(canvas, boxEl, fallbackW = 467, fallbackH = 220) {
+  const rect = boxEl.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
 
-    const r = window.getAppRange?.() || {};
-    const start = r.start;
-    const end = r.end || r.start;
-    if (!start) return;
+  const cssW = rect.width || fallbackW;
+  const cssH = rect.height || fallbackH;
 
-    const seq = ++__cloudReqSeq;
-    ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">불러오는 중…</div>`;
+  // 화면에 보이는 크기
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
 
-    try {
-        const url = `/api/issue_wordcloud?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&keyword=${encodeURIComponent(keyword)}`;
-        const res = await fetch(url, { credentials: "same-origin" });
-        const data = await res.json().catch(() => null);
+  // 실제 렌더 픽셀 크기(DPR 반영)
+  canvas.width = Math.max(1, Math.floor(cssW * dpr));
+  canvas.height = Math.max(1, Math.floor(cssH * dpr));
 
-        if (seq !== __cloudReqSeq) return; 
+  // (선택) 선명도/좌표계 안정화
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-        if (!res.ok || !data?.success || !Array.isArray(data.sub_keywords) || data.sub_keywords.length === 0) {
-            ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">데이터 없음</div>`;
-            return;
-        }
-
-        // 1. Wordcloud2.js 포맷으로 데이터 변환: [ ['단어', 가중치], ... ]
-        const wordList = data.sub_keywords
-            .slice(0, 40) // 최대 단어 수 조절
-            .map((x, i) => {
-                let kw = "";
-                let score = 0;
-                if (typeof x === "string") {
-                    kw = x;
-                    score = 40 - i; // 스코어 없으면 순위 기반 가중치
-                } else {
-                    kw = (x.text ?? x.keyword ?? x.word ?? "").trim();
-                    score = x.value ?? x.score ?? (40 - i);
-                }
-                return [kw, score];
-            })
-            .filter(it => it[0] && it[0] !== "[object Object]");
-
-        if (wordList.length === 0) {
-            ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">데이터 없음</div>`;
-            return;
-        }
-
-        // 2. 캔버스 생성 및 초기화
-        ts3CloudEl.innerHTML = "";
-        const canvas = document.createElement("canvas");
-        const rect = ts3CloudEl.getBoundingClientRect();
-        
-        // 부모 크기에 맞게 캔버스 크기 설정 (해상도를 위해 2배 확대 가능)
-        canvas.width = rect.width || 467;
-        canvas.height = rect.height || 220;
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-        ts3CloudEl.appendChild(canvas);
-
-        // 3. WordCloud 실행
-        // await document.fonts.ready; // 폰트 로드 대기
-        WordCloud(canvas, {
-            list: wordList,
-            gridSize: Math.round(16 * canvas.width / 1024), // 화면 크기에 따른 그리드 조절
-            weightFactor: function (size) {
-                // 가중치를 캔버스 높이에 비례하도록 정규화
-                const maxScore = Math.max(...wordList.map(w => w[1]));
-                return (size / maxScore) * (canvas.height /3); 
-            },
-            fontFamily: '"Lato", "Noto Sans KR",sans-serif',
-            color: (word, weight, fontSize, distance, theta) => {
-                // 상위 단어일수록 진한 색상 부여 가능
-                const colors = ["#0B63CE","#2A7BE4","#6AA6F8","#162C49","#1F3C68"];
-                return colors[Math.floor(Math.random() * colors.length)];
-            },
-            rotateRatio: 0.2, // 30% 확률로 단어 회전
-            rotationSteps: 2,
-            backgroundColor: 'transparent',
-            shuffle: true,
-            ellipticity: 0.4 // 원형보다는 타원형으로 배치 (가로형 대시보드 적합)
-        });
-
-    } catch (e) {
-        if (seq !== __cloudReqSeq) return;
-        ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">불러오기 실패</div>`;
-    }
+  return { rect, dpr };
 }
+
+// ------------------------------
+// util: 테두리에 픽셀이 닿았는지(=너무 꽉참/잘림 위험)
+// ------------------------------
+function hitEdge(canvas, margin = 2, step = 12) {
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width, h = canvas.height;
+  const img = ctx.getImageData(0, 0, w, h).data;
+
+  // top/bottom
+  for (let x = 0; x < w; x += step) {
+    if (img[((margin * w + x) * 4) + 3] > 0) return true;
+    if (img[(((h - 1 - margin) * w + x) * 4) + 3] > 0) return true;
+  }
+  // left/right
+  for (let y = 0; y < h; y += step) {
+    if (img[((y * w + margin) * 4) + 3] > 0) return true;
+    if (img[((y * w + (w - 1 - margin)) * 4) + 3] > 0) return true;
+  }
+  return false;
+}
+
+// ------------------------------
+// 핵심: "박스 꽉 채우기" 자동 스케일 렌더
+//  - k를 키우면 전체 폰트가 커짐
+//  - 테두리에 닿으면 줄이고, 안 닿으면 키움(이진 탐색)
+// ------------------------------
+async function drawWordCloudFit(canvas, wordList, baseOpts) {
+  if (document.fonts?.ready) await document.fonts.ready;
+
+  const maxScore = Math.max(...wordList.map(w => w[1])) || 1;
+
+  // k 범위(필요하면 조금 조정 가능)
+  let lo = 0.18, hi = 0.90;
+
+  // 여러 번 그려서 "거의 꽉" 차는 k를 찾는다
+  for (let i = 0; i < 8; i++) {
+    const k = (lo + hi) / 2;
+
+    WordCloud(canvas, {
+      ...baseOpts,
+      weightFactor: (size) => (size / maxScore) * (canvas.height * k),
+    });
+
+    // WordCloud는 비동기라 잠깐 대기
+    await new Promise(r => setTimeout(r, 90));
+
+    const touched = hitEdge(canvas, 2, 12);
+    if (touched) hi = k; // 너무 꽉참/잘림 위험
+    else lo = k;         // 아직 여유 있음 -> 더 키워도 됨
+  }
+
+  // 최종 렌더(살짝 여유를 주면 잘림 방지)
+  const finalK = lo * 0.97;
+
+  WordCloud(canvas, {
+    ...baseOpts,
+    weightFactor: (size) => (size / maxScore) * (canvas.height * finalK),
+  });
+}
+
+// =========================================================
+// TS3: 워드클라우드 (완성본)
+// =========================================================
+async function renderCloud(keyword) {
+  if (!ts3CloudEl) return;
+
+  const r = window.getAppRange?.() || {};
+  const start = r.start;
+  const end = r.end || r.start;
+  if (!start) return;
+
+  // 최신 상태 저장(리사이즈 재렌더용)
+  __lastCloudState = { keyword, start, end };
+
+  const seq = ++__cloudReqSeq;
+  ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">불러오는 중…</div>`;
+
+  try {
+    const url =
+      `/api/issue_wordcloud?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&keyword=${encodeURIComponent(keyword)}`;
+
+    const res = await fetch(url, { credentials: "same-origin" });
+    const data = await res.json().catch(() => null);
+
+    if (seq !== __cloudReqSeq) return;
+
+    if (!res.ok || !data?.success || !Array.isArray(data.sub_keywords) || data.sub_keywords.length === 0) {
+      ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">데이터 없음</div>`;
+      return;
+    }
+
+    // Wordcloud2.js 형식: [ [word, score], ... ]
+    const wordList = data.sub_keywords
+      .slice(0, 40)
+      .map((x, i) => {
+        let kw = "";
+        let score = 0;
+
+        if (typeof x === "string") {
+          kw = x;
+          score = 40 - i;
+        } else {
+          kw = (x.text ?? x.keyword ?? x.word ?? "").trim();
+          score = Number(x.value ?? x.score ?? (40 - i));
+        }
+
+        // score 방어
+        if (!Number.isFinite(score)) score = 1;
+        return [kw, score];
+      })
+      .filter(it => it[0] && it[0] !== "[object Object]");
+
+    if (wordList.length === 0) {
+      ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">데이터 없음</div>`;
+      return;
+    }
+
+    // 캔버스 생성
+    ts3CloudEl.innerHTML = "";
+    const canvas = document.createElement("canvas");
+    ts3CloudEl.appendChild(canvas);
+
+    // 컨테이너에 맞게 캔버스 세팅
+    setupCanvasToFillBox(canvas, ts3CloudEl, 467, 220);
+
+    // 옵션(여기만 취향대로 바꾸면 됨)
+    const baseOpts = {
+      list: wordList,
+      // gridSize는 작을수록 촘촘히 들어가지만 느려질 수 있음
+      gridSize: Math.max(6, Math.round(12 * canvas.width / 1024)),
+      fontFamily: '"Lato", "Noto Sans KR", sans-serif',
+      color: () => {
+        const colors = ["#0B63CE", "#2A7BE4", "#6AA6F8", "#162C49", "#1F3C68"];
+        return colors[(Math.random() * colors.length) | 0];
+      },
+      rotateRatio: 0.2,
+      rotationSteps: 2,
+      backgroundColor: "transparent",
+      shuffle: true,
+      ellipticity: 0.4,
+
+      // 잘림 방지(지원되는 버전이면 도움)
+      drawOutOfBound: false,
+      shrinkToFit: true,
+      clearCanvas: true,
+    };
+
+    // ✅ 박스에 "거의 꽉" 차게 자동 스케일 렌더
+    await drawWordCloudFit(canvas, wordList, baseOpts);
+
+  } catch (e) {
+    if (seq !== __cloudReqSeq) return;
+    ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">불러오기 실패</div>`;
+  }
+}
+
+// =========================================================
+// 리사이즈 재렌더: "한 번만" 등록 (중복 방지)
+// =========================================================
+(function bindCloudResizeOnce() {
+  let t = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      const { keyword } = __lastCloudState || {};
+      if (keyword) renderCloud(keyword);
+    }, 150);
+  }, { passive: true });
+})();
+
+
 
   // =========================================================
   // TS3: 도넛(감성 합계)
@@ -1851,13 +1961,10 @@ const ts3Api = (function TS3() {
       const res = await fetch(url, { credentials: "same-origin" });
       const data = await res.json().catch(() => null);
 
-      console.log("[TS3][donut] response:", data);
-
       if (seq !== __donutReqSeq) return;
 
       if (!res.ok || !data?.success) {
         setDonutByCounts(0, 0, 0);
-        console.log("[TS3][donut] fail", { ok: res.ok, status: res.status, data });
         return;
       }
 
@@ -1866,11 +1973,9 @@ const ts3Api = (function TS3() {
       const neg = Number(data.negative || 0);
 
       setDonutByCounts(pos, neu, neg, { keyword, start, end });
-      console.log("[TS3][donut] ok", { keyword, start, end, pos, neu, neg });
     } catch (e) {
       if (seq !== __donutReqSeq) return;
       setDonutByCounts(0, 0, 0);
-      console.log("[TS3][donut] error", e);
     }
   }
 
@@ -1954,9 +2059,20 @@ const ts3Api = (function TS3() {
     };
 
   function onManualDateChange() {
-    clearSegActive(); // ✅ 수동 날짜 => 자유기간(range)
-    emitRangeChange({ preset: false });
+  const s = (startDateEl?.value || "").trim();
+  const e = (endDateEl?.value || "").trim();
+
+  // 시작/종료가 모두 있고, 같은 날짜면 → '일별' 버튼 활성화
+  if (s && e && s === e) {
+    setSegActive("day");
+    emitRangeChange({ preset: true });   // day 기준으로 start=end 유지
+    return;
   }
+
+  // 그 외(기간 범위) → 버튼 해제(자유기간)
+  clearSegActive();
+  emitRangeChange({ preset: false });
+}
 
   startDateEl?.addEventListener("input", onManualDateChange);
   startDateEl?.addEventListener("change", onManualDateChange);
@@ -2083,7 +2199,6 @@ const ts3Api = (function TS3() {
 
     try {
       const reqKeywords = [baseKeyword, ...Array.from(compareSet)];
-      console.log("[TS3] fetchTrend keywords =", reqKeywords);
 
       const trend = await fetchTrend(start, end, reqKeywords);
 
@@ -2174,7 +2289,6 @@ const ts3Api = (function TS3() {
       }
     } catch (e) {
       if (seq !== __trendReqSeq) return;
-      console.error("[TS3][line] error", e);
 
       if (ts3Placeholder) {
         ts3Placeholder.style.display = "grid";
@@ -2213,19 +2327,15 @@ const ts3Api = (function TS3() {
     renderCloud(baseKeyword);
     renderDonut(baseKeyword);
     renderLineChart();
-    console.log("KEYWORDS:", JSON.stringify(KEYWORDS, null, 2));
   }
 
   function toggleCompareKeyword(kw) {
     if (!kw) return;
     if (kw === baseKeyword) return; // 기준은 제거 불가
 
-    console.log("[TS3] toggleCompareKeyword", kw, "before", Array.from(compareSet));
 
     if (compareSet.has(kw)) compareSet.delete(kw);
     else compareSet.add(kw);
-
-    console.log("[TS3] after", Array.from(compareSet));
 
     syncButtons();
     renderLineChart();
