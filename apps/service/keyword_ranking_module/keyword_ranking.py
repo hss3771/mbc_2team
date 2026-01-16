@@ -203,7 +203,7 @@ def get_keyword_ranking(
 
         prev_rank = prev_rank_map.get(kw)
         prev_count = prev_count_map.get(kw, 0)
-
+        summary_text = cur.get("summary")
         chg = calc_change_rate(current_count, prev_count)
         mov = calc_rank_change(current_rank, prev_rank)
         badge = _get_badge(mov, chg)
@@ -215,6 +215,7 @@ def get_keyword_ranking(
             "change_rate": chg,
             "rank_change": mov,
             "badge": badge,
+            "summary": summary_text,
         })
 
     return {
@@ -240,9 +241,12 @@ def _hits_to_items(es_resp: dict) -> list[dict]:
     out = []
     for h in hits:
         src = h.get("_source", {})
+        summary_obj = src.get("summary", {})
+        summary_text = summary_obj.get("summary") if isinstance(summary_obj, dict) else None
         out.append({
             "keyword": src.get("keyword"),
             "count": int(src.get("count", 0) or 0),
+            "summary": summary_text
         })
     return out
 
