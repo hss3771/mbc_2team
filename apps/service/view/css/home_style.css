@@ -232,11 +232,6 @@ img {
   border: 1px solid rgba(15, 23, 42, .07);
   background: rgba(255, 255, 255, .55);
   box-shadow: 0 10px 24px rgba(15, 23, 42, .06);
-
-  touch-action: pan-y;
-  /* ✅ 세로 스크롤은 허용, 가로 스와이프는 JS가 처리 */
-  user-select: none;
-  cursor: grab;
 }
 
 .product-slider.is-dragging {
@@ -251,27 +246,18 @@ img {
   will-change: transform;
 }
 
+/* ✅ 슬라이드(컨테이너) */
 .product-slider__slide {
   flex: 0 0 100%;
   width: 100%;
-  height: auto;
-  display: block;
-
-  object-fit: contain;
-  object-position: center;
-
-  --zoom: 1;
-  --ox: 50%;
-  --oy: 50%;
-
-  transform: scale(1);
-  transform-origin: var(--ox) var(--oy);
-  
-  backface-visibility: hidden;
+  padding: 18px;                  /* ✅ 박스 여백 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .product-slider__slide.is-active {
-  transform: scale(var(--zoom));
+  transform: none;
 }
 
 .product-slider__slide[data-idx="1"] {
@@ -294,6 +280,15 @@ img {
   --ox: 8%;
   --oy: 6%;
 }
+
+.product-slider__frame{
+  background: rgba(255,255,255,.78);
+  backdrop-filter: blur(10px);          /* ✅ 뒤 배경 블러 */
+  -webkit-backdrop-filter: blur(10px);  /* 사파리 */
+  box-shadow: 0 6px 16px -6px rgba(140,148,167,.12),
+    0 2px 36px rgba(156,162,175,.08);;
+}
+
 
 /* 카드 클릭 가능 느낌 + 활성 상태 */
 .mini-card {

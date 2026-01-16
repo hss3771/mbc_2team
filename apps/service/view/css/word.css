@@ -656,3 +656,50 @@ main {
   visibility: hidden;   /* 레이아웃은 유지, 화면만 숨김 */
 }
 
+/* =========================
+   1) 모달에서 스크롤이 "확실히" body에서 나게 만들기
+========================= */
+.word-modal-body{
+  flex: 1 1 auto;        /* ✅ 모달 헤더/푸터 제외한 나머지 공간을 차지 */
+  min-height: 0;         /* ✅ flex 자식 overflow 스크롤 필수 */
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+/* 혹시 bookmark-list가 스크롤 컨테이너가 되는 경우도 커버 */
+.bookmark-list{
+  min-height: 0;
+}
+
+/* =========================
+   2) 스크롤바 스타일: body + bookmark-list 둘 다 적용
+========================= */
+.word-modal-body::-webkit-scrollbar,
+.bookmark-list::-webkit-scrollbar{
+  width: 12px;
+}
+
+.word-modal-body::-webkit-scrollbar-track,
+.bookmark-list::-webkit-scrollbar-track{
+  background: #f1f4fb;
+  border-radius: 999px;
+}
+
+.word-modal-body::-webkit-scrollbar-thumb,
+.bookmark-list::-webkit-scrollbar-thumb{
+  background: #c7d6f5;
+  border-radius: 999px;
+}
+
+.word-modal-body::-webkit-scrollbar-thumb:hover,
+.bookmark-list::-webkit-scrollbar-thumb:hover{
+  background: #a9c2f2;
+}
+
+/* Firefox */
+.word-modal-body,
+.bookmark-list{
+  scrollbar-width: thin;
+  scrollbar-color: #c7d6f5 #f1f4fb;
+}
