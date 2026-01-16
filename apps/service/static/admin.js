@@ -1,7 +1,6 @@
 (function () {
   "use strict";
 
-  console.log("✅ admin.js LOADED");
 
   // ===== util =====
   const $ = (sel, el = document) => el.querySelector(sel);
@@ -60,7 +59,6 @@
     const t = setTimeout(() => controller.abort(), opts.timeoutMs ?? 15000);
 
     const method = (opts && opts.method) ? opts.method : "GET";
-    console.log(`🌐 [admin.js] FETCH ${method} ${url}`);
 
     try {
       const res = await fetch(url, {
@@ -160,7 +158,6 @@
     if (limit) qs1.set("limit", String(limit));
 
     try {
-      console.log("📌 fetchRunsPage ISO", { startIso, endIso, cursor, limit });
       const payload = await apiJson(`${API.listRuns}?${qs1.toString()}`, { cache: "no-store" });
       const items = pickListItems(payload).map(normalizeRun).filter(Boolean);
       return { items, nextCursor: pickNextCursor(payload) };
@@ -172,7 +169,6 @@
       if (cursor) qs2.set("cursor", cursor);
       if (limit) qs2.set("limit", String(limit));
 
-      console.log("📌 fetchRunsPage YMD fallback", { start: isoToYmd(startIso), end: isoToYmd(endIso), cursor, limit });
       const payload = await apiJson(`${API.listRuns}?${qs2.toString()}`, { cache: "no-store" });
       const items = pickListItems(payload).map(normalizeRun).filter(Boolean);
       return { items, nextCursor: pickNextCursor(payload) };
@@ -590,7 +586,6 @@
       if (endInput) endInput.value = endIso;
     }
 
-    console.log("🔎 doSearch()", { startIso, endIso });
 
     queryStartIso = startIso;
     queryEndIso = endIso;
@@ -606,7 +601,6 @@
     // ✅ 조회 버튼: 무조건 로그 + doSearch 실행되게
     btnSearch?.addEventListener("click", (e) => {
       e.preventDefault();
-      console.log("🖱️ btnSearch CLICK", startInput?.value, endInput?.value);
       doSearch();
     });
 

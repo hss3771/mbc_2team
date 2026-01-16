@@ -11,7 +11,6 @@ async function syncGlobalStatus() {
     try {
         const res = await fetch('/admin/reanalyze/status/latest'); 
         const data = await res.json();
-        console.log(data);
 
         if (data.status === "running") {
             // 기존 setProgress 활용
@@ -111,7 +110,7 @@ function startPolling(jobId) {
 
   async function apiJson(url, opts = {}) {
     const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), opts.timeoutMs ?? 2000);
+    const t = setTimeout(() => controller.abort(), opts.timeoutMs ?? 15000);
     
     try {
       const res = await fetch(url, {
@@ -264,7 +263,6 @@ function startPolling(jobId) {
     return;
   }
 
-console.log(startEl.value, endEl.value);
 
   // =========================
   // state
@@ -560,7 +558,7 @@ function normalizeProgress(job) {
   try {
     const payload = await apiJson(API.progress(currentJobId), {
       cache: "no-store",
-      timeoutMs: 2000
+      timeoutMs: 15000
     });
     if (!payload) return;
 
@@ -581,15 +579,15 @@ function normalizeProgress(job) {
     console.warn("[reanalyze.progress] poll failed:", e);
   }
 }
-  function uuidv4() {
-    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-    );
-  }
+function uuidv4() {
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  );
+}
   // =========================
   // run (real)
   // =========================
-  async function startRunReal() {
+async function startRunReal() {
   const targets = currentList
     .filter(r => selectedRowIds.has(r.article_id))
     .map(r => r.article_id);
@@ -629,7 +627,7 @@ function normalizeProgress(job) {
 
     // 진행률 polling
     await pollOnce();
-    pollTimer = setInterval(pollOnce, 2000);
+    pollTimer = setInterval(pollOnce, 10000);
 
   } catch (e) {
     setLocked(false);

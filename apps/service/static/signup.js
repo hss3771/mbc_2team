@@ -406,8 +406,6 @@
                     body: fd
                 });
 
-                console.log("[register] status:", resp.status);
-                console.log("[register] response:", data ?? rawText);
 
                 if (!resp.ok) {
                     setFormErr("회원가입 요청 처리 중 오류가 발생했습니다. 입력값을 확인해주세요.");
