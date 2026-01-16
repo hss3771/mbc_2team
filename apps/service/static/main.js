@@ -274,7 +274,9 @@ function renderDonutPercentLabels(pPos, pNeu, pNeg) {
   wrapEl.appendChild(svg);
 }
 
-
+// ===============================
+// TS2 기사 상세 팝업 모달 (전역)
+// ===============================
 // #region ===== 랭킹 렌더 유틸 =====
 function fmtRate(n) {
   if (n === null || n === undefined) return "-";
@@ -338,7 +340,6 @@ function renderRanking(selectedKeyword) {
     rankListEl.appendChild(row);
   });
 }
-// #endregion
 
 // ===== 요약 렌더링 =====
 function renderSummary(keyword) {
@@ -347,13 +348,39 @@ function renderSummary(keyword) {
   summaryKeywordEl.textContent = keyword;
   summaryListEl.innerHTML = "";
 
-  const items = SUMMARY_MAP[keyword] || SUMMARY_MAP["주식"];
-  items.forEach((txt) => {
+  // 1) 랭킹 응답(KEYWORDS)에서 현재 키워드 item 찾기
+  const item = (KEYWORDS || []).find(x => x.keyword === keyword);
+
+  // 2) 서버가 내려주는 형태: item.summary (지금은 summary_text를 바로 넣는 중)
+  const reasonRaw = String(item?.summary ?? "").trim();
+
+  // 3) 아직 없으면 안내 문구
+  if (!reasonRaw) {
+    const li = document.createElement("li");
+    li.textContent = "※ 랭킹 키워드 선정 이유는 일별 선택을 했을 때만 제공됩니다.";
+    summaryListEl.appendChild(li);
+    return;
+  }
+
+  // 4) 줄 단위로 쪼개되, 번호/불릿 제거해서 li에 넣기
+  const lines = reasonRaw
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(s => s.replace(/^\s*(?:\d+[\.\)]|[-•▪■])\s*/, "").trim())
+    .filter(Boolean);
+
+  // 라인이 0이면 원문 그대로
+  const finalLines = lines.length ? lines : [reasonRaw];
+
+  finalLines.forEach((txt) => {
     const li = document.createElement("li");
     li.textContent = txt;
     summaryListEl.appendChild(li);
   });
 }
+
 
 // #region ===== 키워드 선택(랭킹/드롭다운 공통) =====
 function selectKeyword(keyword) {
@@ -752,7 +779,7 @@ document.addEventListener("app:rangechange", () => {
 (function TS2() {
   function hidePopularSortOptions() {
     document.querySelectorAll('.ts2-sort .cselect__opt[data-value="popular"]').forEach((opt) => {
-      opt.remove(); // ✅ 아예 제거
+      opt.remove(); // 아예 제거
     });
   }
   "use strict";
@@ -829,9 +856,8 @@ document.addEventListener("app:rangechange", () => {
 /* =========================
    요약(회원 전용) util
 ========================= */
-const SUMMARY_CACHE = new Map(); // docId -> summaryText
-const LOGIN_URL = "/login";      // ✅ 너희 로그인 페이지 경로로 수정
-
+const SUMMARY_CACHE = new Map();
+const LOGIN_URL = "/login";    
 async function fetchArticleSummary(docId) {
   if (!docId) return { ok: false, code: "NO_ID" };
 
@@ -869,7 +895,91 @@ async function fetchArticleSummary(docId) {
     return s.slice(0, 10);
   }
 
-  function getTrustInfo(a) {
+  function parseSummaryToSections(text) {
+  const raw = String(text || "").replace(/\r\n/g, "\n").trim();
+  if (!raw) return null;
+
+  // 기본 섹션
+  const out = { claim: "", evidence: [] };
+
+  // 1) 한 줄짜리 "핵심 주장: ... 근거: ..." 케이스도 대비
+  //    "근거:" 기준으로 1차 분리
+  const parts = raw.split(/(?:\n|\s)*근거\s*:\s*/);
+  const left = parts[0] || "";
+  const right = parts.slice(1).join("\n") || "";
+
+  // claim: "핵심 주장:" 있으면 제거
+  out.claim = left.replace(/^\s*핵심\s*주장\s*:\s*/g, "").trim();
+
+  // 2) evidence: 줄 단위에서 "- " 시작을 우선 수집
+  const lines = right.split("\n").map(s => s.trim()).filter(Boolean);
+
+  const bullets = [];
+  for (const ln of lines) {
+    if (/^[-•▪■]\s*/.test(ln)) bullets.push(ln.replace(/^[-•▪■]\s*/, "").trim());
+    else {
+      // 불릿이 아니면 이전 불릿에 이어붙이기(긴 문장 줄바꿈 대응)
+      if (bullets.length) bullets[bullets.length - 1] += " " + ln;
+      else if (ln) bullets.push(ln); // 불릿이 아예 없으면 그냥 넣기
+    }
+  }
+  out.evidence = bullets;
+
+  return out;
+}
+
+function isStructuredSummary(text) {
+  const t = String(text || "");
+  // '핵심 주장:' / '근거:'가 있거나, 불릿(- •)이 여러 줄이면 구조화로 간주
+  return /핵심\s*주장\s*:/i.test(t) || /근거\s*:/i.test(t) || /^\s*[-•▪■]\s+/m.test(t);
+}
+
+function renderSummaryBoxUI(containerEl, text) {
+  if (!containerEl) return;
+
+  const raw = String(text || "").trim();
+  if (!raw) {
+    containerEl.innerHTML = `<div class="ts2-sumplain">(요약이 비어 있어요)</div>`;
+    return;
+  }
+
+  // ✅ preview처럼 구조화가 아니면: 그냥 텍스트로 보여주기
+  if (!isStructuredSummary(raw)) {
+    containerEl.innerHTML = `<div class="ts2-sumplain">${escapeHtml(raw)}</div>`;
+    return;
+  }
+
+  // ✅ 구조화 요약이면: 기존 섹션 렌더
+  const sec = parseSummaryToSections(raw);
+  if (!sec) {
+    containerEl.innerHTML = `<div class="ts2-sumplain">${escapeHtml(raw)}</div>`;
+    return;
+  }
+
+  const claimHtml = sec.claim
+    ? `<li>${escapeHtml(sec.claim)}</li>`
+    : `<li>(핵심 주장이 비어 있어요)</li>`;
+
+  const evidenceHtml = (sec.evidence && sec.evidence.length)
+    ? sec.evidence.map(x => `<li>${escapeHtml(x)}</li>`).join("")
+    : `<li>(근거가 비어 있어요)</li>`;
+
+  containerEl.innerHTML = `
+    <div class="ts2-sumsection">
+      <div class="ts2-sumhead">핵심 주장</div>
+      <ul class="ts2-sumlist">${claimHtml}</ul>
+    </div>
+
+    <div class="ts2-sumsection">
+      <div class="ts2-sumhead">근거</div>
+      <ul class="ts2-sumlist">${evidenceHtml}</ul>
+    </div>
+  `;
+}
+
+
+
+function getTrustInfo(a) {
     const sRaw = a?.trustScore ?? a?.score ?? null;
     if (sRaw == null) return { text: "", cls: "", title: "" };
 
@@ -1173,7 +1283,11 @@ async function fetchArticleSummary(docId) {
       src?.news_content ??
       "";
 
-    const summary = "";
+    // 미리보기(비로그인용) - 백엔드 list에서 내려준 값
+    const summaryPreview =
+      src?.summary_preview ??
+      src?.summaryPreview ??
+      "";
 
     // 언론사: press_name
     const press =
@@ -1219,7 +1333,7 @@ async function fetchArticleSummary(docId) {
       src?.thumbnail ??
       "";
 
-    return {docId, title, summary, body, press, url, date, trustScore, trustLabel, imageUrl, raw };
+    return {docId, title, summaryPreview, body, press, url, date, trustScore, trustLabel, imageUrl, raw };
   }
 
 
@@ -1228,75 +1342,146 @@ async function fetchArticleSummary(docId) {
     listEl.innerHTML = `<div class="ts2-empty" style="padding:14px;color:#6a7a93;">${escapeHtml(msg)}</div>`;
   }
 
-  // ✅ 카드 클릭 모달: 이벤트 위임(한 번만 바인딩)
-  function bindTS2CardOpen(listEl) {
-    if (!listEl) return;
-    if (listEl.dataset.boundCardOpen) return;
-    listEl.dataset.boundCardOpen = "1";
+  // ✅ 요약 토글(리스트당 한 번만 이벤트 위임)
+function bindTS2ToggleOnce(listEl) {
+  if (!listEl || listEl.dataset.boundToggle) return;
+  listEl.dataset.boundToggle = "1";
 
-    function openFromCard(card) {
-      if (!card) return;
-      openTS2Modal({
-        press: card.dataset.ts2Press || "",
-        date: card.dataset.ts2Date || "",
-        title: card.dataset.ts2Title || "",
-        summary: card.dataset.ts2Body || card.dataset.ts2Summary || "", // ✅
-        url: card.dataset.ts2Url || "",
-        image_url: card.dataset.ts2Image || "",
-      });
+  listEl.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".js-ts2-toggle");
+    if (!btn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const card = btn.closest(".js-ts2-card");
+    if (!card) return;
+
+    const box = card.querySelector(".ts2-sumbox");
+    const uiEl = box?.querySelector(".ts2-sumui");
+    if (!box || !uiEl) return;
+
+    const isOpen = !box.hasAttribute("hidden");
+    if (isOpen) {
+      box.setAttribute("hidden", "");
+      box.classList.remove("is-locked");
+      box.querySelector(".ts2-sumoverlay")?.remove();
+      return;
     }
 
-    listEl.addEventListener("click", (e) => {
-      // ✅ 요약 버튼 클릭이면 모달 금지
-      if (e.target.closest(".js-ts2-toggle")) return;
+    box.removeAttribute("hidden");
 
-      const card = e.target.closest(".js-ts2-card");
-      if (!card || !listEl.contains(card)) return;
+    const preview = card.dataset.ts2SummaryPreview || "(요약 미리보기가 없습니다)";
+    renderSummaryBoxUI(uiEl, preview);
 
-      e.preventDefault();
-      openFromCard(card);
-    });
+    const docId = card.dataset.ts2Id || "";
+    const res = await fetchArticleSummary(docId);
 
-    listEl.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter" && e.key !== " ") return;
+    if (!res.ok && res.code === "LOGIN_REQUIRED") {
+      box.classList.add("is-locked");
 
-      const card = e.target.closest(".js-ts2-card");
-      if (!card || !listEl.contains(card)) return;
+      let overlay = box.querySelector(".ts2-sumoverlay");
+      if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.className = "ts2-sumoverlay";
+        overlay.innerHTML = `
+          <div class="ts2-sumoverlay__msg">
+            기사 요약은 회원에게만 제공됩니다.<br/>로그인 후 열람 가능
+          </div>
+        `;
+        box.appendChild(overlay);
+      }
 
-      e.preventDefault();
-      openFromCard(card);
+      if (!overlay.dataset.bound) {
+        overlay.dataset.bound = "1";
+        overlay.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          window.location.href = LOGIN_URL;
+        });
+      }
+      return;
+    }
+
+    if (!res.ok) {
+      box.classList.remove("is-locked");
+      box.querySelector(".ts2-sumoverlay")?.remove();
+      renderSummaryBoxUI(uiEl, "(요약을 불러오지 못했어요)");
+      return;
+    }
+
+    box.classList.remove("is-locked");
+    box.querySelector(".ts2-sumoverlay")?.remove();
+    renderSummaryBoxUI(uiEl, res.summary || "(요약이 비어 있어요)");
+  });
+}
+
+// ✅ 카드 클릭 → 모달 오픈 (한 번만 바인딩)
+function bindTS2CardOpen(listEl) {
+  if (!listEl) return;
+  if (listEl.dataset.boundCardOpen) return;
+  listEl.dataset.boundCardOpen = "1";
+
+  function openFromCard(card) {
+    if (!card) return;
+    openTS2Modal({
+      press: card.dataset.ts2Press || "",
+      date: card.dataset.ts2Date || "",
+      title: card.dataset.ts2Title || "",
+      summary: card.dataset.ts2Body || card.dataset.ts2Summary || "",
+      url: card.dataset.ts2Url || "",
+      image_url: card.dataset.ts2Image || "",
     });
   }
 
-  function renderCards(sent, cards, page, totalPages) {
+  listEl.addEventListener("click", (e) => {
+    if (e.target.closest(".js-ts2-toggle")) return; // ✅ 요약 버튼이면 모달 열지 않음
+    const card = e.target.closest(".js-ts2-card");
+    if (!card || !listEl.contains(card)) return;
+    e.preventDefault();
+    openFromCard(card);
+  });
+
+  listEl.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const card = e.target.closest(".js-ts2-card");
+    if (!card || !listEl.contains(card)) return;
+    e.preventDefault();
+    openFromCard(card);
+  });
+}
+
+
+
+function renderCards(sent, cards, page, totalPages) {
   const listEl = els[sent];
   if (!listEl) return;
 
   if (!cards.length) {
     setListMessage(listEl, "기사 데이터 없음");
   } else {
-    listEl.innerHTML = cards
-      .map((a) => {
-        const press = String(a.press || "").trim();
-        const title = String(a.title || "").trim();
-        const body = String(a.body || "").trim();
-        const url = String(a.url || "").trim();
-        const dateOnly = formatDateOnly(a.date);
-        const imageUrl = String(a.imageUrl || a.image_url || "").trim();
-        const docId = String(a.docId || "").trim();
+    listEl.innerHTML = cards.map((a) => {
+      const press = String(a.press || "").trim();
+      const title = String(a.title || "").trim();
+      const body = String(a.body || "").trim();
+      const url = String(a.url || "").trim();
+      const dateOnly = formatDateOnly(a.date);
+      const imageUrl = String(a.imageUrl || a.image_url || "").trim();
+      const docId = String(a.docId || "").trim();
+      const preview = String(a.summaryPreview || a.summary_preview || "").trim();
+      const showTrust = shouldShowTrustBadge(sent);
+      const trust = getTrustInfo(a);
+      const trustChipHtml =
+        (showTrust && trust.text)
+          ? `<span class="ts2-chip ts2-chip--trust ${trust.cls}" title="${escapeHtml(trust.title)}">${escapeHtml(trust.text)}</span>`
+          : "";
 
-        const showTrust = shouldShowTrustBadge(sent);
-        const trust = getTrustInfo(a);
-        const trustChipHtml =
-          (showTrust && trust.text)
-            ? `<span class="ts2-chip ts2-chip--trust ${trust.cls}" title="${escapeHtml(trust.title)}">${escapeHtml(trust.text)}</span>`
-            : "";
-
-        return `
+      return `
 <article class="ts2-card js-ts2-card"
   role="button"
   tabindex="0"
   data-ts2-id="${escapeHtml(docId)}"
+  data-ts2-summary-preview="${escapeHtml(preview)}"
   data-ts2-press="${escapeHtml(press)}"
   data-ts2-date="${escapeHtml(dateOnly)}"
   data-ts2-title="${escapeHtml(title || "제목 없음")}"
@@ -1321,112 +1506,28 @@ async function fetchArticleSummary(docId) {
 
   <!-- ✅ 요약 박스: 기본은 숨김 -->
   <div class="ts2-sumbox" hidden>
-    <div class="ts2-sumtext"></div>
+    <div class="ts2-sumui"></div>
   </div>
 </article>`;
-      })
-      .join("");
+    }).join("");
 
     hydratePressLogos(listEl);
 
     // ✅ 카드 클릭 모달(한 번만)
     bindTS2CardOpen(listEl);
 
-    // ✅ 요약 버튼 토글 + 로그인 안내
-    listEl.querySelectorAll(".js-ts2-card").forEach((card) => {
-      const btn = card.querySelector(".js-ts2-toggle");
-      if (!btn || btn.dataset.bound) return;
-
-      btn.dataset.bound = "1";
-
-      btn.addEventListener("click", async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const box = card.querySelector(".ts2-sumbox");
-        const textEl = box?.querySelector(".ts2-sumtext");
-        if (!box || !textEl) return;
-
-        const isOpen = !box.hasAttribute("hidden");
-        if (isOpen) {
-            box.setAttribute("hidden", "");
-            box.classList.remove("is-locked");
-            const old = box.querySelector(".ts2-sumoverlay");
-            if (old) old.remove();
-            return;
-        }
-
-
-        box.removeAttribute("hidden");
-
-        const docId = card.dataset.ts2Id || "";
-        textEl.textContent = "요약 불러오는 중...";
-
-        const res = await fetchArticleSummary(docId);
-
-        // ✅ 비로그인: 블러 처리 + 오버레이(클릭 시 로그인 이동)
-        if (!res.ok && res.code === "LOGIN_REQUIRED") {
-        // 1) 박스 locked 상태
-        box.classList.add("is-locked");
-
-        // 2) 블러될 "가짜 요약" 텍스트(보기만 되고 블러됨)
-        //    서버에서 못 받아오니까, 길이감만 있는 더미로 채워두면 UI가 자연스러워.
-        textEl.textContent =
-            "핵심 주장: (회원 전용 요약)\n\n근거:\n- (회원 전용 요약)\n- (회원 전용 요약)";
-
-        // 3) 오버레이가 없으면 생성
-        let overlay = box.querySelector(".ts2-sumoverlay");
-        if (!overlay) {
-            overlay = document.createElement("div");
-            overlay.className = "ts2-sumoverlay";
-            overlay.innerHTML = `
-            <span class="ts2-sumoverlay__msg" role="link" tabindex="0">
-                기사 요약은 회원에게만 제공됩니다.<br/>로그인 후 열람 가능
-            </span>
-            `;
-            box.appendChild(overlay);
-
-            const msgEl = overlay.querySelector(".ts2-sumoverlay__msg");
-            const goLogin = (ev) => {
-            ev.preventDefault();
-            ev.stopPropagation();
-            window.location.href = LOGIN_URL;
-            };
-
-            msgEl.addEventListener("click", goLogin);
-            msgEl.addEventListener("keydown", (ev) => {
-            if (ev.key === "Enter" || ev.key === " ") goLogin(ev);
-            });
-        }
-
-        return;
-        }
-
-
-        // 기타 에러
-        if (!res.ok) {
-          textEl.textContent = "(요약을 불러오지 못했어요)";
-          return;
-        }
-
-        // 로그인 성공
-        box.classList.remove("is-locked");
-        const old = box.querySelector(".ts2-sumoverlay");
-        if (old) old.remove();
-        textEl.textContent = res.summary || "(요약이 비어 있어요)";
-
-      });
-    });
+    // ✅ 요약 토글(리스트당 한 번만 이벤트 위임)
+    bindTS2ToggleOnce(listEl);
   }
 
-  // ✅ pager 갱신은 “딱 1번만”
+  // ✅ pager 갱신은 renderCards 안에서!
   const { text, btnPrev, btnNext } = getPager(sent);
   if (text) text.textContent = `${page} / ${totalPages}`;
   if (btnPrev) btnPrev.disabled = page <= 1;
   if (btnNext) btnNext.disabled = page >= totalPages;
 }
 
-  async function fetchSentiment(sent, page, size) {
+async function fetchSentiment(sent, page, size) {
     // ✅ pos/neu/neg -> 서버 sentiment 값
     const sentiment =
       sent === "pos" ? "positive" :
@@ -1541,7 +1642,8 @@ async function fetchArticleSummary(docId) {
   });
 
   ts2ReloadAll();
-})();
+
+  })();
 
 
 // =====================================================
@@ -1554,17 +1656,17 @@ const ts3Api = (function TS3() {
   // 공통 util
   // -------------------------
   const LINE_PALETTE = [
-    "#6797ff",
-    "#36e7ac",
-    "#ffbc49",
-    "#ff6c6c",
-    "#a077ff",
-    "#51e5ff",
-    "#fff348",
-    "#ff80bf",
-    "#c6ff71",
-    "#8b8dff",
-  ];
+  "#4C7DFF", 
+  "#1ECFA2", 
+  "#FFB020", 
+  "#FF5C5C", 
+  "#9B6DFF", 
+  "#3FD5FF", 
+  "#FFD84D", 
+  "#FF6FAE", 
+  "#9EDB3A",
+  "#7B7EFF" 
+];
   const __kwColorMap = new Map();
 
   function hashStr(s) {
@@ -1580,9 +1682,6 @@ const ts3Api = (function TS3() {
     const c = LINE_PALETTE[hashStr(kw) % LINE_PALETTE.length];
     __kwColorMap.set(kw, c);
     return c;
-  }
-  function clamp(n, a, b) {
-    return Math.max(a, Math.min(b, n));
   }
   function pad2(n) {
     return String(n).padStart(2, "0");
@@ -1600,24 +1699,6 @@ const ts3Api = (function TS3() {
     // =========================================================
   // TS3: 워드클라우드
   // =========================================================
-  const CLOUD_PALETTE = [
-    "#3374ff",
-    "#13dd9a",
-    "#fdaf29",
-    "#ff5050",
-    "#824cff",
-    "#1fdcfd",
-    "#f3e300",
-    "#ff5dae",
-    "#afff37",
-    "#6a6cff",
-  ];
-
-  function pickColor(word, i) {
-    const h = hashStr(word) + i * 97;
-    return CLOUD_PALETTE[h % CLOUD_PALETTE.length];
-  }
-
   // ✅ 요청 순서 관리(빠르게 기간 바꿀 때 이전 응답이 덮어쓰는 문제 방지)
   let __cloudReqSeq = 0;
 
@@ -1627,186 +1708,86 @@ const ts3Api = (function TS3() {
 
     const r = window.getAppRange?.() || {};
     const start = r.start;
-    const end = r.end || r.start; // ✅ end 없으면 start
+    const end = r.end || r.start;
     if (!start) return;
 
     const seq = ++__cloudReqSeq;
-
-    if (DEBUG_CLOUD) {
-      console.log("[TS3][cloud] called", { keyword, start, end, grain: r.grain });
-    }
-
     ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">불러오는 중…</div>`;
 
     try {
-      // ✅ 신규 백엔드: 기간 집계
-      const url =
-        `/api/issue_wordcloud?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}` +
-        `&keyword=${encodeURIComponent(keyword)}`;
+        const url = `/api/issue_wordcloud?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&keyword=${encodeURIComponent(keyword)}`;
+        const res = await fetch(url, { credentials: "same-origin" });
+        const data = await res.json().catch(() => null);
 
-      if (DEBUG_CLOUD) console.log("[TS3][cloud] request", url);
+        if (seq !== __cloudReqSeq) return; 
 
-      const res = await fetch(url, { credentials: "same-origin" });
-      const data = await res.json().catch(() => null);
-
-      if (seq !== __cloudReqSeq) return; // ✅ stale 응답 무시
-
-      if (DEBUG_CLOUD) console.log("[TS3][cloud] response", { ok: res.ok, status: res.status, data });
-
-      if (!res.ok || !data?.success || !Array.isArray(data.sub_keywords) || data.sub_keywords.length === 0) {
-        ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">데이터 없음</div>`;
-        return;
-      }
-
-      // ✅ 백엔드 반환 포맷 우선: [{text, value}]
-      // 하위호환: [{keyword, score}] 또는 문자열 배열도 수용
-      const items = data.sub_keywords
-        .slice(0, 30)
-        .map((x) => {
-          // 문자열 배열
-          if (typeof x === "string") return { kw: x, score: null };
-
-          if (x && typeof x === "object") {
-            // 신규 포맷
-            const kw = (x.text ?? x.keyword ?? x.word ?? "").trim();
-            const score =
-              typeof x.value === "number"
-                ? x.value
-                : typeof x.score === "number"
-                ? x.score
-                : null;
-            return { kw, score };
-          }
-
-          return { kw: String(x), score: null };
-        })
-        .filter((it) => it.kw && it.kw !== "[object Object]");
-
-      if (items.length === 0) {
-        ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">데이터 없음</div>`;
-        return;
-      }
-
-      // ✅ score가 있으면 score로, 없거나 분포가 같으면 rank로 크기 차등
-      const scoreVals = items
-        .map((x) => (typeof x.score === "number" ? x.score : null))
-        .filter((v) => v != null);
-
-      const hasScore = scoreVals.length > 0;
-
-      let minS = 0,
-        maxS = 1;
-      if (hasScore) {
-        minS = Math.min(...scoreVals);
-        maxS = Math.max(...scoreVals);
-      }
-
-      // ✅ 워드클라우드 컨테이너 안전장치
-      ts3CloudEl.style.overflow = "hidden";
-
-      const rect = ts3CloudEl.getBoundingClientRect();
-      const W = rect.width || 467;
-      const H = rect.height || 220;
-
-      // padding 감안(현재 UI가 14px라면)
-      const PAD = 14 * 2;
-      const effW = Math.max(120, W - PAD);
-      const effH = Math.max(120, H - PAD);
-
-      const rows = Math.max(3, Math.ceil(Math.sqrt(items.length)));
-      const rowH = effH / rows;
-
-      const MAX = clamp(rowH * 1.25, 44, 90);
-      const MIN = clamp(MAX * 0.38, 14, 24);
-
-      const gamma = 2.2;
-
-      const wrap = document.createElement("div");
-      wrap.className = "ts3-cloud-inner";
-      wrap.style.display = "flex";
-      wrap.style.flexWrap = "wrap";
-      wrap.style.justifyContent = "center";
-      wrap.style.alignContent = "center";
-      wrap.style.gap = "2px 6px";
-      wrap.style.width = "100%";
-      wrap.style.height = "100%";
-      wrap.style.boxSizing = "border-box";
-      wrap.style.padding = "0px";
-
-      items.forEach((it, i) => {
-        const span = document.createElement("span");
-        span.className = "ts3-w";
-        span.textContent = it.kw;
-        span.style.color = pickColor(it.kw, i);
-        span.style.transform = "none";
-        span.style.whiteSpace = "nowrap";
-        span.style.margin = "6px 10px";
-
-        let t;
-        if (typeof it.score === "number" && hasScore && maxS !== minS) {
-          t = (it.score - minS) / (maxS - minS);
-        } else {
-          t = 1 - i / Math.max(1, items.length - 1);
+        if (!res.ok || !data?.success || !Array.isArray(data.sub_keywords) || data.sub_keywords.length === 0) {
+            ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">데이터 없음</div>`;
+            return;
         }
-        t = clamp(t, 0, 1);
 
-        const tAdj = Math.pow(t, gamma);
+        // 1. Wordcloud2.js 포맷으로 데이터 변환: [ ['단어', 가중치], ... ]
+        const wordList = data.sub_keywords
+            .slice(0, 40) // 최대 단어 수 조절
+            .map((x, i) => {
+                let kw = "";
+                let score = 0;
+                if (typeof x === "string") {
+                    kw = x;
+                    score = 40 - i; // 스코어 없으면 순위 기반 가중치
+                } else {
+                    kw = (x.text ?? x.keyword ?? x.word ?? "").trim();
+                    score = x.value ?? x.score ?? (40 - i);
+                }
+                return [kw, score];
+            })
+            .filter(it => it[0] && it[0] !== "[object Object]");
 
-        let sizePx = MIN + tAdj * (MAX - MIN);
+        if (wordList.length === 0) {
+            ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">데이터 없음</div>`;
+            return;
+        }
 
-        const len = (it.kw || "").length || 1;
-        const lenFactor = clamp(1 - Math.max(0, len - 8) * 0.015, 0.78, 1);
-        sizePx *= lenFactor;
+        // 2. 캔버스 생성 및 초기화
+        ts3CloudEl.innerHTML = "";
+        const canvas = document.createElement("canvas");
+        const rect = ts3CloudEl.getBoundingClientRect();
+        
+        // 부모 크기에 맞게 캔버스 크기 설정 (해상도를 위해 2배 확대 가능)
+        canvas.width = rect.width || 467;
+        canvas.height = rect.height || 220;
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        ts3CloudEl.appendChild(canvas);
 
-        const maxByWidth = effW / (len * 0.92);
-        sizePx = Math.min(sizePx, maxByWidth);
+        // 3. WordCloud 실행
+        // await document.fonts.ready; // 폰트 로드 대기
+        WordCloud(canvas, {
+            list: wordList,
+            gridSize: Math.round(16 * canvas.width / 1024), // 화면 크기에 따른 그리드 조절
+            weightFactor: function (size) {
+                // 가중치를 캔버스 높이에 비례하도록 정규화
+                const maxScore = Math.max(...wordList.map(w => w[1]));
+                return (size / maxScore) * (canvas.height /3); 
+            },
+            fontFamily: '"Lato", "Noto Sans KR",sans-serif',
+            color: (word, weight, fontSize, distance, theta) => {
+                // 상위 단어일수록 진한 색상 부여 가능
+                const colors = ["#0B63CE","#2A7BE4","#6AA6F8","#162C49","#1F3C68"];
+                return colors[Math.floor(Math.random() * colors.length)];
+            },
+            rotateRatio: 0.2, // 30% 확률로 단어 회전
+            rotationSteps: 2,
+            backgroundColor: 'transparent',
+            shuffle: true,
+            ellipticity: 0.4 // 원형보다는 타원형으로 배치 (가로형 대시보드 적합)
+        });
 
-        span.style.fontSize = `${sizePx}px`;
-        span.style.fontWeight = tAdj > 0.7 ? "900" : tAdj > 0.4 ? "800" : "700";
-        span.style.opacity = String(0.72 + tAdj * 0.28);
-        span.style.display = "inline-block";
-        span.style.lineHeight = "1.05";
-
-        wrap.appendChild(span);
-      });
-
-      ts3CloudEl.innerHTML = "";
-      ts3CloudEl.appendChild(wrap);
-
-      requestAnimationFrame(() => {
-        if (seq !== __cloudReqSeq) return; // ✅ 렌더 직후에도 stale 방지
-
-        const cs = getComputedStyle(ts3CloudEl);
-        const pl = parseFloat(cs.paddingLeft) || 0;
-        const pr = parseFloat(cs.paddingRight) || 0;
-        const pt = parseFloat(cs.paddingTop) || 0;
-        const pb = parseFloat(cs.paddingBottom) || 0;
-
-        const availW = ts3CloudEl.clientWidth - pl - pr;
-        const availH = ts3CloudEl.clientHeight - pt - pb;
-
-        wrap.style.width = "100%";
-        wrap.style.height = "100%";
-        wrap.style.boxSizing = "border-box";
-        wrap.style.transformOrigin = "center center";
-
-        const contentW = wrap.scrollWidth;
-        const contentH = wrap.scrollHeight;
-
-        const scaleW = availW > 0 ? availW / contentW : 1;
-        const scaleH = availH > 0 ? availH / contentH : 1;
-
-        const scale = Math.min(1, scaleW, scaleH);
-        wrap.style.transform = `scale(${scale})`;
-      });
-
-      if (DEBUG_CLOUD) console.log("[TS3][cloud] rendered", { count: items.length, items });
     } catch (e) {
-      if (seq !== __cloudReqSeq) return;
-      ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">불러오기 실패</div>`;
-      if (DEBUG_CLOUD) console.log("[TS3][cloud] error", e);
+        if (seq !== __cloudReqSeq) return;
+        ts3CloudEl.innerHTML = `<div class="ts3-cloud-inner">불러오기 실패</div>`;
     }
-  }
+}
 
   // =========================================================
   // TS3: 도넛(감성 합계)
@@ -2130,7 +2111,7 @@ const ts3Api = (function TS3() {
       const kws = [baseKeyword, ...Array.from(compareSet)];
       const datasets = [];
 
-      const usedColors = new Set(); // ✅ 차트 1회 렌더 기준
+      const usedColors = new Set(); // 차트 1회 렌더 기준
 
       for (const uiKw of kws) {
         const serverKw = resolveSeriesKey(uiKw);
@@ -2329,4 +2310,3 @@ window.ts3Api = ts3Api;
     });
   });
 })();
-

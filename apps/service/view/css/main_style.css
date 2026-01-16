@@ -96,6 +96,7 @@
   border: 1px solid #dfe8f7;
   border-radius: 12px;
   box-shadow: 0 6px 16px rgba(15, 40, 90, 0.06);
+  padding-right: 2px;
 }
 
 .date-icon {
@@ -123,13 +124,13 @@
   position: relative; /* 크기 변화 없음 */
 }
 
-/* ✅ 기본 달력 indicator(브라우저 아이콘) 숨김 */
+/*  기본 달력 indicator(브라우저 아이콘) 숨김 */
 .date-pill input[type="date"]::-webkit-calendar-picker-indicator{
   opacity: 0;            /* 안 보이게 */
   cursor: pointer;       /* 클릭 영역은 살아있게(원하면) */
 }
 
-/* ✅ 오른쪽 끝에 📅 오버레이 */
+/*  오른쪽 끝에 📅 오버레이 */
 .date-pill .date-icon-right{
   position: absolute;
   right: 7px;           /* date-pill padding이 12px라 딱 맞춤 */
@@ -141,11 +142,21 @@
   cursor: pointer;
 }
 
-/* ✅ 아이콘이 input 텍스트랑 겹치지 않게: input 오른쪽만 살짝 여유 */
+/*  아이콘이 input 텍스트랑 겹치지 않게: input 오른쪽만 살짝 여유 */
 .date-pill input[type="date"]{
-  padding-right: 34px;   /* 툴바 크기/높이 변화 없음 (input 내부 여백만) */
+  padding-left: 0;
+  text-align: center;
 }
 
+/* date 날짜 폰트 스타일 */
+.mains .date-pill input[type="date"]::-webkit-datetime-edit {
+  font-family: "Noto Sans KR", system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #24324a;
+  text-align: center;
+  width: 100%;
+}
 
 
 /* ===== 세그먼트 버튼 ===== */
@@ -644,30 +655,6 @@
   justify-self: center;
 }
 
-
-
-
-/* ===== TS2 기사 요약 박스 ===== */
-.ts2-sumbox {
-  margin-top: 12px;
-  padding: 14px 16px;
-  border: 1px solid #e8eef8;
-  border-radius: 12px;
-  background: #f9fbff;
-  animation: ts2SlideDown 0.18s ease-out;
-}
-
-@keyframes ts2SlideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* ===== 요약 패널 ===== */
 .summary {
   width: 420px;
@@ -724,9 +711,10 @@
 }
 
 .summary-subhead {
+  display: none;
   font-size: 13px;
   font-weight: 900;
-  color: #1d2b42;
+  color: #0462d2;
   margin-bottom: 10px;
 }
 
@@ -735,22 +723,168 @@
   padding-left: 18px;
   color: #2c3a52;
   font-size: 13px;
-  line-height: 1
+  line-height: 1.6
 }
 
-/* ===== TS2 요약 박스 (회원 전용 대응) ===== */
+.summaryary-content {
+  padding: 14px 18px;   /* 위아래 / 좌우 */
+  box-sizing: border-box;
+}
+
+/* 선정이유(요약패널) 리스트 정리 */
+#summaryList{
+  margin: 8px 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  counter-reset: tsReason;
+}
+
+#summaryList > li{
+  margin: 2px;
+  padding-left: 17px;
+  padding-bottom: 0;
+  position: relative;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #2c3a52;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* 자동 번호 */
+/* #summaryList > li::before{
+  display: none;
+  content: counter(tsReason) ".";
+  counter-increment: tsReason;
+  position: absolute;
+  left: 5px;
+  top: 0.1;
+  font-weight: 900;
+  color: #0462d2;
+} */
+
+
+
+/* ===== TS2 기사 요약 박스 ===== */
 .ts2-sumbox {
-  position: relative; /* 오버레이 기준 */
-  overflow: hidden;   /* 블러 잘림 방지 */
+  position: relative;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid #e8eef8;
+  border-radius: 10px;
+  background: #f9fbff;
+  animation: ts2SlideDown 0.18s ease-out;
+  overflow: hidden;
 }
 
-/* 요약 블러 상태 */
-.ts2-sumbox.is-locked .ts2-sumtext {
+@keyframes ts2SlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===============================
+   TS2 요약
+   =============================== */
+
+/* 요약 박스(기본) */
+.ts2-sumbox {
+  position: relative;
+  margin-top: 6px;
+  padding: 6px 10px;          /* ⭐ 위아래 여백 줄임 */
+  border: 1px solid #e8eef8;
+  border-radius: 10px;
+  background: #f9fbff;
+  overflow: hidden;
+}
+
+/* 회원 요약(잠금 아님) 더 얇게 */
+.ts2-sumbox:not(.is-locked) {
+  padding-top: 4px;           /* ⭐ 위 */
+  padding-bottom: 4px;        /* ⭐ 아래 */
+}
+
+/* 요약 UI 기본 텍스트 */
+.ts2-sumui {
+  font-size: 13.3px;
+  line-height: 1.35;          /* ⭐ 줄간격 압축 */
+  color: #2c3a52;
+}
+
+/* 섹션 자체 여백 제거 */
+.ts2-sumsection {
+  margin: 0;
+  padding: 0;
+}
+
+/* 섹션 사이 간격 최소화 + 구분선 */
+.ts2-sumsection + .ts2-sumsection {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #eef2fb;
+}
+
+/* 헤더(핵심 주장/근거) 여백 최소화 */
+.ts2-sumhead {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.3px;
+  font-weight: 900;
+  color: #0462d2;
+  margin: 0 0 -2px 4px;          /* ⭐ 아래만 2px */
+  margin-top: 7px; 
+}
+
+/* 헤더 점 더 작게 */
+.ts2-sumhead::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: #0462d2;
+  box-shadow: none;
+}
+
+/* UL 기본 margin 제거(브라우저 기본값 제거 핵심) */
+.ts2-sumlist {
+  margin-bottom: 13px !important; 
+  margin-top:8px;
+  padding-left: 19px;
+  line-height: 1.32;
+}
+
+/* LI 여백 제거(여기서 대부분 커짐) */
+.ts2-sumlist li {
+  margin: 3px !important;       /* ⭐ 강제 */
+  padding: 0;
+}
+
+/* plain 텍스트 fallback */
+.ts2-sumplain {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #2c3a52;
+  white-space: pre-line;
+}
+
+/* ===== 비회원 잠금 상태 ===== */
+.ts2-sumbox.is-locked .ts2-sumui {
   filter: blur(6px);
-  opacity: 0.9;
+  opacity: 0.85;
   user-select: none;
   pointer-events: none;
 }
+
 
 /* 비로그인 오버레이 */
 .ts2-sumoverlay {
@@ -768,12 +902,14 @@
   display: flex;
 }
 
+/* ===== 오버레이 문구 ===== */
 .ts2-sumoverlay__msg {
   background: none;  
   border: none;        
   border-radius: 0;
   padding: 0;
   font-size: 13px;
+  transform: translateY(-8px);
   font-weight: 800;
   line-height: 1.6;
   color: #0462D2;
@@ -788,7 +924,7 @@
 .ts2-sumoverlay__msg:active {
   background: transparent !important;
   outline: none;
-  text-decoration: underline; /* ← 이거 싫으면 지워도 됨 */
+  text-decoration: underline;
 }
 
 .ts2-sumtext {
@@ -797,6 +933,12 @@
   color: #2c3a52;
   white-space: pre-line;
 }
+
+/* ===== 잠금 상태 높이 제한 ===== */
+.ts2-sumbox.is-locked {
+  max-height: 90px;
+}
+
 
 /* 카드 전체 폰트/기본 텍스트 안정화 */
 .ts2-card {
@@ -820,6 +962,13 @@
   align-items: center;
   flex-wrap: wrap;
 }
+
+.ts2-meta { position: relative; z-index: 10; }
+.ts2-sumoverlay { pointer-events: none; }
+.ts2-sumbox.is-locked .ts2-sumoverlay { pointer-events: auto; }
+.ts2-card__top { position: relative; z-index: 20; }
+.js-ts2-toggle { position: relative; z-index: 30; pointer-events: auto; }
+
 
 
 /* ===================== TS2: MAIN2 (기사 3열) ===================== */
@@ -961,7 +1110,7 @@
 
 /* ✅ 로고만 보여주는 모드 */
 .ts2-src.ts2-src--logoonly {
-  padding: 0;
+  padding: 0 6px;
   gap: 0;
   background: #fff;
   border: 1px solid #dfe8f7;
@@ -972,13 +1121,15 @@
   overflow: hidden;
   display: inline-flex;
   align-items: stretch;
-  justify-content: stretch;
+  justify-content: center;
 }
 
 /* ✅ 컨테이너를 "꽉" 채우는 로고 */
 .ts2-src.ts2-src--logoonly .ts2-src__logo {
-  width: 100%;
-  height: 100%;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
   /* 로고를 완전히 꽉 채우고 싶으면 cover (잘릴 수 있음) */
   object-fit: contain;
   /* 로고가 안 잘리게 넣고 싶으면 contain (여백 생길 수 있음) */
@@ -1913,6 +2064,7 @@ body.is-modal-open {
     /* 필요하면 160~200 사이로 조절 */
   }
 
+
   /* 키워드 드롭다운: 한 줄을 통째로 차지 (날짜 다음 줄) */
   .toolbar-right {
     flex: 1 1 100%;
@@ -2020,4 +2172,5 @@ body.is-modal-open {
 
 .ts2-sumbox{ position:relative; margin-top:10px; border:1px solid #e6eefc; border-radius:12px; padding:12px; background:#fff; }
 .ts2-sumtext{ white-space:pre-wrap; line-height:1.5; }
+
 

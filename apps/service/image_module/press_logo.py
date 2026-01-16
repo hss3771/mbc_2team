@@ -82,6 +82,8 @@ PRESS_LOGO_MAP = {
     "문화일보": "/view/img/문화일보_로고.png", # 추가
     "스포츠경향": "/view/img/스포츠경향_로고.png", # 추가 (img 파일도 업데이트 됨)
     "스포츠조선": "/view/img/스포츠조선_로고.png", # 추가 (img 파일도 업데이트 됨)
+    "스포츠서울": "/view/img/스포츠서울_로고.png",  # 추가 (img 파일도 업데이트 됨)
+    "스포츠동아": "/view/img/스포츠동아_로고.png",  # 추가 (img 파일도 업데이트 됨)
 }
 
 DEFAULT_LOGO = "/view/img/favicon.png"
